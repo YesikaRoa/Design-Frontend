@@ -1,0 +1,147 @@
+/* Header */
+
+.custom-modal-header {
+  background-color: #5856d6;
+  color: white;
+  border-bottom: none;
+  text-align: center; /* centra texto dentro */
+  justify-content: center !important; /* forza el centrado en caso de que haya flex */
+  padding: 1rem 1.5rem;
+  width: 100%;
+}
+.custom-modal-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 auto;
+  width: 100%;
+  text-align: center;
+}
+/* Steps Indicator */
+
+.step-circle {
+  background-color: white;
+  border: 2px solid #5856d6;
+  color: #5856d6;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.step-circle.active {
+  background-color: #5856d6;
+  color: white;
+}
+
+/* Labels and inputs */
+.mb-3 label {
+  font-weight: 500;
+}
+/* Footer buttons */
+.custom-footer {
+  display: flex;
+  justify-content: center; /* Centra los botones en la fila */
+  width: 100%;
+  gap: 10px; /* Espacio entre los botones */
+}
+
+/* Agrupa los botones juntos */
+.button-group {
+  display: flex;
+  gap: 10px; /* Espacio entre botones */
+  width: 100%; /* Asegura que los botones ocupen el 100% del espacio */
+  justify-content: space-between; /* Los botones deben tener espacio entre ellos */
+}
+
+.button-group .btn {
+  flex: 1; /* Hace que los botones ocupen el mismo ancho que los inputs */
+  margin: 0; /* Elimina márgenes innecesarios */
+}
+
+/* Personalización de los colores */
+.custom-footer .btn-primary {
+  background-color: #5856d6;
+  border-color: #5856d6;
+}
+
+.custom-footer .btn-secondary {
+  border-color: #6c757d;
+}
+
+.custom-footer .btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+
+.steps-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin: 20px 0;
+}
+
+.step-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.step-item:not(:last-child)::after {
+  content: '';
+  height: 2px;
+  background-color: #5856d6;
+  width: 40px;
+  margin: 0 10px;
+}
+.custom-modal-header .btn-close {
+  background-color: white !important;
+  border-radius: 50%;
+  color: var(--cui-primary);
+  border: 1px solid var(--cui-primary);
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal-header .btn-close:hover {
+  background-color: var(--cui-primary);
+  color: white;
+}
+.floating-label-input {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.floating-label-input input {
+  width: 100%;
+  padding: 1rem 0.5rem 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+}
+
+.floating-label-input label {
+  position: absolute;
+  top: 1rem;
+  left: 0.5rem;
+  color: #999;
+  background: white;
+  padding: 0 0.25rem;
+  transition: 0.2s ease all;
+  pointer-events: none;
+}
+
+.floating-label-input input:focus + label,
+.floating-label-input input:not(:placeholder-shown) + label {
+  top: -0.6rem;
+  left: 0.4rem;
+  font-size: 0.8rem;
+  color: #666;
+}

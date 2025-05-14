@@ -1,0 +1,45 @@
+/* Contenedor para las palabras clicables */
+.card-actions-container {
+  display: flex;
+  flex-direction: column; /* Apila los elementos verticalmente */
+  gap: 1rem; /* Espaciado entre los elementos */
+  align-items: flex-start; /* Alinear los elementos a la izquierda */
+  width: 100%; /* Asegurar que ocupe todo el ancho disponible */
+}
+
+/* Estilo para las palabras clicables */
+.card-actions-link {
+  cursor: pointer; /* Cambia el cursor a "mano" */
+
+  text-decoration: none; /* Sin subrayado */
+  display: flex; /* Alinear ícono y texto */
+  align-items: center; /* Centrar verticalmente */
+  gap: 0.5rem; /* Espaciado entre ícono y texto */
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease; /* Animación suave */
+  font-size: 1.2rem; /* Tamaño de fuente */
+}
+
+/* Estilo para las palabras clicables */
+.card-actions-link.change-password {
+  color: #ffc107; /* Amarillo */
+}
+
+.card-actions-link.activate-user {
+  color: #28a745; /* Verde */
+}
+
+.card-actions-link.deactivate-user {
+  color: #dc3545; /* Rojo */
+}
+
+.card-actions-link.delete-user {
+  color: #dc3545; /* Rojo */
+}
+
+/* Hover para todas las palabras */
+.card-actions-link:hover {
+  transform: translateX(5px); /* Mueve ligeramente hacia la derecha */
+  text-decoration: underline; /* Subrayado al pasar el mouse */
+}

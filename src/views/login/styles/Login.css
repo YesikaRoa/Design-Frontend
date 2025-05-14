@@ -1,0 +1,13 @@
+.login-background {
+  background-image: url('/src/assets/images/4.png'), url('/src/assets/images/2.png');
+  background-size: 15%, 25%;
+  background-position:
+    120px 98px,
+    right bottom;
+  background-color: rgb(202, 224, 240) !important;
+  background-repeat: no-repeat, no-repeat;
+}
+.some-class {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra alrededor del elemento */
+  border-radius: 8px; /* Opcional: bordes redondeados */
+}

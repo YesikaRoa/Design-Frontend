@@ -1,0 +1,25 @@
+.animated-text {
+  transition:
+    transform 0.6s ease,
+    color 0.6s ease;
+  will-change: transform, color;
+}
+.animated-text:hover {
+  transform: scale(1.05);
+  color: #007bff;
+}
+.card-custom-margin {
+  margin-bottom: 1rem; /* Ajusta el margen según sea necesario */
+}
+.card-body-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: start; /* Alinea horizontalmente a la izquierda */
+  justify-content: center; /* Centra verticalmente */
+  padding: 0.5rem; /* Ajusta el padding general */
+  padding-left: 1rem; /* Agrega espacio a la izquierda */
+  margin: 0; /* Elimina márgenes adicionales */
+}
+.card-body-centered p {
+  margin: 1rem 0; /* Ajusta el margen superior e inferior */
+}

@@ -1,0 +1,30 @@
+.filter-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.reset-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  height: 38px;
+  padding: 0 20px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.reset-button:hover {
+  background-color: #5a6268;
+}
+
+.table-header {
+  background-color: #f8f9fa;
+  text-align: left;
+}
+.avatar-header {
+  text-align: center !important;
+  width: 80px; /* opcional: ajusta el ancho si lo ves muy angosto */
+}
