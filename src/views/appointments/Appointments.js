@@ -44,8 +44,74 @@ const Appointments = () => {
   const [visible, setVisible] = useState(false)
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
-  const [addVisible, setAddVisible] = useState(false)
+
   const ModalAddRef = useRef()
+  const [usersData, setUsersData] = useState([])
+  const [selectedProfessional, setSelectedProfessional] = useState(null)
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const [appointmentsRes, usersRes] = await Promise.all([
+          fetch('http://localhost:8000/appointments'),
+          fetch('http://localhost:8000/users'),
+        ])
+        if (!appointmentsRes.ok || !usersRes.ok) {
+          throw new Error('Failed to fetch data')
+        }
+        const appointmentsData = await appointmentsRes.json()
+        const usersData = await usersRes.json()
+        //Enriquese los datos de las citas con los nombres de los pacientes y profesionales
+        const enrichedAppointments = appointmentsData.map((appointment) => {
+          const patient = usersData.find((user) => user.id === appointment.patient)
+          // Filtrar profesional por id y que tenga un role_id que represente un profesional válido
+          const professional = usersData.find(
+            (user) =>
+              user.id === appointment.professional &&
+              (user.role_id === 'Doctor' ||
+                user.role_id === 'Nurse' ||
+                user.role_id === 'Therapist'),
+          )
+
+          return {
+            ...appointment,
+            patient: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown',
+            professional: professional
+              ? `${professional.first_name} ${professional.last_name}`
+              : 'Unknown',
+          }
+        })
+        setAppointments(enrichedAppointments)
+        setFilteredAppointments(enrichedAppointments)
+        setUsersData(usersData)
+      } catch (error) {}
+    }
+    fetchAppointments()
+  }, [])
+
+  const handleProfessionalChange = (professionalId) => {
+    console.log('Professional selected:', professionalId)
+    setSelectedProfessional(professionalId)
+  }
+
+  const professionalSpecialty =
+    selectedProfessional && usersData.length > 0
+      ? usersData.find((user) => user.id.toString() === selectedProfessional.toString())
+          ?.specialty || 'Not specified'
+      : null
+
+  // Extraer las opciones únicas para los campos del formulario, donde en users con role_id sea :Doctor, Nurse o Therapist y para pacientes role_id sea Patient
+  const uniquePatients = usersData
+    .filter((user) => user.role_id === 'Patient')
+    .map((user) => ({ label: `${user.first_name} ${user.last_name}`, value: user.id }))
+
+  const uniqueProfessionals = usersData
+    .filter((user) => ['Doctor', 'Nurse', 'Therapist'].includes(user.role_id))
+    .map((user) => ({ label: `${user.first_name} ${user.last_name}`, value: user.id }))
+
+  const specialtyOptions = professionalSpecialty
+    ? [{ label: professionalSpecialty, value: professionalSpecialty }]
+    : []
 
   const appointmentSteps = [
     {
@@ -53,14 +119,19 @@ const Appointments = () => {
         {
           name: 'patient',
           label: 'Patient',
-          placeholder: 'Enter patient name',
+          type: 'select',
+          placeholder: 'Select patient',
+          options: uniquePatients,
           required: true,
         },
         {
           name: 'professional',
           label: 'Professional',
-          placeholder: 'Enter professional name',
+          type: 'select',
+          placeholder: 'Select professional',
+          options: uniqueProfessionals,
           required: true,
+          onChange: (event) => handleProfessionalChange(event.target.value),
         },
         {
           name: 'scheduled_at',
@@ -106,12 +177,37 @@ const Appointments = () => {
           type: 'select',
           required: true,
           options: [
+            { label: 'Rehabilitación física', value: 'Rehabilitación física' },
+            {
+              label: 'Terapia de movilidad y flexibilidad',
+              value: 'Terapia de movilidad y flexibilidad',
+            },
+            { label: 'Terapia de relajación muscular', value: 'Terapia de relajación muscular' },
+            { label: 'Entrenamiento postural', value: 'Entrenamiento postural' },
+            { label: 'Rehabilitación neurológica', value: 'Rehabilitación neurológica' },
+            { label: 'Consulta diagnóstica general', value: 'Consulta diagnóstica general' },
+            {
+              label: 'Tratamiento de enfermedades comunes',
+              value: 'Tratamiento de enfermedades comunes',
+            },
+            { label: 'Control y seguimiento médico', value: 'Control y seguimiento médico' },
+            { label: 'Educación y prevención en salud', value: 'Educación y prevención en salud' },
+            {
+              label: 'Evaluación de laboratorio o radiológica',
+              value: 'Evaluación de laboratorio o radiológica',
+            },
+            { label: 'Administración de medicamentos', value: 'Administración de medicamentos' },
+            {
+              label: 'Control y monitoreo de signos vitales',
+              value: 'Control y monitoreo de signos vitales',
+            },
+            { label: 'Cuidados postoperatorios', value: 'Cuidados postoperatorios' },
+            { label: 'Curación y manejo de heridas', value: 'Curación y manejo de heridas' },
+            { label: 'Apoyo en procedimientos médicos', value: 'Apoyo en procedimientos médicos' },
             { label: 'Consulta médica', value: 'Consulta médica' },
             { label: 'Rehabilitación', value: 'Rehabilitación' },
             { label: 'Emergencias', value: 'Emergencias' },
             { label: 'Prevención', value: 'Prevención' },
-            { label: 'Atención de enfermería', value: 'Atención de enfermería' },
-            { label: 'Especialidad médica', value: 'Especialidad médica' },
           ],
         },
         {
@@ -119,15 +215,9 @@ const Appointments = () => {
           label: 'Specialty',
           type: 'select',
           required: true,
-          options: [
-            { label: 'Pediatría', value: 'Pediatría' },
-            { label: 'Fisioterapia', value: 'Fisioterapia' },
-            { label: 'Medicina Intensiva', value: 'Medicina Intensiva' },
-            { label: 'Medicina General', value: 'Medicina General' },
-            { label: 'Terapia Ocupacional', value: 'Terapia Ocupacional' },
-            { label: 'Enfermería', value: 'Enfermería' },
-            { label: 'Dermatología', value: 'Dermatología' },
-          ],
+          options: specialtyOptions,
+          placeholder: 'Select specialty',
+          disabled: !professionalSpecialty, // Disable if no specialty is selected
         },
       ],
     },
@@ -152,11 +242,12 @@ const Appointments = () => {
       ],
     },
   ]
+
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'appointments') {
       const newAppointment = {
         ...formData,
-        id: String(Date.now()), // Generate a temporary unique ID
+        id: String(Date.now()), // Genera un ID único temporal
         scheduled_at: formData.scheduled_at,
         status: formData.status || 'pending',
         city: formData.city || '',
@@ -165,17 +256,40 @@ const Appointments = () => {
         reason_for_visit: formData.reason_for_visit || '',
       }
 
-      // Simulate a backend call
-      const response = await fetch('http://localhost:8000/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAppointment),
-      })
+      try {
+        const response = await fetch('http://localhost:8000/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newAppointment),
+        })
 
-      const savedAppointment = await response.json()
+        if (!response.ok) {
+          throw new Error('Failed to save appointment')
+        }
 
-      setAppointments((prev) => [...prev, savedAppointment])
-      setFilteredAppointments((prev) => [...prev, savedAppointment])
+        const savedAppointment = await response.json()
+
+        // Enriquecer los datos de la cita con nombres de patient y professional
+        const patient = usersData.find((user) => user.id === savedAppointment.patient)
+        const professional = usersData.find(
+          (user) =>
+            user.id === savedAppointment.professional &&
+            ['Doctor', 'Nurse', 'Therapist'].includes(user.role_id),
+        )
+
+        const enrichedAppointment = {
+          ...savedAppointment,
+          patient: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown',
+          professional: professional
+            ? `${professional.first_name} ${professional.last_name}`
+            : 'Unknown',
+        }
+
+        setAppointments((prev) => [...prev, enrichedAppointment])
+        setFilteredAppointments((prev) => [...prev, enrichedAppointment])
+      } catch (error) {
+        console.error('Error adding appointment:', error)
+      }
     }
   }
 
@@ -314,16 +428,8 @@ const Appointments = () => {
     setFilteredAppointments(appointments)
   }
 
-  useEffect(() => {
-    fetch('http://localhost:8000/appointments')
-      .then((res) => res.json())
-      .then((data) => {
-        setAppointments(data)
-        setFilteredAppointments(data)
-      })
-  }, [])
-
   const getStatusBadgeColor = (status) => {
+    if (!status) return 'secondary'
     switch (status.toLowerCase()) {
       case 'pending':
         return 'warning'
@@ -354,20 +460,9 @@ const Appointments = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <div className="mb-3">
-            <CAlert
-              color={alert.type}
-              className="text-center"
-              style={{
-                maxWidth: '400px',
-                margin: '0 auto',
-                fontSize: '14px',
-                padding: '5px',
-              }}
-            >
-              {alert.message}
-            </CAlert>
-          </div>
+          <CAlert color={alert.type} className="text-center alert-fixed">
+            {alert.message}
+          </CAlert>
         )}
         <CCardBody>
           <CTable align="middle" className="mb-0 border" hover responsive>

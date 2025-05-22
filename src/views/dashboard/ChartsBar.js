@@ -19,9 +19,18 @@ const ChartBarExample = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/appointments')
-        const appointments = await response.json()
+        const [appointmentsResponse, usersResponse] = await Promise.all([
+          fetch('http://localhost:8000/appointments'),
+          fetch('http://localhost:8000/users'),
+        ])
+        const appointments = await appointmentsResponse.json()
+        const users = await usersResponse.json()
 
+        // Crear un mapa para acceder rápido al usuario por su ID
+        const usersMap = {}
+        users.forEach((user) => {
+          usersMap[user.id] = `${user.first_name} ${user.last_name}`
+        })
         // Initialize arrays for each status by month
         const pending = new Array(12).fill(0)
         const confirmed = new Array(12).fill(0)
@@ -68,11 +77,13 @@ const ChartBarExample = () => {
         })
         // Process data for the professionals chart
         const professionalCounts = appointments.reduce((acc, appointment) => {
+          // Incrementar el contador de pacientes para cada profesional
           acc[appointment.professional] = (acc[appointment.professional] || 0) + 1
           return acc
         }, {})
 
-        const professionals = Object.keys(professionalCounts)
+        // Convertir IDs en nombres completos usando usersMap
+        const professionals = Object.keys(professionalCounts).map((id) => usersMap[id] || 'Unknown')
         const professionalData = Object.values(professionalCounts)
 
         setChartData({

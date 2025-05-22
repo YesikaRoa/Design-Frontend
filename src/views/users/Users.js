@@ -5,6 +5,7 @@ import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import defaultAvatar from '../../assets/images/avatars/avatar.png'
 import Notifications from '../../components/Notifications'
+import bcrypt from 'bcryptjs'
 
 import './styles/users.css'
 import './styles/filter.css'
@@ -48,6 +49,23 @@ export const Users = () => {
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
+      // Verificar si el email ya existe
+      try {
+        const emailCheckResponse = await fetch(
+          `http://localhost:8000/users?email=${formData.email}`,
+        )
+        const existingUsers = await emailCheckResponse.json()
+
+        if (existingUsers.length > 0) {
+          Notifications.showAlert(setAlert, 'The email is already in use.', 'warning')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking email:', error)
+        Notifications.showAlert(setAlert, 'An error occurred while checking the email.', 'error')
+        return
+      }
+
       const formatDate = (date) => {
         const [year, month, day] = date.split('-')
         return `${day}/${month}/${year}`
@@ -71,20 +89,24 @@ export const Users = () => {
         updated_at: new Date().toISOString(),
       }
 
-      // Hacer fetch con completeUser
-      const response = await fetch('http://localhost:8000/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(completeUser),
-      })
+      try {
+        const response = await fetch('http://localhost:8000/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(completeUser),
+        })
 
-      const savedUser = await response.json()
+        const savedUser = await response.json()
 
-      // Usa el usuario real del backend
-      setUsers((prev) => [...prev, { ...savedUser }])
-      setFilteredUsers((prev) => [...prev, { ...savedUser }])
+        setUsers((prev) => [...prev, { ...savedUser }])
+        setFilteredUsers((prev) => [...prev, { ...savedUser }])
+      } catch (error) {
+        console.error('Error saving user:', error)
+        Notifications.showAlert(setAlert, 'An error occurred while saving the user.', 'error')
+      }
     }
   }
+
   const userSteps = [
     {
       fields: [
@@ -135,9 +157,11 @@ export const Users = () => {
           type: 'select', // Cambiado a tipo select
           required: true,
           options: [
-            { label: 'Admin', value: 'Admin' },
+            { label: 'Administrator', value: 'Administrator' },
             { label: 'Patient', value: 'Patient' },
-            { label: 'Professional', value: 'Professional' },
+            { label: 'Doctor', value: 'Doctor' },
+            { label: 'Nurse', value: 'Nurse' },
+            { label: 'Therapist', value: 'Therapist' },
           ],
         },
         {
@@ -223,9 +247,11 @@ export const Users = () => {
         label = 'Role'
         type = 'select' // Cambiar a tipo select
         options = [
-          { label: 'Admin', value: 'Admin' },
+          { label: 'Administrator', value: 'Administrator' },
           { label: 'Patient', value: 'Patient' },
-          { label: 'Professional', value: 'Professional' },
+          { label: 'Doctor', value: 'Doctor' },
+          { label: 'Nurse', value: 'Nurse' },
+          { label: 'Therapist', value: 'Therapist' },
         ]
         break
       case 'status':
@@ -307,20 +333,9 @@ export const Users = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <div className="mb-3">
-            <CAlert
-              color={alert.type}
-              className="text-center"
-              style={{
-                maxWidth: '400px',
-                margin: '0 auto',
-                fontSize: '14px',
-                padding: '5px',
-              }}
-            >
-              {alert.message}
-            </CAlert>
-          </div>
+          <CAlert color={alert.type} className="text-center alert-fixed">
+            {alert.message}
+          </CAlert>
         )}
         <CCardBody>
           <CTable align="middle" className="mb-0 border" hover responsive>

@@ -1,227 +1,434 @@
-import React from 'react'
-import { CCard, CCardHeader, CCardBody } from '@coreui/react'
-import { DocsLink } from 'src/components'
+import React, { useEffect, useRef, useState } from 'react'
+import UserFilter from '../../components/Filter'
+import ModalDelete from '../../components/ModalDelete'
+import ModalInformation from '../../components/ModalInformation'
+import ModalAdd from '../../components/ModalAdd'
+import defaultAvatar from '../../assets/images/avatars/avatar.png'
+import Notifications from '../../components/Notifications'
 
-const Patients = () => {
+import '../users/styles/users.css'
+import '../users/styles/filter.css'
+
+import {
+  CTable,
+  CTableBody,
+  CTableRow,
+  CTableHeaderCell,
+  CTableDataCell,
+  CAvatar,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CButton,
+  CAlert,
+  CBadge,
+  CTableHead,
+} from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilPeople, cilPencil, cilInfo, cilTrash, cilUserPlus } from '@coreui/icons'
+import { useNavigate } from 'react-router-dom'
+
+export const Patients = () => {
+  const navigate = useNavigate()
+  const [users, setUsers] = useState([])
+  const [filteredUsers, setFilteredUsers] = useState([])
+  const [filters, setFilters] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    status: '',
+  })
+  const [visible, setVisible] = useState(false)
+  const [infoVisible, setInfoVisible] = useState(false)
+  const [selectedPatient, setselectedPatient] = useState(null)
+  const ModalAddRef = useRef()
+  const [alert, setAlert] = useState(null)
+  const [userToDelete, setUserToDelete] = useState(null)
+
+  const handleFinish = async (purpose, formData) => {
+    if (purpose === 'users') {
+      // Verificar si el email ya existe
+      try {
+        const emailCheckResponse = await fetch(
+          `http://localhost:8000/users?email=${formData.email}`,
+        )
+        const existingUsers = await emailCheckResponse.json()
+
+        if (existingUsers.length > 0) {
+          Notifications.showAlert(setAlert, 'The email is already in use.', 'warning')
+          return
+        }
+      } catch (error) {
+        console.error('Error checking email:', error)
+        Notifications.showAlert(setAlert, 'An error occurred while checking the email.', 'error')
+        return
+      }
+
+      const formatDate = (date) => {
+        const [year, month, day] = date.split('-')
+        return `${day}/${month}/${year}`
+      }
+
+      const completeUser = {
+        first_name: formData.first_name || '',
+        last_name: formData.last_name || '',
+        email: formData.email || '',
+        password: 'hashed_password_default',
+        address: formData.address || '',
+        phone: formData.phone || '',
+        birth_date: formData.birth_date
+          ? formatDate(formData.birth_date)
+          : 'No birth date available',
+        gender: formData.gender || '',
+        avatar: formData.avatar || defaultAvatar,
+        role_id: formData.role || 'No role assigned',
+        status: formData.status || 'Active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+
+      try {
+        const response = await fetch('http://localhost:8000/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(completeUser),
+        })
+
+        const savedUser = await response.json()
+
+        setUsers((prev) => [...prev, { ...savedUser }])
+        setFilteredUsers((prev) => [...prev, { ...savedUser }])
+      } catch (error) {
+        console.error('Error saving user:', error)
+        Notifications.showAlert(setAlert, 'An error occurred while saving the user.', 'error')
+      }
+    }
+  }
+  const userSteps = [
+    {
+      fields: [
+        {
+          name: 'first_name',
+          label: 'First Name',
+          placeholder: 'Enter first name',
+          required: true,
+        },
+        { name: 'last_name', label: 'Last Name', placeholder: 'Enter last name', required: true },
+        {
+          name: 'birth_date',
+          type: 'date', // Cambiar a texto
+          label: 'Birth Date',
+          placeholder: 'Enter birth date', // Placeholder para guiar al usuario
+          required: true,
+        },
+        {
+          name: 'gender',
+          label: 'Gender',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Female', value: 'F' },
+            { label: 'Male', value: 'M' },
+          ],
+        },
+      ],
+    },
+    {
+      fields: [
+        {
+          name: 'email',
+          label: 'Email',
+          type: 'email',
+          placeholder: 'Enter email',
+          required: true,
+        },
+        { name: 'phone', label: 'Phone', placeholder: 'Enter phone number' },
+        { name: 'address', label: 'Address', placeholder: 'Enter address' },
+      ],
+    },
+    {
+      fields: [
+        {
+          name: 'role',
+          label: 'Role',
+          type: 'select', // Cambiado a tipo select
+          required: true,
+          options: [{ label: 'Patient', value: 'Patient' }],
+        },
+        {
+          name: 'status',
+          label: 'Status',
+          type: 'select', // Cambiado a tipo select
+          required: true,
+          options: [
+            { label: 'Active', value: 'Active' },
+            { label: 'Inactive', value: 'Inactive' },
+          ],
+        },
+      ],
+    },
+  ]
+
+  const addUser = () => {
+    ModalAddRef.current.open()
+  }
+
+  const handleDeleteClick = (user) => {
+    if (!user || !user.id) {
+      console.error('Invalid user selected for deletion.')
+      return
+    }
+    setUserToDelete(user)
+    setVisible(true)
+  }
+
+  const confirmDelete = async () => {
+    if (userToDelete) {
+      try {
+        // Realiza la solicitud DELETE al backend
+        const response = await fetch(`http://localhost:8000/users/${userToDelete.id}`, {
+          method: 'DELETE',
+        })
+
+        if (response.ok) {
+          // Actualiza la lista de usuarios eliminando el usuario borrado
+          setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
+          setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
+
+          // Muestra una notificación de éxito
+          Notifications.showAlert(setAlert, 'User deleted', 'success')
+        } else {
+          // Muestra una notificación de error
+          Notifications.showAlert(setAlert, 'Failed to delete the user. Please try again.', 'error')
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error)
+        // Muestra una notificación de error
+        Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'error')
+      } finally {
+        setVisible(false) // Cierra la modal
+        setUserToDelete(null) // Limpia el usuario seleccionado
+      }
+    }
+  }
+  const handleInfo = (user) => {
+    setselectedPatient(user)
+    setInfoVisible(true)
+  }
+
+  const handleEdit = (user) => {
+    localStorage.setItem('selectedPatient', JSON.stringify(user))
+    navigate(`/patients/${user.id}`, { state: { user } })
+  }
+
+  // Construcción dinámica de los inputs
+  const dataFilter = Object.keys(filters).map((key) => {
+    let label
+    let type = 'text' // Por defecto, el tipo es 'text'
+    let options = [] // Opciones para los select
+
+    switch (key) {
+      case 'first_name':
+        label = 'First name'
+        break
+      case 'last_name':
+        label = 'Last name'
+        break
+      case 'status':
+        label = 'Status'
+        type = 'select' // Cambiar a tipo select
+        options = [
+          { label: 'Active', value: 'Active' },
+          { label: 'Inactive', value: 'Inactive' },
+        ]
+        break
+      default:
+        label = key.charAt(0).toUpperCase() + key.slice(1)
+    }
+
+    return {
+      name: key,
+      label,
+      placeholder: `Buscar por ${label}`,
+      type,
+      options, // Agregar las opciones si es un select
+      value: filters[key],
+      onChange: (e) => setFilters((prev) => ({ ...prev, [key]: e.target.value })),
+    }
+  })
+  const normalizeText = (text) =>
+    text
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // elimina acentos
+      .trim() // elimina espacios adicionales
+      .toLowerCase()
+
+  const handleFilter = () => {
+    const activeFilters = Object.keys(filters).filter((key) => filters[key].trim() !== '')
+
+    const filtered = users.filter((user) =>
+      activeFilters.every((key) => {
+        const userValue = user[key] ? normalizeText(user[key]) : ''
+        const filterValue = normalizeText(filters[key])
+        return userValue.startsWith(filterValue)
+      }),
+    )
+
+    setFilteredUsers(filtered)
+  }
+
+  const resetFilters = () => {
+    const resetValues = Object.keys(filters).reduce((acc, key) => {
+      acc[key] = ''
+      return acc
+    }, {})
+    setFilters(resetValues)
+    setFilteredUsers(users)
+  }
+  useEffect(() => {
+    fetch('http://localhost:8000/users?role_id=Patient')
+      .then((res) => res.json())
+      .then((data) => {
+        const normalizedUsers = data.map((user) => ({
+          ...user,
+          id: String(user.id), // asegura que todos los IDs sean string
+        }))
+        setUsers(normalizedUsers)
+        setFilteredUsers(normalizedUsers)
+      })
+  }, [])
+
   return (
     <>
+      <div className="d-flex justify-content-end mb-3">
+        <CButton color="primary" onClick={() => addUser()}>
+          <CIcon icon={cilUserPlus} className="me-2" /> Add patient
+        </CButton>
+      </div>
+
       <CCard className="mb-4">
-        <CCardHeader>
-          Users
-          <DocsLink href="https://coreui.io/docs/content/typography/" />
-        </CCardHeader>
-        <CCardBody>
-          <p>
-            Documentation and examples for Bootstrap typography, including global settings,
-            headings, body text, lists, and more.
-          </p>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Heading</th>
-                <th>Example</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <p>
-                    <code className="highlighter-rouge">&lt;h1&gt;&lt;/h1&gt;</code>
-                  </p>
-                </td>
-                <td>
-                  <span className="h1">h1. Bootstrap heading</span>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <p>
-                    <code className="highlighter-rouge">&lt;h2&gt;&lt;/h2&gt;</code>
-                  </p>
-                </td>
-                <td>
-                  <span className="h2">h2. Bootstrap heading</span>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <p>
-                    <code className="highlighter-rouge">&lt;h3&gt;&lt;/h3&gt;</code>
-                  </p>
-                </td>
-                <td>
-                  <span className="h3">h3. Bootstrap heading</span>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <p>
-                    <code className="highlighter-rouge">&lt;h4&gt;&lt;/h4&gt;</code>
-                  </p>
-                </td>
-                <td>
-                  <span className="h4">h4. Bootstrap heading</span>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <p>
-                    <code className="highlighter-rouge">&lt;h5&gt;&lt;/h5&gt;</code>
-                  </p>
-                </td>
-                <td>
-                  <span className="h5">h5. Bootstrap heading</span>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <p>
-                    <code className="highlighter-rouge">&lt;h6&gt;&lt;/h6&gt;</code>
-                  </p>
-                </td>
-                <td>
-                  <span className="h6">h6. Bootstrap heading</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </CCardBody>
-      </CCard>
-      <CCard className="mb-4">
-        <CCardHeader>Headings</CCardHeader>
-        <CCardBody>
-          <p>
-            <code className="highlighter-rouge">.h1</code> through
-            <code className="highlighter-rouge">.h6</code>
-            classes are also available, for when you want to match the font styling of a heading but
-            cannot use the associated HTML element.
-          </p>
-          <div className="bd-example">
-            <p className="h1">h1. Bootstrap heading</p>
-            <p className="h2">h2. Bootstrap heading</p>
-            <p className="h3">h3. Bootstrap heading</p>
-            <p className="h4">h4. Bootstrap heading</p>
-            <p className="h5">h5. Bootstrap heading</p>
-            <p className="h6">h6. Bootstrap heading</p>
-          </div>
-        </CCardBody>
-      </CCard>
-      <CCard className="mb-4">
-        <div className="card-header">Display headings</div>
-        <div className="card-body">
-          <p>
-            Traditional heading elements are designed to work best in the meat of your page content.
-            When you need a heading to stand out, consider using a <strong>display heading</strong>
-            —a larger, slightly more opinionated heading style.
-          </p>
-          <div className="bd-example bd-example-type">
-            <table className="table">
-              <tbody>
-                <tr>
-                  <td>
-                    <span className="display-1">Display 1</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="display-2">Display 2</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="display-3">Display 3</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="display-4">Display 4</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <CCardHeader>Patients</CCardHeader>
+        <div className="filter-container">
+          <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
-      </CCard>
-      <CCard className="mb-4">
-        <CCardHeader>Inline text elements</CCardHeader>
+        {alert && (
+          <CAlert color={alert.type} className="text-center alert-fixed">
+            {alert.message}
+          </CAlert>
+        )}
+
         <CCardBody>
-          <p>
-            Traditional heading elements are designed to work best in the meat of your page content.
-            When you need a heading to stand out, consider using a <strong>display heading</strong>
-            —a larger, slightly more opinionated heading style.
-          </p>
-          <div className="bd-example">
-            <p>
-              You can use the mark tag to <mark>highlight</mark> text.
-            </p>
-            <p>
-              <del>This line of text is meant to be treated as deleted text.</del>
-            </p>
-            <p>
-              <s>This line of text is meant to be treated as no longer accurate.</s>
-            </p>
-            <p>
-              <ins>This line of text is meant to be treated as an addition to the document.</ins>
-            </p>
-            <p>
-              <u>This line of text will render as underlined</u>
-            </p>
-            <p>
-              <small>This line of text is meant to be treated as fine print.</small>
-            </p>
-            <p>
-              <strong>This line rendered as bold text.</strong>
-            </p>
-            <p>
-              <em>This line rendered as italicized text.</em>
-            </p>
-          </div>
+          <CTable align="middle" className="mb-0 border" hover responsive>
+            <CTableHead className="text-nowrap">
+              <CTableRow>
+                <CTableHeaderCell className="avatar-header">
+                  <CIcon icon={cilPeople} />
+                </CTableHeaderCell>
+                <CTableHeaderCell className="table-header">First name</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">Last name</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">Email</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">Status</CTableHeaderCell>
+                <CTableHeaderCell className="avatar-header">Actions</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
+            <CTableBody>
+              {filteredUsers.length === 0 ? (
+                <CTableRow>
+                  <CTableDataCell colSpan={6} className="text-center">
+                    No hay usuarios disponibles
+                  </CTableDataCell>
+                </CTableRow>
+              ) : (
+                filteredUsers.map((user, index) => (
+                  <CTableRow key={index}>
+                    <CTableDataCell className="text-center">
+                      <CAvatar size="md" src={user.avatar || defaultAvatar} />
+                    </CTableDataCell>
+                    <CTableDataCell>{user.first_name}</CTableDataCell>
+                    <CTableDataCell>{user.last_name}</CTableDataCell>
+                    <CTableDataCell>{user.email}</CTableDataCell>
+                    <CTableDataCell>
+                      <CBadge color={user.status === 'Active' ? 'success' : 'danger'}>
+                        {user.status}
+                      </CBadge>
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      <div className="d-flex gap-2 justify-content-center">
+                        <CButton color="primary" size="sm" onClick={() => handleEdit(user)}>
+                          <CIcon icon={cilPencil} />
+                        </CButton>
+                        <CButton color="danger" size="sm" onClick={() => handleDeleteClick(user)}>
+                          <CIcon icon={cilTrash} style={{ '--ci-primary-color': 'white' }} />
+                        </CButton>
+                        <CButton color="info" size="sm" onClick={() => handleInfo(user)}>
+                          <CIcon icon={cilInfo} style={{ '--ci-primary-color': 'white' }} />
+                        </CButton>
+                      </div>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              )}
+            </CTableBody>
+          </CTable>
         </CCardBody>
       </CCard>
-      <CCard className="mb-4">
-        <CCardHeader>Description list alignment</CCardHeader>
-        <CCardBody>
-          <p>
-            Align terms and descriptions horizontally by using our grid system’s predefined classes
-            (or semantic mixins). For longer terms, you can optionally add a{' '}
-            <code className="highlighter-rouge">.text-truncate</code> class to truncate the text
-            with an ellipsis.
-          </p>
-          <div className="bd-example">
-            <dl className="row">
-              <dt className="col-sm-3">Description lists</dt>
-              <dd className="col-sm-9">A description list is perfect for defining terms.</dd>
 
-              <dt className="col-sm-3">Euismod</dt>
-              <dd className="col-sm-9">
-                <p>
-                  Vestibulum id ligula porta felis euismod semper eget lacinia odio sem nec elit.
-                </p>
-                <p>Donec id elit non mi porta gravida at eget metus.</p>
-              </dd>
-
-              <dt className="col-sm-3">Malesuada porta</dt>
-              <dd className="col-sm-9">Etiam porta sem malesuada magna mollis euismod.</dd>
-
-              <dt className="col-sm-3 text-truncate">Truncated term is truncated</dt>
-              <dd className="col-sm-9">
-                Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut
-                fermentum massa justo sit amet risus.
-              </dd>
-
-              <dt className="col-sm-3">Nesting</dt>
-              <dd className="col-sm-9">
-                <dl className="row">
-                  <dt className="col-sm-4">Nested definition list</dt>
-                  <dd className="col-sm-8">
-                    Aenean posuere, tortor sed cursus feugiat, nunc augue blandit nunc.
-                  </dd>
-                </dl>
-              </dd>
-            </dl>
-          </div>
-        </CCardBody>
-      </CCard>
+      <ModalDelete
+        visible={visible}
+        onClose={() => {
+          setVisible(false)
+          setUserToDelete(null) // Limpia el usuario seleccionado al cerrar la modal
+        }}
+        onConfirm={confirmDelete}
+        title="Confirm patient deletion"
+        message={`Are you sure you want to remove ${userToDelete?.first_name} ${userToDelete?.last_name}?`}
+      />
+      <ModalInformation
+        visible={infoVisible}
+        onClose={() => setInfoVisible(false)} // Cierra la modal
+        title="Patient information"
+        content={
+          selectedPatient ? (
+            <div>
+              <p>
+                <strong>First Name:</strong> {selectedPatient.first_name}
+              </p>
+              <p>
+                <strong>Last Name:</strong> {selectedPatient.last_name}
+              </p>
+              <p>
+                <strong>Email:</strong> {selectedPatient.email}
+              </p>
+              <p>
+                <strong>Address:</strong> {selectedPatient.address || 'No address available'}
+              </p>
+              <p>
+                <strong>Phone:</strong> {selectedPatient.phone || 'No phone available'}
+              </p>
+              <p>
+                <strong>Birth Date:</strong>{' '}
+                {selectedPatient.birth_date || 'No birth date available'}
+              </p>
+              <p>
+                <strong>Gender:</strong> {selectedPatient.gender === 'F' ? 'Female' : 'Male'}
+              </p>
+              <p>
+                <strong>Status:</strong> {selectedPatient.status}
+              </p>
+            </div>
+          ) : (
+            <p>No information available.</p>
+          )
+        }
+      />
+      <ModalAdd
+        ref={ModalAddRef}
+        title="Add new patient"
+        steps={userSteps}
+        onFinish={handleFinish}
+        purpose="users"
+      />
     </>
   )
 }

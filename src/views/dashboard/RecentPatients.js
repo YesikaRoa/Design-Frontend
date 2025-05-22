@@ -15,6 +15,7 @@ import './../../scss/style.scss'
 
 const RecentPatientsTable = () => {
   const [appointments, setAppointments] = useState([])
+  const [users, setUsers] = useState({}) // Almacenar usuarios por ID
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -22,27 +23,42 @@ const RecentPatientsTable = () => {
         const response = await fetch('http://localhost:8000/appointments')
         const data = await response.json()
 
-        // Get today's date and calculate the date 7 days ago
+        // Filtrar citas recientes
         const today = new Date()
-        today.setHours(23, 59, 59, 999) // End of today
+        today.setHours(23, 59, 59, 999)
         const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(today.getDate() - 6) // Include today and the last 6 days
-        sevenDaysAgo.setHours(0, 0, 0, 0) // Start of 7 days ago
+        sevenDaysAgo.setDate(today.getDate() - 6)
+        sevenDaysAgo.setHours(0, 0, 0, 0)
 
-        // Filter appointments strictly within the last 7 days, including today
         const recentAppointments = data
           .filter((appointment) => {
             const appointmentDate = new Date(appointment.scheduled_at)
             return appointmentDate >= sevenDaysAgo && appointmentDate <= today
           })
-          .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at)) // Sort by date
-          .slice(0, 10) // Limit to the first 10 appointments
+          .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+          .slice(0, 10)
 
         setAppointments(recentAppointments)
+
+        // Obtener IDs únicos de pacientes y profesionales
+        const userIds = [...new Set(recentAppointments.flatMap((a) => [a.patient, a.professional]))]
+
+        // Fetch de usuarios
+        const usersResponse = await fetch('http://localhost:8000/users')
+        const usersData = await usersResponse.json()
+
+        // Mapa de usuarios
+        const usersMap = usersData.reduce((map, user) => {
+          map[user.id] = `${user.first_name} ${user.last_name}`
+          return map
+        }, {})
+
+        setUsers(usersMap)
       } catch (error) {
         console.error('Error fetching data:', error)
       }
     }
+
     fetchAppointments()
   }, [])
 
@@ -75,6 +91,7 @@ const RecentPatientsTable = () => {
           <CTableHead className="text-nowrap">
             <CTableRow>
               <CTableHeaderCell>Patient</CTableHeaderCell>
+              <CTableHeaderCell>Professional</CTableHeaderCell>
               <CTableHeaderCell>City</CTableHeaderCell>
               <CTableHeaderCell>Appointment Date</CTableHeaderCell>
               <CTableHeaderCell>Specialty</CTableHeaderCell>
@@ -84,14 +101,15 @@ const RecentPatientsTable = () => {
           <CTableBody>
             {appointments.length === 0 ? (
               <CTableRow>
-                <CTableDataCell colSpan={5} className="text-center">
+                <CTableDataCell colSpan={6} className="text-center">
                   No appointments available
                 </CTableDataCell>
               </CTableRow>
             ) : (
               appointments.map((appointment) => (
                 <CTableRow key={appointment.id}>
-                  <CTableDataCell>{appointment.patient}</CTableDataCell>
+                  <CTableDataCell>{users[appointment.patient] || 'Unknown'}</CTableDataCell>
+                  <CTableDataCell>{users[appointment.professional] || 'Unknown'}</CTableDataCell>
                   <CTableDataCell>{appointment.city || 'Unknown'}</CTableDataCell>
                   <CTableDataCell>
                     {new Date(appointment.scheduled_at).toLocaleDateString()}

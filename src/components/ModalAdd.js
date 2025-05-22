@@ -116,7 +116,12 @@ const ModalAdd = forwardRef(({ title = 'Formulario', steps = [], onFinish, purpo
             variant="standard"
             name={field.name}
             value={formData[field.name] || ''}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e) // Llama al manejador genérico
+              if (field.onChange) {
+                field.onChange(e) // Llama al manejador personalizado si existe
+              }
+            }}
             fullWidth
             error={!!errors[field.name]}
             helperText={errors[field.name]}
@@ -134,7 +139,12 @@ const ModalAdd = forwardRef(({ title = 'Formulario', steps = [], onFinish, purpo
             type={field.type || 'text'}
             name={field.name}
             value={formData[field.name] || ''}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e) // Llama al manejador genérico
+              if (field.onChange) {
+                field.onChange(e) // Llama al manejador personalizado si existe
+              }
+            }}
             fullWidth
             margin="normal"
             InputLabelProps={{

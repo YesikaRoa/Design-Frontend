@@ -23,8 +23,9 @@ import {
   cilMenu,
   cilMoon,
   cilSun,
+  cilChatBubble,
 } from '@coreui/icons'
-
+import { NotificationPopover } from '../views/notificationsProfessional/NotificationsProfessional'
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
 
@@ -54,9 +55,15 @@ const AppHeader = () => {
         <CHeaderNav className="d-none d-md-flex"></CHeaderNav>
         <CHeaderNav className="ms-auto">
           <CNavItem>
-            <CNavLink href="#">
-              <CIcon icon={cilBell} size="lg" />
-            </CNavLink>
+            <NotificationPopover />
+          </CNavItem>
+          <li className="nav-item py-1">
+            <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
+          </li>
+          <CNavItem>
+            <NavLink to="/notifications-professional" className=" nav-link">
+              <CIcon icon={cilChatBubble} size="lg" />
+            </NavLink>
           </CNavItem>
         </CHeaderNav>
         <CHeaderNav>
