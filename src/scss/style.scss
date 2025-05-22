@@ -7,7 +7,18 @@
 body {
   background-color: var(--cui-tertiary-bg);
 }
-
+/* alerts.css */
+.alert-fixed {
+  position: fixed;
+  top: 130px; /* Distancia desde la parte superior */
+  left: 50%; /* Centrado horizontal */
+  transform: translateX(-20%); /* Ajusta el centrado */
+  max-width: 400px; /* Ancho máximo */
+  font-size: 14px; /* Tamaño de fuente */
+  padding: 10px; /* Espaciado interno */
+  z-index: 3050; /* Coloca la alerta por encima del resto */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra opcional */
+}
 .wrapper {
   width: 100%;
   padding-inline: var(--cui-sidebar-occupy-start, 0) var(--cui-sidebar-occupy-end, 0);

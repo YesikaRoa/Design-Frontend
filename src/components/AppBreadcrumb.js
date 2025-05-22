@@ -42,6 +42,10 @@ const AppBreadcrumb = () => {
 
   // Detecta si estamos en la página de detalles del usuario
   const isUserDetailsPage = pathname.startsWith('/users/') && pathname.split('/').length === 3
+  const isEditPatientPage = pathname.startsWith('/patients/') && pathname.split('/').length === 3
+  const isEditProfessionalPage =
+    pathname.startsWith('/professionals/') && pathname.split('/').length === 3
+
   let userName = null
 
   if (isUserDetailsPage) {
@@ -63,6 +67,46 @@ const AppBreadcrumb = () => {
 
     userName = capitalizeFirstLetter(firstName)
   }
+  if (isEditPatientPage) {
+    const userId = pathname.split('/')[2]
+    const storedPatient = localStorage.getItem('selectedPatient') // Cambiado a 'selectedPatient'
+    let firstName = null
+
+    if (storedPatient) {
+      try {
+        const patient = JSON.parse(storedPatient)
+        firstName = patient?.first_name?.split(' ')[0] || `Patient ${userId}`
+      } catch (e) {
+        console.error('Error parsing selectedPatient from localStorage:', e)
+        firstName = `Patient ${userId}`
+      }
+    } else {
+      firstName = `Patient ${userId}`
+    }
+
+    userName = capitalizeFirstLetter(firstName)
+  }
+
+  if (isEditProfessionalPage) {
+    const userId = pathname.split('/')[2]
+    console.log(localStorage.getItem('selectedProfessional'))
+    const storedProfessional = localStorage.getItem('selectedProfessional') // Cambiado a 'selectedProfessional'
+    let firstName = null
+
+    if (storedProfessional) {
+      try {
+        const professional = JSON.parse(storedProfessional)
+        firstName = professional?.first_name?.split(' ')[0] || `Professional ${userId}`
+      } catch (e) {
+        console.error('Error parsing selectedProfessional from localStorage:', e)
+        firstName = `Professional ${userId}`
+      }
+    } else {
+      firstName = `Professional ${userId}`
+    }
+
+    userName = capitalizeFirstLetter(firstName)
+  }
 
   return (
     <CBreadcrumb className="my-0">
@@ -76,6 +120,8 @@ const AppBreadcrumb = () => {
         </CBreadcrumbItem>
       ))}
       {isUserDetailsPage && <CBreadcrumbItem active>{userName}</CBreadcrumbItem>}
+      {isEditPatientPage && <CBreadcrumbItem active>{userName}</CBreadcrumbItem>}
+      {isEditProfessionalPage && <CBreadcrumbItem active>{userName}</CBreadcrumbItem>}
     </CBreadcrumb>
   )
 }

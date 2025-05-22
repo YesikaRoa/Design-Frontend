@@ -113,20 +113,9 @@ const EditAppointment = () => {
       <CCol md={12}>
         <h3 className="mb-4">Edit Appointment</h3>
         {alert && (
-          <div className="mb-3">
-            <CAlert
-              color={alert.type}
-              className="text-center"
-              style={{
-                maxWidth: '400px',
-                margin: '0 auto',
-                fontSize: '14px',
-                padding: '5px',
-              }}
-            >
-              {alert.message}
-            </CAlert>
-          </div>
+          <CAlert color={alert.type} className="text-center alert-fixed">
+            {alert.message}
+          </CAlert>
         )}
       </CCol>
       <CCol md={4}>

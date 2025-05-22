@@ -16,16 +16,28 @@ import {
   CContainer,
   CRow,
   CCol,
+  CForm,
+  CInputGroup,
+  CInputGroupText,
+  CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilSave, cilPencil, cilExitToApp } from '@coreui/icons'
+import { cilSave, cilPencil, cilExitToApp, cilLockLocked, cilLockUnlocked } from '@coreui/icons'
+import bcrypt from 'bcryptjs'
 import './styles/Profile.css' // Asegúrate de que la ruta sea correcta
+import Notifications from '../../components/Notifications'
 
 const Profile = () => {
   const [user, setUser] = useState(null)
   const [formData, setFormData] = useState({})
   const [modalVisible, setModalVisible] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [alert, setAlert] = useState(null)
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0]
@@ -112,6 +124,55 @@ const Profile = () => {
   if (!user) {
     return <div>Loading...</div>
   }
+  const handleChangePassword = () => {
+    setShowChangePasswordModal(true)
+  }
+
+  const handlePasswordChangeSubmit = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return Notifications.showAlert(setAlert, 'Todos los campos son obligatorios.', 'danger')
+    }
+    if (newPassword !== confirmPassword) {
+      return Notifications.showAlert(setAlert, 'Las contraseñas nuevas no coinciden.', 'warning')
+    }
+
+    try {
+      const res = await fetch(`http://localhost:8000/users/${user.id}`)
+      if (!res.ok) throw new Error('Usuario no encontrado.')
+
+      const dbUser = await res.json()
+
+      // Compara la contraseña ingresada con la almacenada (encriptada)
+      const passwordMatch = await bcrypt.compare(currentPassword, dbUser.password)
+
+      if (!passwordMatch) {
+        return Notifications.showAlert(setAlert, 'La contraseña actual es incorrecta.', 'danger')
+      }
+
+      // Encripta la nueva contraseña antes de actualizarla
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10)
+
+      // Actualiza la contraseña en la base de datos
+      const updateRes = await fetch(`http://localhost:8000/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...dbUser, password: hashedNewPassword }),
+      })
+
+      if (!updateRes.ok) throw new Error('Error al actualizar la contraseña.')
+
+      Notifications.showAlert(setAlert, 'La contraseña se ha actualizado correctamente.', 'success')
+
+      // Limpia los campos y cierra el modal
+      setShowChangePasswordModal(false)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      console.error(err)
+      Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
+    }
+  }
 
   return (
     <CCard className="space-component">
@@ -132,6 +193,11 @@ const Profile = () => {
                 >
                   <CIcon icon={cilPencil} />
                 </CButton>
+                {alert && (
+                  <CAlert color={alert.type} className="text-center alert-fixed">
+                    {alert.message}
+                  </CAlert>
+                )}
                 <input
                   type="file"
                   id="file-input"
@@ -143,7 +209,7 @@ const Profile = () => {
             </div>
             <div className="profile-name">
               <h2>{`${user.first_name} ${user.last_name}`}</h2>
-              <p>{user.specialty}</p>
+              <p>{user.role_id}</p>
             </div>
           </div>
 
@@ -176,7 +242,7 @@ const Profile = () => {
               <CCol md={6} className="d-flex align-items-stretch">
                 <CCard className="inner-card">
                   <CCardBody>
-                    <CCardTitle>Medical Information</CCardTitle>
+                    <CCardTitle>Professional Information</CCardTitle>
                     <CListGroup flush>
                       <CListGroupItem>
                         <strong>Description:</strong> {user.description}
@@ -195,14 +261,24 @@ const Profile = () => {
                 </CCard>
               </CCol>
             </CRow>
-            <CRow className="space-component">
+            <CRow className="space-component d-flex justify-content-center">
               <CButton
                 color="primary"
-                className="update-button"
+                className="update-button mx-2"
+                style={{ width: 'auto' }}
                 onClick={() => setModalVisible(true)}
               >
                 <CIcon icon={cilPencil} className="me-2" />
                 Edit Information
+              </CButton>
+              <CButton
+                color="primary"
+                className="change-password-btn mx-2"
+                style={{ width: 'auto' }}
+                onClick={handleChangePassword}
+              >
+                <CIcon icon={cilLockLocked} className="me-2" width={17} height={17} />
+                Change Password
               </CButton>
             </CRow>
           </CContainer>
@@ -284,6 +360,73 @@ const Profile = () => {
               <CButton color="primary" onClick={handleSaveChanges}>
                 <CIcon icon={cilSave} className="me-2" />
                 Save Changes
+              </CButton>
+            </CModalFooter>
+          </CModal>
+          <CModal
+            alignment="center"
+            visible={showChangePasswordModal}
+            onClose={() => setShowChangePasswordModal(false)}
+          >
+            <CModalHeader>
+              <CModalTitle>Change Password</CModalTitle>
+            </CModalHeader>
+            <CModalBody>
+              <CForm>
+                <CInputGroup className="mb-2">
+                  <CFormInput
+                    type={showPasswords.current ? 'text' : 'password'}
+                    placeholder="Current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                  <CInputGroupText
+                    onClick={() =>
+                      setShowPasswords((prev) => ({ ...prev, current: !prev.current }))
+                    }
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <CIcon icon={showPasswords.current ? cilLockUnlocked : cilLockLocked} />
+                  </CInputGroupText>
+                </CInputGroup>
+                <CInputGroup className="mb-2">
+                  <CFormInput
+                    type={showPasswords.new ? 'text' : 'password'}
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <CInputGroupText
+                    onClick={() => setShowPasswords((prev) => ({ ...prev, new: !prev.new }))}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <CIcon icon={showPasswords.new ? cilLockUnlocked : cilLockLocked} />
+                  </CInputGroupText>
+                </CInputGroup>
+                <CInputGroup>
+                  <CFormInput
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <CInputGroupText
+                    onClick={() =>
+                      setShowPasswords((prev) => ({ ...prev, confirm: !prev.confirm }))
+                    }
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <CIcon icon={showPasswords.confirm ? cilLockUnlocked : cilLockLocked} />
+                  </CInputGroupText>
+                </CInputGroup>
+              </CForm>
+            </CModalBody>
+            <CModalFooter>
+              <CButton color="secondary" onClick={() => setShowChangePasswordModal(false)}>
+                Cancel
+              </CButton>
+              <CButton color="primary" onClick={handlePasswordChangeSubmit}>
+                Change Password
               </CButton>
             </CModalFooter>
           </CModal>

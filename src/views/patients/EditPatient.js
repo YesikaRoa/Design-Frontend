@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import './styles/UserDetails.css'
+import '../users/styles/UserDetails.css'
+
 import {
   CButton,
   CCard,
@@ -32,7 +33,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
-import bcrypt from 'bcryptjs'
+
 const UserDetails = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -41,7 +42,7 @@ const UserDetails = () => {
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState(null)
+  const [selectedPatientId, setselectedPatientId] = useState(null)
 
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -102,13 +103,13 @@ const UserDetails = () => {
     if (location.state && location.state.user) {
       const newUser = location.state.user
       setUser(newUser)
-      localStorage.setItem('selectedUser', JSON.stringify(newUser))
+      localStorage.setItem('selectedPatient', JSON.stringify(newUser))
 
       const firstName = newUser.first_name.split(' ')[0]
       const normalizedFirstName = normalizeNameForURL(firstName)
-      navigate(`/users/${normalizedFirstName}`, { replace: true })
+      navigate(`/patients/${normalizedFirstName}`, { replace: true })
     } else {
-      const storedUser = localStorage.getItem('selectedUser')
+      const storedUser = localStorage.getItem('selectedPatient')
       if (storedUser) {
         setUser(JSON.parse(storedUser))
       }
@@ -130,42 +131,27 @@ const UserDetails = () => {
     if (newPassword !== confirmPassword) {
       return Notifications.showAlert(setAlert, 'Las contraseñas nuevas no coinciden.', 'warning')
     }
-
     try {
       const res = await fetch(`http://localhost:8000/users/${user.id}`)
       if (!res.ok) throw new Error('Usuario no encontrado.')
-
       const dbUser = await res.json()
-
-      // Compara la contraseña ingresada con la almacenada (encriptada)
-      const passwordMatch = await bcrypt.compare(currentPassword, dbUser.password)
-
-      if (!passwordMatch) {
-        return Notifications.showAlert(setAlert, 'La contraseña actual es incorrecta.', 'danger')
+      if (dbUser.password !== currentPassword) {
+        return Notifications.showAlert(setAlert, 'The current password is incorrect.', 'danger')
       }
-
-      // Encripta la nueva contraseña antes de actualizarla
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10)
-
-      // Actualiza la contraseña en la base de datos
       const updateRes = await fetch(`http://localhost:8000/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...dbUser, password: hashedNewPassword }),
+        body: JSON.stringify({ ...dbUser, password: newPassword }),
       })
-
-      if (!updateRes.ok) throw new Error('Error al actualizar la contraseña.')
-
-      Notifications.showAlert(setAlert, 'La contraseña se ha actualizado correctamente.', 'success')
-
-      // Limpia los campos y cierra el modal
+      if (!updateRes.ok) throw new Error('Error updating password.')
+      Notifications.showAlert(setAlert, 'Password updated correctly.', 'success')
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (err) {
       console.error(err)
-      Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
+      Notifications.showAlert(setAlert, 'Error changing password.', 'danger')
     }
   }
 
@@ -199,14 +185,14 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/users/${selectedUserId}`, {
+      const response = await fetch(`http://localhost:8000/users/${selectedPatientId}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
         Notifications.showAlert(setAlert, 'User has been deleted successfully.', 'success')
         setDeleteModalVisible(false)
-        navigate('/users')
+        navigate('/patients')
       } else {
         Notifications.showAlert(setAlert, 'Failed to delete user.', 'danger')
       }
@@ -217,14 +203,14 @@ const UserDetails = () => {
   }
 
   const openDeleteModal = (userId) => {
-    setSelectedUserId(userId)
+    setselectedPatientId(userId)
     setDeleteModalVisible(true)
   }
 
   return (
     <CRow>
       <CCol md={12}>
-        <h3 className="mb-4">User Details</h3>
+        <h3 className="mb-4">Patient Details</h3>
         {alert && (
           <CAlert color={alert.type} className="text-center alert-fixed">
             {alert.message}
@@ -263,14 +249,14 @@ const UserDetails = () => {
                   width={24}
                   height={24}
                 />
-                {user.status === 'Active' ? 'Deactivate User' : 'Activate User'}
+                {user.status === 'Active' ? 'Deactivate Patient' : 'Activate Patient'}
               </span>
               <span
                 className="card-actions-link delete-user"
                 onClick={() => openDeleteModal(user.id)}
               >
                 <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
-                Delete User
+                Delete Patient
               </span>
             </div>
           </CCardBody>
@@ -279,7 +265,7 @@ const UserDetails = () => {
       <CCol md={8}>
         <CCard>
           <CCardBody>
-            <CCardTitle>Edit User</CCardTitle>
+            <CCardTitle>Edit Patient</CCardTitle>
             <CFormInput
               type="text"
               id="firstName"
