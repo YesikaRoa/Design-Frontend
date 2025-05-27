@@ -297,6 +297,24 @@
       "avatar": "/src/assets/images/avatars/avatar.png",
       "role_id": "Administrator",
       "status": "Active"
+    },
+    {
+      "id": "d18d",
+      "first_name": "Luz",
+      "last_name": "Cardenas",
+      "email": "luzroa1402@gmail.com",
+      "password": "$2b$10$4q90DxX4M7E9KNGliXV7IOCwD3.bqNCpjzMC9A963IdKP95rhKk8i",
+      "address": "Av. Rotaria, San Cristóbal",
+      "phone": "31233222222",
+      "birth_date": "2025-05-04",
+      "gender": "F",
+      "description": "Enfermero comprometido con el cuidado humanizado de pacientes.",
+      "specialty": "Pediatría",
+      "subspecialty": "Enfermería Neonatal",
+      "years_experience": "1",
+      "avatar": "src/assets/images/avatars/8.jpg",
+      "role_id": "Nurse",
+      "status": "Active"
     }
   ],
   "appointments": [
@@ -419,50 +437,22 @@
       "notes": "medicamento",
       "pathology": "tension alta",
       "reason_for_visit": "Consulta pediátrica"
+    },
+    {
+      "id": "1748381681434",
+      "patient": "1",
+      "professional": "8",
+      "scheduled_at": "2025-05-23T17:34",
+      "status": "pending",
+      "city": "Táriba",
+      "category": "Rehabilitación física",
+      "specialty": "Médico",
+      "notes": "medicamento",
+      "pathology": "tension alta",
+      "reason_for_visit": "Consulta pediátrica"
     }
   ],
   "medical_records": [
-    {
-      "id": "2",
-      "patient_id": "1",
-      "professional_id": "3",
-      "appointment_id": "5",
-      "general_notes": "Se inició terapia física para recuperación tras lesión de ligamento cruzado y rodillas debiles.",
-      "created_at": "2025-04-25T11:00",
-      "updated_at": "2025-04-26T11:45:00",
-      "attachment_image": {},
-      "attachment_document": {}
-    },
-    {
-      "id": "1747870677747",
-      "appointment_id": "4",
-      "created_at": "2025-05-18T19:37",
-      "general_notes": "Chequeo",
-      "patient_id": "2",
-      "professional_id": "8",
-      "attachment_image_url": null,
-      "attachment_document_url": null
-    },
-    {
-      "id": "1747870717687",
-      "appointment_id": "3",
-      "created_at": "2025-05-21T19:38",
-      "general_notes": "csdcs",
-      "patient_id": "7",
-      "professional_id": "6",
-      "attachment_image_url": null,
-      "attachment_document_url": null
-    },
-    {
-      "id": "1747871463729",
-      "appointment_id": "5",
-      "created_at": "2025-05-15T19:50",
-      "general_notes": "Chequeo",
-      "patient_id": "4",
-      "professional_id": "10",
-      "attachment_image_url": null,
-      "attachment_document_url": null
-    },
     {
       "id": "1747872368602",
       "appointment_id": "1747872349774",
@@ -470,6 +460,16 @@
       "general_notes": "Chequeo",
       "patient_id": "2",
       "professional_id": "8",
+      "attachment_image_url": null,
+      "attachment_document_url": null
+    },
+    {
+      "id": "1748381751364",
+      "appointment_id": "3",
+      "created_at": "2025-05-27T17:35",
+      "general_notes": "Chequeo",
+      "patient_id": "7",
+      "professional_id": "6",
       "attachment_image_url": null,
       "attachment_document_url": null
     }

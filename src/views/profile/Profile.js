@@ -44,7 +44,7 @@ const Profile = () => {
     if (file) {
       // Simula la ruta de la imagen cargada
       const newImagePath = `src/assets/images/avatars/${file.name}`
-      console.log('Nueva ruta de la imagen:', newImagePath)
+
       setSelectedImage(newImagePath) // Guarda la nueva ruta
 
       // Actualiza la imagen en el servidor inmediatamente
@@ -63,7 +63,6 @@ const Profile = () => {
           return response.json()
         })
         .then((data) => {
-          console.log('Imagen actualizada en el servidor:', data)
           setUser(data) // Actualiza el estado del usuario con los datos del servidor
         })
         .catch((error) => console.error('Error al guardar la imagen:', error))
