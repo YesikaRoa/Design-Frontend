@@ -26,8 +26,11 @@ import { cilSave, cilPencil, cilExitToApp, cilLockLocked, cilLockUnlocked } from
 import bcrypt from 'bcryptjs'
 import './styles/Profile.css' // Asegúrate de que la ruta sea correcta
 import Notifications from '../../components/Notifications'
+import { useDispatch } from 'react-redux'
 
 const Profile = () => {
+  const dispatch = useDispatch()
+
   const [user, setUser] = useState(null)
   const [formData, setFormData] = useState({})
   const [modalVisible, setModalVisible] = useState(false)
@@ -63,6 +66,7 @@ const Profile = () => {
           return response.json()
         })
         .then((data) => {
+          dispatch({ type: 'setAvatar', avatar: data.avatar })
           setUser(data) // Actualiza el estado del usuario con los datos del servidor
         })
         .catch((error) => console.error('Error al guardar la imagen:', error))
