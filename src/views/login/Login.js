@@ -131,8 +131,7 @@ const Login = () => {
       // Si las credenciales son correctas, redirigir al dashboard
       localStorage.setItem('authToken', 'your-auth-token') // Guarda un token de autenticación
       localStorage.setItem('userId', user.id)
-
-      navigate('/dashboard')
+      window.location.href = '/#/dashboard'
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
       Notifications.showAlert(setAlert, 'Hubo un error al iniciar sesión.', 'danger')
