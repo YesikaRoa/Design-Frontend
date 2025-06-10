@@ -3,11 +3,12 @@ import { getStyle } from '@coreui/utils'
 import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader } from '@coreui/react'
 import './Styles.css/ChartsSection.css'
+import { useTranslation } from 'react-i18next'
 
 const generateColors = (count) => {
   const colors = []
   for (let i = 0; i < count; i++) {
-    const color = `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)` // Generate colors in HSL format
+    const color = `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`
     colors.push(color)
   }
   return colors
@@ -16,34 +17,92 @@ const generateColors = (count) => {
 const ChartsSection = () => {
   const doughnutRef1 = useRef(null)
   const doughnutRef2 = useRef(null)
+  const { t } = useTranslation()
   const [cityData, setCityData] = useState([])
   const [specialtyData, setSpecialtyData] = useState([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/appointments')
-        const appointments = await response.json()
+        // Fetch data from all endpoints
+        const [
+          appointmentsResponse,
+          citiesResponse,
+          professionalSpecialtiesResponse,
+          specialtiesResponse,
+        ] = await Promise.all([
+          fetch('http://localhost:8000/appointments'),
+          fetch('http://localhost:8000/city'),
+          fetch('http://localhost:8000/professional_specialty'),
+          fetch('http://localhost:8000/specialty'),
+        ])
 
-        // Process data for "Patients by City"
+        // Convert responses to JSON
+        const appointments = await appointmentsResponse.json()
+        const cities = await citiesResponse.json()
+        const professionalSpecialties = await professionalSpecialtiesResponse.json()
+        const specialties = await specialtiesResponse.json()
+
+        // ------------------------
+        // 1. Map city_id to city name
+        const cityMap = cities.reduce((acc, city) => {
+          acc[city.id] = city.name
+          return acc
+        }, {})
+
+        // ------------------------
+        // 2. Process data for "Patients by City"
         const cityCounts = appointments.reduce((acc, appointment) => {
-          acc[appointment.city] = (acc[appointment.city] || 0) + 1
+          const cityName = cityMap[appointment.city_id] || 'Unknown'
+          acc[cityName] = (acc[cityName] || 0) + 1
           return acc
         }, {})
 
         const cityLabels = Object.keys(cityCounts)
         const cityValues = Object.values(cityCounts)
 
-        // Process data for "Most Requested Specialties"
-        const specialtyCounts = appointments.reduce((acc, appointment) => {
-          acc[appointment.specialty] = (acc[appointment.specialty] || 0) + 1
+        setCityData({ labels: cityLabels, data: cityValues })
+
+        // ------------------------
+        // 3. Map professional_id to array of specialty_ids (because can have multiple)
+        const professionalToSpecialtyMap = professionalSpecialties.reduce((acc, item) => {
+          if (!acc[item.professional_id]) acc[item.professional_id] = []
+          acc[item.professional_id].push(item.specialty_id)
           return acc
         }, {})
+
+        // ------------------------
+        // 4. Map specialty_id to specialty name
+        const specialtyMap = specialties.reduce((acc, specialty) => {
+          acc[specialty.id] = specialty.name
+          return acc
+        }, {})
+
+        // ------------------------
+        // 5. Agrupar citas por profesional para contar solo 1 por profesional
+        const professionalsWithAppointments = new Set()
+        appointments.forEach((appointment) => {
+          professionalsWithAppointments.add(appointment.professional_id)
+        })
+
+        // ------------------------
+        // 6. Contar especialidades según profesionales con citas
+        const specialtyCounts = {}
+
+        professionalsWithAppointments.forEach((professionalId) => {
+          const specialtyIds = professionalToSpecialtyMap[professionalId] || []
+          specialtyIds.forEach((specialtyId) => {
+            // Considerar solo especialidades del 1 al 15 (no subespecialidades)
+            if (specialtyId >= 1 && specialtyId <= 15) {
+              const specialtyName = specialtyMap[specialtyId] || 'Unknown Specialty'
+              specialtyCounts[specialtyName] = (specialtyCounts[specialtyName] || 0) + 1
+            }
+          })
+        })
 
         const specialtyLabels = Object.keys(specialtyCounts)
         const specialtyValues = Object.values(specialtyCounts)
 
-        setCityData({ labels: cityLabels, data: cityValues })
         setSpecialtyData({ labels: specialtyLabels, data: specialtyValues })
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -89,7 +148,7 @@ const ChartsSection = () => {
       <div className="row">
         <div className="col-sm-6">
           <CCard>
-            <CCardHeader style={{ fontWeight: 'bold' }}>Patients by City</CCardHeader>
+            <CCardHeader style={{ fontWeight: 'bold' }}>{t('Patients by City')}</CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
                 <CChart type="doughnut" data={doughnutData1} options={options} ref={doughnutRef1} />
@@ -99,7 +158,9 @@ const ChartsSection = () => {
         </div>
         <div className="col-sm-6">
           <CCard>
-            <CCardHeader style={{ fontWeight: 'bold' }}>Most Requested Specialties</CCardHeader>
+            <CCardHeader style={{ fontWeight: 'bold' }}>
+              {t('Most Requested Specialties')}
+            </CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
                 <CChart type="doughnut" data={doughnutData2} options={options} ref={doughnutRef2} />

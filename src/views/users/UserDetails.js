@@ -33,9 +33,13 @@ import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
 import bcrypt from 'bcryptjs'
+import { useTranslation } from 'react-i18next'
+
 const UserDetails = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation()
+
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
@@ -46,9 +50,15 @@ const UserDetails = () => {
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false })
 
+  const [roles, setRoles] = useState([])
+
+  useEffect(() => {
+    fetch('http://localhost:8000/role')
+      .then((res) => res.json())
+      .then(setRoles)
+  }, [])
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
   }
@@ -124,11 +134,8 @@ const UserDetails = () => {
   }
 
   const handlePasswordChangeSubmit = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!currentPassword || !newPassword) {
       return Notifications.showAlert(setAlert, 'Todos los campos son obligatorios.', 'danger')
-    }
-    if (newPassword !== confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Las contraseñas nuevas no coinciden.', 'warning')
     }
 
     try {
@@ -162,7 +169,6 @@ const UserDetails = () => {
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')
-      setConfirmPassword('')
     } catch (err) {
       console.error(err)
       Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
@@ -199,9 +205,47 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/users/${selectedUserId}`, {
+      // 1. Eliminar usuario
+      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
         method: 'DELETE',
       })
+
+      // 2. Eliminar en cascada según el rol
+      if (user.role_id === '2') {
+        // Eliminar professional y sus especialidades
+        const profRes = await fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
+        const professionals = await profRes.json()
+        for (const prof of professionals) {
+          // Eliminar TODOS los professional_specialty relacionados a este professional
+          const specRes = await fetch(
+            `http://localhost:8000/professional_specialty?professional_id=${prof.id}`,
+          )
+          const specialties = await specRes.json()
+          // ...existing code...
+          if (Array.isArray(specialties)) {
+            await Promise.all(
+              specialties.map((s) =>
+                fetch(`http://localhost:8000/professional_specialty/${s.id}`, {
+                  method: 'DELETE',
+                }),
+              ),
+            )
+          }
+          // ...existing code...
+          // Eliminar professional
+          await fetch(`http://localhost:8000/professionals/${prof.id}`, { method: 'DELETE' })
+        }
+      } else if (user.role_id === '3') {
+        // Eliminar TODOS los patient relacionados
+        const patRes = await fetch(`http://localhost:8000/patient?user_id=${user.id}`)
+        const patients = await patRes.json()
+        if (Array.isArray(patients)) {
+          for (const p of patients) {
+            await fetch(`http://localhost:8000/patient/${p.id}`, { method: 'DELETE' })
+          }
+        }
+        // NO elimines professional_specialty aquí, no corresponde a un patient
+      }
 
       if (response.ok) {
         Notifications.showAlert(setAlert, 'User has been deleted successfully.', 'success')
@@ -215,7 +259,6 @@ const UserDetails = () => {
       Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'danger')
     }
   }
-
   const openDeleteModal = (userId) => {
     setSelectedUserId(userId)
     setDeleteModalVisible(true)
@@ -238,11 +281,14 @@ const UserDetails = () => {
               {user.first_name} {user.last_name}
             </CCardTitle>
             <CCardText>
-              <strong>Email:</strong> {user.email} <br />
-              <strong>Role:</strong> {user.role_id} <br />
-              <strong>Status:</strong> {user.status} <br />
-              <strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()} <br />
-              <strong>Last Updated:</strong> {new Date(user.updated_at).toLocaleDateString()}
+              <strong>{t('Email')}:</strong> {user.email} <br />
+              <strong>{t('Role')}:</strong>{' '}
+              {roles.find((r) => String(r.id) === String(user.role_id))?.name || user.role_id}{' '}
+              <br />
+              <strong>{t('Status')}:</strong> {user.status} <br />
+              <strong>{t('Created at')}:</strong> {new Date(user.created_at).toLocaleDateString()}{' '}
+              <br />
+              <strong>{t('Last Updated')}:</strong> {new Date(user.updated_at).toLocaleDateString()}
             </CCardText>
           </CCardBody>
         </CCard>
@@ -251,7 +297,7 @@ const UserDetails = () => {
             <div className="card-actions-container">
               <span className="card-actions-link change-password" onClick={handleChangePassword}>
                 <CIcon icon={cilLockLocked} className="me-2" width={24} height={24} />
-                Change Password
+                {t('Change Password')}
               </span>
               <span
                 className={`card-actions-link ${user.status === 'Active' ? 'deactivate-user' : 'activate-user'}`}
@@ -263,14 +309,14 @@ const UserDetails = () => {
                   width={24}
                   height={24}
                 />
-                {user.status === 'Active' ? 'Deactivate User' : 'Activate User'}
+                {user.status === 'Active' ? t('Deactivate User') : t('Activate User')}
               </span>
               <span
                 className="card-actions-link delete-user"
                 onClick={() => openDeleteModal(user.id)}
               >
                 <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
-                Delete User
+                {t('Delete User')}
               </span>
             </div>
           </CCardBody>
@@ -279,11 +325,11 @@ const UserDetails = () => {
       <CCol md={8}>
         <CCard>
           <CCardBody>
-            <CCardTitle>Edit User</CCardTitle>
+            <CCardTitle>{t('Edit User')}</CCardTitle>
             <CFormInput
               type="text"
               id="firstName"
-              floatingLabel="First Name"
+              floatingLabel={t('First name')}
               defaultValue={user.first_name}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -291,7 +337,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="lastName"
-              floatingLabel="Last Name"
+              floatingLabel={t('Last name')}
               defaultValue={user.last_name}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -299,7 +345,7 @@ const UserDetails = () => {
             <CFormInput
               type="email"
               id="email"
-              floatingLabel="Email"
+              floatingLabel={t('Email')}
               defaultValue={user.email}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -307,7 +353,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="address"
-              floatingLabel="Address"
+              floatingLabel={t('Address')}
               defaultValue={user.address}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -315,14 +361,14 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="phone"
-              floatingLabel="Phone"
+              floatingLabel={t('Phone')}
               defaultValue={user.phone}
               className="mb-3"
               disabled={fieldsDisabled}
             />
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? 'Edit' : 'Save'}
+              {fieldsDisabled ? t('Edit User') : t('Save')}
             </CButton>
           </CCardBody>
         </CCard>
@@ -360,7 +406,7 @@ const UserDetails = () => {
                 <CIcon icon={showPasswords.current ? cilLockUnlocked : cilLockLocked} />
               </CInputGroupText>
             </CInputGroup>
-            <CInputGroup className="mb-2">
+            <CInputGroup>
               <CFormInput
                 type={showPasswords.new ? 'text' : 'password'}
                 placeholder="New password"
@@ -372,20 +418,6 @@ const UserDetails = () => {
                 style={{ cursor: 'pointer' }}
               >
                 <CIcon icon={showPasswords.new ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-            <CInputGroup>
-              <CFormInput
-                type={showPasswords.confirm ? 'text' : 'password'}
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, confirm: !prev.confirm }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.confirm ? cilLockUnlocked : cilLockLocked} />
               </CInputGroupText>
             </CInputGroup>
           </CForm>

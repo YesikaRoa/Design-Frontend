@@ -5,6 +5,7 @@ import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import defaultAvatar from '../../assets/images/avatars/avatar.png'
 import Notifications from '../../components/Notifications'
+import { useCallback } from 'react'
 
 import '../users/styles/users.css'
 import '../users/styles/filter.css'
@@ -45,6 +46,7 @@ export const Patients = () => {
   const [alert, setAlert] = useState(null)
   const [userToDelete, setUserToDelete] = useState(null)
 
+  // Cambia handleFinish para guardar en ambos endpoints
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
       // Verificar si el email ya existe
@@ -53,13 +55,11 @@ export const Patients = () => {
           `http://localhost:8000/users?email=${formData.email}`,
         )
         const existingUsers = await emailCheckResponse.json()
-
         if (existingUsers.length > 0) {
           Notifications.showAlert(setAlert, 'The email is already in use.', 'warning')
           return
         }
       } catch (error) {
-        console.error('Error checking email:', error)
         Notifications.showAlert(setAlert, 'An error occurred while checking the email.', 'error')
         return
       }
@@ -69,6 +69,7 @@ export const Patients = () => {
         return `${day}/${month}/${year}`
       }
 
+      // 1. Crear usuario
       const completeUser = {
         first_name: formData.first_name || '',
         last_name: formData.last_name || '',
@@ -81,7 +82,7 @@ export const Patients = () => {
           : 'No birth date available',
         gender: formData.gender || '',
         avatar: formData.avatar || defaultAvatar,
-        role_id: formData.role || 'No role assigned',
+        role_id: '3', // Paciente por defecto
         status: formData.status || 'Active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -96,14 +97,28 @@ export const Patients = () => {
 
         const savedUser = await response.json()
 
-        setUsers((prev) => [...prev, { ...savedUser }])
-        setFilteredUsers((prev) => [...prev, { ...savedUser }])
+        // 2. Crear paciente
+        const patientData = {
+          user_id: savedUser.id,
+          medical_data: formData.medical_data || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
+        await fetch('http://localhost:8000/patient', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patientData),
+        })
+
+        setUsers((prev) => [...prev, { ...savedUser, medical_data: formData.medical_data }])
+        setFilteredUsers((prev) => [...prev, { ...savedUser, medical_data: formData.medical_data }])
       } catch (error) {
-        console.error('Error saving user:', error)
         Notifications.showAlert(setAlert, 'An error occurred while saving the user.', 'error')
       }
     }
   }
+
   const userSteps = [
     {
       fields: [
@@ -116,9 +131,9 @@ export const Patients = () => {
         { name: 'last_name', label: 'Last Name', placeholder: 'Enter last name', required: true },
         {
           name: 'birth_date',
-          type: 'date', // Cambiar a texto
+          type: 'date',
           label: 'Birth Date',
-          placeholder: 'Enter birth date', // Placeholder para guiar al usuario
+          placeholder: 'Enter birth date',
           required: true,
         },
         {
@@ -149,21 +164,21 @@ export const Patients = () => {
     {
       fields: [
         {
-          name: 'role',
-          label: 'Role',
-          type: 'select', // Cambiado a tipo select
-          required: true,
-          options: [{ label: 'Patient', value: 'Patient' }],
-        },
-        {
           name: 'status',
           label: 'Status',
-          type: 'select', // Cambiado a tipo select
+          type: 'select',
           required: true,
           options: [
             { label: 'Active', value: 'Active' },
             { label: 'Inactive', value: 'Inactive' },
           ],
+        },
+        {
+          name: 'medical_data',
+          label: 'Medical Data',
+          type: 'textarea',
+          placeholder: 'Enter medical data',
+          required: false,
         },
       ],
     },
@@ -185,34 +200,47 @@ export const Patients = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
-        // Realiza la solicitud DELETE al backend
+        // 1. Buscar el paciente por user_id
+        const patientRes = await fetch(`http://localhost:8000/patient?user_id=${userToDelete.id}`)
+        const patientData = await patientRes.json()
+        if (patientData && patientData.length > 0) {
+          // 2. Eliminar el paciente
+          await fetch(`http://localhost:8000/patient/${patientData[0].id}`, {
+            method: 'DELETE',
+          })
+        }
+
+        // 3. Eliminar el usuario
         const response = await fetch(`http://localhost:8000/users/${userToDelete.id}`, {
           method: 'DELETE',
         })
 
         if (response.ok) {
-          // Actualiza la lista de usuarios eliminando el usuario borrado
           setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
           setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-
-          // Muestra una notificación de éxito
           Notifications.showAlert(setAlert, 'User deleted', 'success')
         } else {
-          // Muestra una notificación de error
           Notifications.showAlert(setAlert, 'Failed to delete the user. Please try again.', 'error')
         }
       } catch (error) {
         console.error('Error deleting user:', error)
-        // Muestra una notificación de error
         Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'error')
       } finally {
-        setVisible(false) // Cierra la modal
-        setUserToDelete(null) // Limpia el usuario seleccionado
+        setVisible(false)
+        setUserToDelete(null)
       }
     }
   }
-  const handleInfo = (user) => {
-    setselectedPatient(user)
+  const handleInfo = async (user) => {
+    // Obtener medical_data actualizado del endpoint patient
+    try {
+      const res = await fetch(`http://localhost:8000/patient?user_id=${user.id}`)
+      const data = await res.json()
+      const medical_data = data && data.length > 0 ? data[0].medical_data : ''
+      setselectedPatient({ ...user, medical_data })
+    } catch (error) {
+      setselectedPatient({ ...user, medical_data: '' })
+    }
     setInfoVisible(true)
   }
 
@@ -287,7 +315,7 @@ export const Patients = () => {
     setFilteredUsers(users)
   }
   useEffect(() => {
-    fetch('http://localhost:8000/users?role_id=Patient')
+    fetch('http://localhost:8000/users?role_id=3')
       .then((res) => res.json())
       .then((data) => {
         const normalizedUsers = data.map((user) => ({
@@ -415,6 +443,9 @@ export const Patients = () => {
               </p>
               <p>
                 <strong>Status:</strong> {selectedPatient.status}
+              </p>
+              <p>
+                <strong>Medical Data:</strong> {selectedPatient.medical_data || 'No medical data'}
               </p>
             </div>
           ) : (

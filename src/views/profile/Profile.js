@@ -27,10 +27,10 @@ import bcrypt from 'bcryptjs'
 import './styles/Profile.css' // Asegúrate de que la ruta sea correcta
 import Notifications from '../../components/Notifications'
 import { useDispatch } from 'react-redux'
+import Select from 'react-select'
 
 const Profile = () => {
   const dispatch = useDispatch()
-
   const [user, setUser] = useState(null)
   const [formData, setFormData] = useState({})
   const [modalVisible, setModalVisible] = useState(false)
@@ -41,6 +41,76 @@ const Profile = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
   const [alert, setAlert] = useState(null)
+  const [professional, setProfessional] = useState(null)
+  const [professionalType, setProfessionalType] = useState(null)
+  const [professionalSpecialties, setProfessionalSpecialties] = useState([])
+  const [specialties, setSpecialties] = useState([])
+
+  useEffect(() => {
+    if (!user) return
+
+    // 1. Obtener el professional relacionado al user actual
+    fetch('http://localhost:8000/professionals')
+      .then((res) => res.json())
+      .then((professionals) => {
+        const prof = professionals.find((p) => String(p.user_id) === String(user.id))
+        setProfessional(prof)
+
+        // 2. Obtener el tipo de professional
+        if (prof) {
+          fetch('http://localhost:8000/professional_type')
+            .then((res) => res.json())
+            .then((types) => {
+              const type = types.find((t) => String(t.id) === String(prof.professional_type_id))
+              setProfessionalType(type)
+            })
+
+          // 3. Obtener las especialidades asociadas
+          fetch('http://localhost:8000/professional_specialty')
+            .then((res) => res.json())
+            .then((specialties) => {
+              const profSpecialties = specialties.filter(
+                (s) => String(s.professional_id) === String(prof.id),
+              )
+              setProfessionalSpecialties(profSpecialties)
+            })
+          fetch('http://localhost:8000/specialty')
+            .then((res) => res.json())
+            .then((data) => setSpecialties(data))
+            .catch(() => setSpecialties([]))
+        }
+      })
+      .catch((err) => {
+        setProfessional(null)
+        setProfessionalType(null)
+        setProfessionalSpecialties([])
+      })
+  }, [user])
+
+  const getSpecialtyName = (id) => {
+    if (!id) return '-'
+    const found = specialties.find((s) => String(s.id) === String(id))
+    return found ? found.name : '-'
+  }
+  const getSpecialtyNames = () => {
+    // IDs del 1 al 15
+    return (
+      professionalSpecialties
+        .filter((ps) => Number(ps.specialty_id) >= 1 && Number(ps.specialty_id) <= 15)
+        .map((ps) => getSpecialtyName(ps.specialty_id))
+        .join(', ') || '-'
+    )
+  }
+
+  const getSubspecialtyNames = () => {
+    // IDs del 16 al 60
+    return (
+      professionalSpecialties
+        .filter((ps) => Number(ps.specialty_id) >= 16 && Number(ps.specialty_id) <= 60)
+        .map((ps) => getSpecialtyName(ps.specialty_id))
+        .join(', ') || '-'
+    )
+  }
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0]
@@ -101,29 +171,68 @@ const Profile = () => {
     setFormData({ ...formData, [name]: value })
   }
 
-  const handleSaveChanges = () => {
-    const updatedData = { ...formData, avatar: selectedImage || user.avatar }
-    console.log('Datos enviados al servidor:', updatedData)
+  const handleSaveChanges = async () => {
+    try {
+      // 1. Actualiza datos del usuario
+      const updatedUserData = { ...formData, avatar: selectedImage || user.avatar }
+      await fetch(`http://localhost:8000/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedUserData),
+      })
 
-    fetch(`http://localhost:8000/users/${user.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updatedData),
-    })
-      .then((response) => {
-        console.log('Estado de la respuesta:', response.status)
-        return response.json()
-      })
-      .then((data) => {
-        console.log('Respuesta del servidor:', data)
-        setUser(data) // Actualiza el estado con los datos del servidor
-        setModalVisible(false) // Cierra el modal después de guardar
-      })
-      .catch((error) => console.error('Error al guardar los cambios:', error))
+      // 2. Actualiza datos profesionales
+      if (professional) {
+        const updatedProfessional = {
+          ...professional,
+          biography: formData.biography,
+          years_of_experience: formData.years_experience,
+        }
+        await fetch(`http://localhost:8000/professionals/${professional.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProfessional),
+        })
+
+        // 3. Actualiza specialties y subspecialties
+        // Suponiendo que specialty y subspecialty son strings separados por coma de IDs
+        const specialtiesIds = (formData.specialty || '')
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+        const subspecialtiesIds = (formData.subspecialty || '')
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+        const allSpecialties = [...specialtiesIds, ...subspecialtiesIds]
+
+        // Elimina las relaciones actuales
+        const currentSpecialties = professionalSpecialties.map((ps) => ps.id)
+        for (const psId of currentSpecialties) {
+          await fetch(`http://localhost:8000/professional_specialty/${psId}`, {
+            method: 'DELETE',
+          })
+        }
+        // Crea las nuevas relaciones
+        for (const specialty_id of allSpecialties) {
+          await fetch(`http://localhost:8000/professional_specialty`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              professional_id: professional.id,
+              specialty_id: Number(specialty_id),
+            }),
+          })
+        }
+      }
+
+      setModalVisible(false)
+      // Opcional: recarga los datos para reflejar los cambios
+      window.location.reload()
+    } catch (error) {
+      console.error('Error al guardar los cambios:', error)
+    }
   }
-
   if (!user) {
     return <div>Loading...</div>
   }
@@ -176,7 +285,38 @@ const Profile = () => {
       Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
     }
   }
+  const handleEditInformation = () => {
+    setFormData({
+      ...user,
+      biography: professional?.biography || '',
+      years_experience: professional?.years_of_experience || '',
+      specialty: professionalSpecialties
+        .filter((ps) => Number(ps.specialty_id) >= 1 && Number(ps.specialty_id) <= 15)
+        .map((ps) => ps.specialty_id)
+        .join(','),
+      subspecialty: professionalSpecialties
+        .filter((ps) => Number(ps.specialty_id) >= 16 && Number(ps.specialty_id) <= 60)
+        .map((ps) => ps.specialty_id)
+        .join(','),
+    })
+    setModalVisible(true)
+  }
+  // Opciones para specialty y subspecialty
+  const specialtyOptions = specialties
+    .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
+    .map((s) => ({ value: String(s.id), label: s.name }))
 
+  const subspecialtyOptions = specialties
+    .filter((s) => Number(s.id) >= 16 && Number(s.id) <= 60)
+    .map((s) => ({ value: String(s.id), label: s.name }))
+
+  // Valores seleccionados para react-select
+  const selectedSpecialties = specialtyOptions.filter((opt) =>
+    (formData.specialty ? formData.specialty.split(',') : []).includes(opt.value),
+  )
+  const selectedSubspecialties = subspecialtyOptions.filter((opt) =>
+    (formData.subspecialty ? formData.subspecialty.split(',') : []).includes(opt.value),
+  )
   return (
     <CCard className="space-component">
       <CCardBody>
@@ -212,7 +352,7 @@ const Profile = () => {
             </div>
             <div className="profile-name">
               <h2>{`${user.first_name} ${user.last_name}`}</h2>
-              <p>{user.role_id}</p>
+              <p>{professionalType ? professionalType.name : ''}</p>
             </div>
           </div>
 
@@ -248,16 +388,20 @@ const Profile = () => {
                     <CCardTitle>Professional Information</CCardTitle>
                     <CListGroup flush>
                       <CListGroupItem>
-                        <strong>Description:</strong> {user.description}
+                        <strong>Type:</strong> {professionalType ? professionalType.name : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Specialty:</strong> {user.specialty}
+                        <strong>Biography:</strong> {professional ? professional.biography : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Subspecialty:</strong> {user.subspecialty}
+                        <strong>Years experience:</strong>{' '}
+                        {professional ? professional.years_of_experience : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Years experience:</strong> {user.years_experience}
+                        <strong>Specialties:</strong> {getSpecialtyNames()}
+                      </CListGroupItem>
+                      <CListGroupItem>
+                        <strong>Subspecialties:</strong> {getSubspecialtyNames()}
                       </CListGroupItem>
                     </CListGroup>
                   </CCardBody>
@@ -269,7 +413,7 @@ const Profile = () => {
                 color="primary"
                 className="update-button mx-2"
                 style={{ width: 'auto' }}
-                onClick={() => setModalVisible(true)}
+                onClick={handleEditInformation}
               >
                 <CIcon icon={cilPencil} className="me-2" />
                 Edit Information
@@ -328,25 +472,48 @@ const Profile = () => {
               />
               <CFormInput
                 type="text"
-                name="description"
-                label={<strong>Description:</strong>}
-                value={formData.description || ''}
+                name="biography"
+                label={<strong>Biography:</strong>}
+                value={formData.biography || ''}
                 onChange={handleInputChange}
               />
-              <CFormInput
-                type="text"
+              <label>
+                <strong>Specialty:</strong>
+              </label>
+              <Select
+                isMulti
                 name="specialty"
-                label={<strong>Specialty:</strong>}
-                value={formData.specialty || ''}
-                onChange={handleInputChange}
+                options={specialtyOptions}
+                value={selectedSpecialties}
+                onChange={(selected) => {
+                  setFormData({
+                    ...formData,
+                    specialty: selected.map((opt) => opt.value).join(','),
+                  })
+                }}
+                className="mb-2"
+                classNamePrefix="react-select"
+                placeholder="Selecciona especialidades"
               />
-              <CFormInput
-                type="text"
+              <label>
+                <strong>Subspecialty:</strong>
+              </label>
+              <Select
+                isMulti
                 name="subspecialty"
-                label={<strong>Subspecialty:</strong>}
-                value={formData.subspecialty || ''}
-                onChange={handleInputChange}
+                options={subspecialtyOptions}
+                value={selectedSubspecialties}
+                onChange={(selected) => {
+                  setFormData({
+                    ...formData,
+                    subspecialty: selected.map((opt) => opt.value).join(','),
+                  })
+                }}
+                className="mb-2"
+                classNamePrefix="react-select"
+                placeholder="Selecciona subespecialidades"
               />
+
               <CFormInput
                 type="number"
                 name="years_experience"

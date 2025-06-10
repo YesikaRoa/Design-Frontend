@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import Notifications from '../../components/Notifications'
@@ -20,7 +20,7 @@ import {
   CFormSelect,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser } from '@coreui/icons'
+import { cilLockLocked, cilLockUnlocked, cilUser } from '@coreui/icons'
 import defaultAvatar from '../../assets/images/avatars/avatar.png'
 import { validateEmail, isStepValid } from './Validationes'
 
@@ -34,111 +34,58 @@ const Register = () => {
     phone: '',
     birth_date: '',
     gender: '',
-    description: '',
+    biography: '',
     specialty: '',
     subspecialty: '',
     years_experience: '',
     avatar: defaultAvatar,
-    role_id: '',
+    role_id: 'Professional',
     status: 'Active',
+    state: '',
+    city: '',
   })
   const [step, setStep] = useState(1)
   const [alert, setAlert] = useState(null)
+  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
-  const specialties = {
-    Doctor: {
-      MedicinaGeneral: [
-        'Atención Preventiva',
-        'Manejo de Enfermedades Crónicas',
-        'Educación en Salud',
-      ],
-      Cardiología: [
-        'Cardiología Intervencionista',
-        'Cardiología Pediátrica',
-        'Manejo de Insuficiencia Cardíaca',
-      ],
-      Dermatología: ['Dermatología Cosmética', 'Dermatología Pediátrica', 'Dermatopatología'],
-      Neurología: [
-        'Neurología Clínica',
-        'Neurofisiología',
-        'Manejo de Accidentes Cerebrovasculares',
-      ],
-      Pediatría: ['Neonatología', 'Oncología Pediátrica', 'Pediatría del Desarrollo'],
-      Oncología: ['Oncología Médica', 'Oncología Radioterápica', 'Oncología Quirúrgica'],
-    },
-    Nurse: {
-      CuidadosGenerales: [
-        'Cuidado de Heridas',
-        'Administración de Medicamentos',
-        'Monitoreo de Signos Vitales',
-      ],
-      Pediatría: ['Enfermería Neonatal', 'Enfermería Escolar', 'Cuidados Críticos Pediátricos'],
-      Quirúrgico: [
-        'Enfermería Perioperatoria',
-        'Enfermería Postoperatoria',
-        'Enfermería Oncológica Quirúrgica',
-      ],
-      SaludComunitaria: [
-        'Enfermería de Salud Pública',
-        'Cuidado en el Hogar',
-        'Educación Comunitaria',
-      ],
-      CuidadosCríticos: ['Enfermería en UCI', 'Enfermería de Emergencias', 'Enfermería de Trauma'],
-    },
-    Therapist: {
-      Fisioterapia: [
-        'Rehabilitación Ortopédica',
-        'Rehabilitación Neurológica',
-        'Terapia Geriátrica',
-      ],
-      TerapiaOcupacional: ['Terapia de la Mano', 'Rehabilitación Pediátrica', 'Terapia Vocacional'],
-      TerapiaDelHabla: [
-        'Terapia para Trastornos de la Voz',
-        'Terapia para Trastornos de Deglución',
-        'Terapia de Articulación',
-      ],
-      TerapiaDeportiva: [
-        'Prevención de Lesiones',
-        'Rehabilitación Post-Lesión',
-        'Mejora del Rendimiento Deportivo',
-      ],
-      TerapiaMental: ['Terapia Cognitivo-Conductual', 'Terapia de Trauma', 'Manejo del Estrés'],
-    },
-    Administrator: {
-      LiderTecnico: [
-        'Gestión de Equipos de Desarrollo',
-        'Planificación de Arquitectura',
-        'Revisión de Código',
-      ],
-      Backend: [
-        'Diseño de APIs RESTful',
-        'Optimización de Bases de Datos',
-        'Gestión de Microservicios',
-      ],
-      Frontend: [
-        'Diseño de Interfaces de Usuario',
-        'Desarrollo con Frameworks (React, Angular)',
-        'Pruebas de Usabilidad',
-      ],
-      DevOps: [
-        'Integración y Entrega Continua (CI/CD)',
-        'Automatización de Infraestructura',
-        'Monitoreo y Alertas',
-      ],
-      EstrategiaTecnológica: [
-        'Definición de Roadmap Técnico',
-        'Evaluación de Nuevas Tecnologías',
-        'Gestión de Proyectos de Desarrollo',
-      ],
-    },
-  }
+  const [professionalTypes, setProfessionalTypes] = useState([])
+  const [specialtiesData, setSpecialtiesData] = useState([])
+  const [states, setStates] = useState([])
+  const [cities, setCities] = useState([])
+  useEffect(() => {
+    // Cargar tipos de profesional
+    fetch('http://localhost:8000/professional_type')
+      .then((res) => res.json())
+      .then((data) => setProfessionalTypes(data))
+    // Cargar especialidades
+    fetch('http://localhost:8000/specialty')
+      .then((res) => res.json())
+      .then((data) => setSpecialtiesData(data))
+    // Cargar estados
+    fetch('http://localhost:8000/state')
+      .then((res) => res.json())
+      .then((data) => setStates(data))
+    // Cargar ciudades
+    fetch('http://localhost:8000/city')
+      .then((res) => res.json())
+      .then((data) => {
+        setCities(data)
+      })
+  }, [])
+
+  // Filtrar especialidades y subespecialidades según selección
+  const specialties = specialtiesData.filter((s) => !s.parent_id)
+  const subspecialties = specialtiesData.filter(
+    (s) => s.parent_id && s.parent_id === Number(formData.specialty),
+  )
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
+      ...(name === 'professional_type' && { specialty: '', subspecialty: '' }),
       ...(name === 'specialty' && { subspecialty: '' }),
     }))
   }
@@ -154,38 +101,100 @@ const Register = () => {
   const handlePrevious = () => {
     if (step > 1) setStep((prevStep) => prevStep - 1)
   }
+  // ...existing code...
   const handleRegister = async () => {
     try {
-      // Verificar si el correo ya existe
+      // 1. Verificar si el correo ya existe
       const emailResponse = await fetch(`http://localhost:8000/users?email=${formData.email}`)
       const existingUsers = await emailResponse.json()
-
       if (existingUsers.length > 0) {
         Notifications.showAlert(setAlert, 'Email already in use.', 'danger')
         return
       }
 
-      // Encriptar la contraseña
+      // 2. Encriptar la contraseña
       const hashedPassword = await bcrypt.hash(formData.password, 10)
 
-      // Guardar los datos del usuario
-      const response = await fetch('http://localhost:8000/users', {
+      // 3. Crear usuario
+      const now = new Date().toISOString()
+      // ...existing code...
+      const userPayload = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: hashedPassword,
+        address: formData.address,
+        phone: formData.phone,
+        birth_date: formData.birth_date,
+        gender: formData.gender,
+        avatar: formData.avatar, // solo si tu tabla user tiene avatar
+        role_id: 2, // o el id correspondiente
+        status: 'Active',
+        created_at: now,
+        updated_at: now,
+      }
+      // ...existing code...
+      const userRes = await fetch('http://localhost:8000/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, password: hashedPassword }),
+        body: JSON.stringify(userPayload),
       })
-
-      if (response.ok) {
-        Notifications.showAlert(setAlert, 'Registration successful!', 'success')
-        setTimeout(() => navigate('/login'), 1000)
-      } else {
-        Notifications.showAlert(setAlert, 'Registration failed. Please try again.', 'danger')
+      if (!userRes.ok) {
+        Notifications.showAlert(setAlert, 'User creation failed.', 'danger')
+        return
       }
+      const user = await userRes.json()
+
+      // 4. Crear profesional
+      const professionalPayload = {
+        user_id: user.id,
+        professional_type_id: Number(formData.professional_type), // Debe ser el id, ajusta si es necesario
+        biography: formData.biography,
+        years_of_experience: Number(formData.years_experience),
+        created_at: now,
+      }
+      const profRes = await fetch('http://localhost:8000/professionals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(professionalPayload),
+      })
+      if (!profRes.ok) {
+        Notifications.showAlert(setAlert, 'Professional creation failed.', 'danger')
+        return
+      }
+      const professional = await profRes.json()
+
+      // 5. Registrar especialidad principal
+      if (formData.specialty) {
+        await fetch('http://localhost:8000/professional_specialty', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            specialty_id: Number(formData.specialty),
+            professional_id: professional.id,
+          }),
+        })
+      }
+      // 6. Registrar subespecialidad si existe
+      if (formData.subspecialty) {
+        await fetch('http://localhost:8000/professional_specialty', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            specialty_id: Number(formData.subspecialty),
+            professional_id: professional.id,
+          }),
+        })
+      }
+
+      Notifications.showAlert(setAlert, 'Registration successful!', 'success')
+      setTimeout(() => navigate('/login'), 1000)
     } catch (error) {
       console.error('Error:', error)
       Notifications.showAlert(setAlert, 'An error occurred. Please try again later.', 'danger')
     }
   }
+
   const handleBlur = () => {
     if (formData.email && !validateEmail(formData.email)) {
       Notifications.showAlert(setAlert, 'Please enter a valid email address.', 'danger')
@@ -234,12 +243,15 @@ const Register = () => {
               />
             </CInputGroup>
             <CInputGroup className="mb-3 form-step">
-              <CInputGroupText className="input-group-text">
-                <CIcon icon={cilLockLocked} />
+              <CInputGroupText
+                style={{ cursor: 'pointer' }}
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
               </CInputGroupText>
               <CFormInput
                 className="form-input"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 name="password"
                 value={formData.password}
@@ -251,6 +263,42 @@ const Register = () => {
       case 2:
         return (
           <>
+            <CInputGroup className="mb-3 form-step">
+              <CInputGroupText>Estado</CInputGroupText>
+              <CFormSelect
+                className="form-select"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+              >
+                <option value="">Seleccione estado</option>
+                {states.map((state) => (
+                  <option key={state.id} value={state.id}>
+                    {state.name}
+                  </option>
+                ))}
+              </CFormSelect>
+            </CInputGroup>
+            {formData.state && (
+              <CInputGroup className="mb-3 form-step">
+                <CInputGroupText>Ciudad</CInputGroupText>
+                <CFormSelect
+                  className="form-select"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Seleccione ciudad</option>
+                  {cities
+                    .filter((city) => Number(city.state_id) === Number(formData.state))
+                    .map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
+                    ))}
+                </CFormSelect>
+              </CInputGroup>
+            )}
             <CInputGroup className="mb-3 form-step">
               <CInputGroupText>📍</CInputGroupText>
               <CFormInput
@@ -304,62 +352,63 @@ const Register = () => {
               <CInputGroupText>📝</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Description"
-                name="description"
-                value={formData.description}
+                placeholder="biography"
+                name="biography"
+                value={formData.biography}
                 onChange={handleInputChange}
               />
             </CInputGroup>
+            {/* Tipo de profesional */}
             <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>🏥</CInputGroupText>
+              <CInputGroupText>👤</CInputGroupText>
               <CFormSelect
                 className="form-select"
-                name="role_id"
-                value={formData.role_id}
+                name="professional_type"
+                value={formData.professional_type}
                 onChange={handleInputChange}
+                required
               >
-                <option value="">Select type of professional</option>
-                <option value="Administrator">Administrator</option>
-                <option value="Doctor">Doctor</option>
-                <option value="Nurse">Nurse</option>
-                <option value="Therapist">Therapist</option>
+                <option value="">Seleccione tipo de profesional</option>
+                {professionalTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
               </CFormSelect>
             </CInputGroup>
-            {formData.role_id && (
+            {formData.professional_type && (
               <>
                 <CInputGroup className="mb-3 form-step">
-                  <CInputGroupText>Specialty</CInputGroupText>
+                  <CInputGroupText>Especialidad</CInputGroupText>
                   <CFormSelect
                     className="form-select"
                     name="specialty"
                     value={formData.specialty}
                     onChange={handleInputChange}
                   >
-                    <option value="">Select Specialty</option>
-                    {Object.keys(specialties[formData.role_id]).map((specialty, idx) => (
-                      <option key={idx} value={specialty}>
-                        {specialty}
+                    <option value="">Seleccione especialidad</option>
+                    {specialties.map((spec) => (
+                      <option key={spec.id} value={spec.id}>
+                        {spec.name}
                       </option>
                     ))}
                   </CFormSelect>
                 </CInputGroup>
                 {formData.specialty && (
                   <CInputGroup className="mb-3 form-step">
-                    <CInputGroupText>Subspecialty</CInputGroupText>
+                    <CInputGroupText>Subespecialidad</CInputGroupText>
                     <CFormSelect
                       className="form-select"
                       name="subspecialty"
                       value={formData.subspecialty}
                       onChange={handleInputChange}
                     >
-                      <option value="">Select Subspecialty</option>
-                      {specialties[formData.role_id][formData.specialty].map(
-                        (subspecialty, idx) => (
-                          <option key={idx} value={subspecialty}>
-                            {subspecialty}
-                          </option>
-                        ),
-                      )}
+                      <option value="">Seleccione subespecialidad</option>
+                      {subspecialties.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
                     </CFormSelect>
                   </CInputGroup>
                 )}

@@ -3,15 +3,16 @@ import { getStyle } from '@coreui/utils'
 import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader } from '@coreui/react'
 import './Styles.css/ChartBarExample.css'
+import { useTranslation } from 'react-i18next'
 
 const ChartBarExample = () => {
   const chartRef = useRef(null)
+  const { t } = useTranslation()
   const [chartData, setChartData] = useState({
     pending: [],
     confirmed: [],
     completed: [],
-    canceledByPatient: [],
-    canceledByProfessional: [],
+    canceled: [],
     professionals: [],
     professionalCounts: [],
   })
@@ -19,48 +20,53 @@ const ChartBarExample = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [appointmentsResponse, usersResponse] = await Promise.all([
+        // Traer appointments, users y professionals
+        const [appointmentsResponse, usersResponse, professionalsResponse] = await Promise.all([
           fetch('http://localhost:8000/appointments'),
           fetch('http://localhost:8000/users'),
+          fetch('http://localhost:8000/professionals'),
         ])
         const appointments = await appointmentsResponse.json()
         const users = await usersResponse.json()
+        const professionals = await professionalsResponse.json()
 
-        // Crear un mapa para acceder rápido al usuario por su ID
+        // Crear mapa userId -> nombre completo
         const usersMap = {}
         users.forEach((user) => {
           usersMap[user.id] = `${user.first_name} ${user.last_name}`
         })
-        // Initialize arrays for each status by month
+
+        // Crear mapa professionalId -> userId
+        const professionalToUserMap = {}
+        professionals.forEach((professional) => {
+          professionalToUserMap[professional.id] = professional.user_id
+        })
+
+        // Inicializar arrays para conteos mensuales
         const pending = new Array(12).fill(0)
         const confirmed = new Array(12).fill(0)
         const completed = new Array(12).fill(0)
-        const canceledByPatient = new Array(12).fill(0)
-        const canceledByProfessional = new Array(12).fill(0)
+        const canceled = new Array(12).fill(0)
 
-        // Count appointments by status and month
+        // Conteo de citas por estado y mes
         appointments.forEach((appointment) => {
           let month = null
 
-          // Determine the month based on the status
           if (
             appointment.status === 'canceled by patient' ||
             appointment.status === 'canceled by professional'
           ) {
-            // Use canceled_at if available, otherwise use scheduled_at
             if (appointment.canceled_at) {
               month = new Date(appointment.canceled_at).getMonth()
             } else if (appointment.scheduled_at) {
               month = new Date(appointment.scheduled_at).getMonth()
             }
           } else {
-            // Use scheduled_at for other statuses
             if (appointment.scheduled_at) {
               month = new Date(appointment.scheduled_at).getMonth()
             }
           }
 
-          // Increment the corresponding counter for the status
           if (month !== null) {
             if (appointment.status === 'pending') {
               pending[month]++
@@ -68,31 +74,35 @@ const ChartBarExample = () => {
               confirmed[month]++
             } else if (appointment.status === 'completed') {
               completed[month]++
-            } else if (appointment.status === 'canceled by patient') {
-              canceledByPatient[month]++
-            } else if (appointment.status === 'canceled by professional') {
-              canceledByProfessional[month]++
+            } else if (appointment.status === 'canceled') {
+              canceled[month]++
             }
           }
         })
-        // Process data for the professionals chart
+
+        // Contar pacientes atendidos por profesional
         const professionalCounts = appointments.reduce((acc, appointment) => {
-          // Incrementar el contador de pacientes para cada profesional
-          acc[appointment.professional] = (acc[appointment.professional] || 0) + 1
+          const professionalId = appointment.professional_id
+          if (professionalId) {
+            acc[professionalId] = (acc[professionalId] || 0) + 1
+          }
           return acc
         }, {})
 
-        // Convertir IDs en nombres completos usando usersMap
-        const professionals = Object.keys(professionalCounts).map((id) => usersMap[id] || 'Unknown')
+        // Mapear professionalIds a nombres usando professionalToUserMap y usersMap
+        const professionalsNames = Object.keys(professionalCounts).map((professionalId) => {
+          const userId = professionalToUserMap[professionalId]
+          return usersMap[userId] || 'Unknown'
+        })
+
         const professionalData = Object.values(professionalCounts)
 
         setChartData({
           pending,
           confirmed,
           completed,
-          canceledByPatient,
-          canceledByProfessional,
-          professionals,
+          canceled,
+          professionals: professionalsNames,
           professionalCounts: professionalData,
         })
       } catch (error) {
@@ -122,14 +132,9 @@ const ChartBarExample = () => {
         data: chartData.completed,
       },
       {
-        label: 'Canceled by Patient',
+        label: 'Canceled',
         backgroundColor: '#f44336',
-        data: chartData.canceledByPatient,
-      },
-      {
-        label: 'Canceled by Professional',
-        backgroundColor: '#9c27b0',
-        data: chartData.canceledByProfessional,
+        data: chartData.canceled,
       },
     ],
   }
@@ -174,7 +179,7 @@ const ChartBarExample = () => {
       <div className="row">
         <div className="col-sm-6">
           <CCard>
-            <CCardHeader style={{ fontWeight: 'bold' }}>Appointment Summary</CCardHeader>
+            <CCardHeader style={{ fontWeight: 'bold' }}>{t('Appointment Summary')}</CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
                 <CChart type="bar" data={data1} options={options} ref={chartRef} />
@@ -185,7 +190,7 @@ const ChartBarExample = () => {
         <div className="col-sm-6">
           <CCard>
             <CCardHeader style={{ fontWeight: 'bold' }}>
-              Professionals with Most Patients
+              {t('Professionals with Most Patients Attended')}
             </CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">

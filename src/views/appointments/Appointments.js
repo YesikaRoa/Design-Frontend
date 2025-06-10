@@ -4,6 +4,10 @@ import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import Notifications from '../../components/Notifications'
+import AsyncSelect from 'react-select/async'
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 
 import './styles/appointments.css'
 import '../users/styles/filter.css'
@@ -44,55 +48,118 @@ const Appointments = () => {
   const [visible, setVisible] = useState(false)
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
-
+  const [patients, setPatients] = useState([]) // [{id, user_id, ...}]
+  const [professionals, setProfessionals] = useState([]) // [{id, user_id, ...}]
+  const [cities, setCities] = useState([])
   const ModalAddRef = useRef()
+
+  // Cargar usuarios una sola vez (ya lo haces en useEffect)
   const [usersData, setUsersData] = useState([])
+
   const [selectedProfessional, setSelectedProfessional] = useState(null)
 
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const [appointmentsRes, usersRes] = await Promise.all([
+  // Pacientes válidos
+  const loadPatients = async (inputValue) => {
+    const patientUserIds = patients.map((p) => p.user_id)
+    return usersData
+      .filter(
+        (u) =>
+          String(u.role_id) === '3' &&
+          patientUserIds.includes(u.id) &&
+          `${u.first_name} ${u.last_name}`.toLowerCase().startsWith(inputValue.toLowerCase()),
+      )
+      .slice(0, 5)
+      .map((u) => ({
+        label: `${u.first_name} ${u.last_name}`,
+        value: u.id,
+      }))
+  }
+
+  // Profesionales válidos
+  const loadProfessionals = async (inputValue) => {
+    const professionalUserIds = professionals.map((p) => p.user_id)
+    return usersData
+      .filter(
+        (u) =>
+          String(u.role_id) === '2' &&
+          professionalUserIds.includes(u.id) &&
+          `${u.first_name} ${u.last_name}`.toLowerCase().startsWith(inputValue.toLowerCase()),
+      )
+      .slice(0, 5)
+      .map((u) => ({
+        label: `${u.first_name} ${u.last_name}`,
+        value: u.id,
+      }))
+  }
+
+  const loadCities = async (inputValue) => {
+    return cities
+      .filter((city) => city.name.toLowerCase().startsWith(inputValue.toLowerCase()))
+      .slice(0, 5)
+      .map((city) => ({
+        label: city.name,
+        value: city.id,
+      }))
+  }
+
+  const fetchAppointments = async () => {
+    try {
+      const [appointmentsRes, usersRes, patientsRes, professionalsRes, citiesRes] =
+        await Promise.all([
           fetch('http://localhost:8000/appointments'),
           fetch('http://localhost:8000/users'),
+          fetch('http://localhost:8000/patient'),
+          fetch('http://localhost:8000/professionals'),
+          fetch('http://localhost:8000/city'), // <-- agrega fetch de ciudades aquí
         ])
-        if (!appointmentsRes.ok || !usersRes.ok) {
-          throw new Error('Failed to fetch data')
-        }
-        const appointmentsData = await appointmentsRes.json()
-        const usersData = await usersRes.json()
-        //Enriquese los datos de las citas con los nombres de los pacientes y profesionales
-        const enrichedAppointments = appointmentsData.map((appointment) => {
-          const patient = usersData.find((user) => user.id === appointment.patient)
-          // Filtrar profesional por id y que tenga un role_id que represente un profesional válido
-          const professional = usersData.find(
-            (user) =>
-              user.id === appointment.professional &&
-              (user.role_id === 'Doctor' ||
-                user.role_id === 'Nurse' ||
-                user.role_id === 'Therapist'),
-          )
+      if (
+        !appointmentsRes.ok ||
+        !usersRes.ok ||
+        !patientsRes.ok ||
+        !professionalsRes.ok ||
+        !citiesRes.ok
+      ) {
+        throw new Error('Failed to fetch data')
+      }
+      const appointmentsData = await appointmentsRes.json()
+      const usersData = await usersRes.json()
+      const patientsData = await patientsRes.json()
+      const professionalsData = await professionalsRes.json()
+      const citiesData = await citiesRes.json() // <-- ciudades aquí
 
-          return {
-            ...appointment,
-            patient: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown',
-            professional: professional
-              ? `${professional.first_name} ${professional.last_name}`
-              : 'Unknown',
-          }
-        })
-        setAppointments(enrichedAppointments)
-        setFilteredAppointments(enrichedAppointments)
-        setUsersData(usersData)
-      } catch (error) {}
+      setPatients(patientsData)
+      setProfessionals(professionalsData)
+      setCities(citiesData) // <-- actualiza el estado
+
+      // Usa citiesData en vez de cities (que puede estar vacío)
+      const enrichedAppointments = appointmentsData.map((appointment) => {
+        const patientObj = patientsData.find((p) => p.id === appointment.patient_id)
+        const professionalObj = professionalsData.find((p) => p.id === appointment.professional_id)
+        const patientUser = patientObj ? usersData.find((u) => u.id === patientObj.user_id) : null
+        const professionalUser = professionalObj
+          ? usersData.find((u) => u.id === professionalObj.user_id)
+          : null
+        const cityObj = citiesData.find((c) => String(c.id) === String(appointment.city_id))
+
+        return {
+          ...appointment,
+          patient: patientUser ? `${patientUser.first_name} ${patientUser.last_name}` : 'Unknown',
+          professional: professionalUser
+            ? `${professionalUser.first_name} ${professionalUser.last_name}`
+            : 'Unknown',
+          city: cityObj ? cityObj.name : 'Unknown',
+        }
+      })
+      setAppointments(enrichedAppointments)
+      setFilteredAppointments(enrichedAppointments)
+      setUsersData(usersData)
+    } catch (error) {
+      // Manejo de error
     }
+  }
+  useEffect(() => {
     fetchAppointments()
   }, [])
-
-  const handleProfessionalChange = (professionalId) => {
-    console.log('Professional selected:', professionalId)
-    setSelectedProfessional(professionalId)
-  }
 
   const professionalSpecialty =
     selectedProfessional && usersData.length > 0
@@ -100,50 +167,38 @@ const Appointments = () => {
           ?.specialty || 'Not specified'
       : null
 
-  // Extraer las opciones únicas para los campos del formulario, donde en users con role_id sea :Doctor, Nurse o Therapist y para pacientes role_id sea Patient
-  const uniquePatients = usersData
-    .filter((user) => user.role_id === 'Patient')
-    .map((user) => ({ label: `${user.first_name} ${user.last_name}`, value: user.id }))
-
-  const uniqueProfessionals = usersData
-    .filter((user) => ['Doctor', 'Nurse', 'Therapist'].includes(user.role_id))
-    .map((user) => ({ label: `${user.first_name} ${user.last_name}`, value: user.id }))
-
-  const specialtyOptions = professionalSpecialty
-    ? [{ label: professionalSpecialty, value: professionalSpecialty }]
-    : []
-
   const appointmentSteps = [
     {
+      // Paso 1: Selección de paciente y profesional
       fields: [
         {
           name: 'patient',
           label: 'Patient',
           type: 'select',
-          placeholder: 'Select patient',
-          options: uniquePatients,
           required: true,
+          placeholder: 'Select patient',
+          options: [], // Usado por customFields con AsyncSelect
         },
         {
           name: 'professional',
           label: 'Professional',
           type: 'select',
+          required: true,
           placeholder: 'Select professional',
-          options: uniqueProfessionals,
-          required: true,
-          onChange: (event) => handleProfessionalChange(event.target.value),
-        },
-        {
-          name: 'scheduled_at',
-          type: 'datetime-local',
-          label: 'Scheduled At',
-          placeholder: 'Select date and time',
-          required: true,
+          options: [], // Usado por customFields con AsyncSelect
         },
       ],
     },
     {
+      // Paso 2: Fecha, estado y ciudad
       fields: [
+        {
+          name: 'scheduled_at',
+          type: 'text', // o simplemente omite el type
+          label: 'Scheduled At',
+          required: true,
+          placeholder: 'Select date and time',
+        },
         {
           name: 'status',
           label: 'Status',
@@ -153,91 +208,44 @@ const Appointments = () => {
             { label: 'Pending', value: 'pending' },
             { label: 'Confirmed', value: 'confirmed' },
             { label: 'Completed', value: 'completed' },
-            { label: 'Canceled by patient', value: 'Canceled by patient' },
-            { label: 'Canceled by professional', value: 'Canceled by professional' },
+            { label: 'Canceled', value: 'canceled' },
           ],
         },
         {
-          name: 'city',
+          name: 'city_id',
           label: 'City',
           type: 'select',
           required: true,
-          options: [
-            { label: 'San Cristóbal', value: 'San Cristóbal' },
-            { label: 'Táriba', value: 'Táriba' },
-            { label: 'La Fría', value: 'La Fría' },
-            { label: 'San Antonio del Táchira', value: 'San Antonio del Táchira' },
-            { label: 'Rubio', value: 'Rubio' },
-            { label: 'La Grita', value: 'La Grita' },
-          ],
-        },
-        {
-          name: 'category',
-          label: 'Category',
-          type: 'select',
-          required: true,
-          options: [
-            { label: 'Rehabilitación física', value: 'Rehabilitación física' },
-            {
-              label: 'Terapia de movilidad y flexibilidad',
-              value: 'Terapia de movilidad y flexibilidad',
-            },
-            { label: 'Terapia de relajación muscular', value: 'Terapia de relajación muscular' },
-            { label: 'Entrenamiento postural', value: 'Entrenamiento postural' },
-            { label: 'Rehabilitación neurológica', value: 'Rehabilitación neurológica' },
-            { label: 'Consulta diagnóstica general', value: 'Consulta diagnóstica general' },
-            {
-              label: 'Tratamiento de enfermedades comunes',
-              value: 'Tratamiento de enfermedades comunes',
-            },
-            { label: 'Control y seguimiento médico', value: 'Control y seguimiento médico' },
-            { label: 'Educación y prevención en salud', value: 'Educación y prevención en salud' },
-            {
-              label: 'Evaluación de laboratorio o radiológica',
-              value: 'Evaluación de laboratorio o radiológica',
-            },
-            { label: 'Administración de medicamentos', value: 'Administración de medicamentos' },
-            {
-              label: 'Control y monitoreo de signos vitales',
-              value: 'Control y monitoreo de signos vitales',
-            },
-            { label: 'Cuidados postoperatorios', value: 'Cuidados postoperatorios' },
-            { label: 'Curación y manejo de heridas', value: 'Curación y manejo de heridas' },
-            { label: 'Apoyo en procedimientos médicos', value: 'Apoyo en procedimientos médicos' },
-            { label: 'Consulta médica', value: 'Consulta médica' },
-            { label: 'Rehabilitación', value: 'Rehabilitación' },
-            { label: 'Emergencias', value: 'Emergencias' },
-            { label: 'Prevención', value: 'Prevención' },
-          ],
-        },
-        {
-          name: 'specialty',
-          label: 'Specialty',
-          type: 'select',
-          required: true,
-          options: specialtyOptions,
-          placeholder: 'Select specialty',
-          disabled: !professionalSpecialty, // Disable if no specialty is selected
+          options: [], // Usado por customFields con AsyncSelect
+          placeholder: 'Select city',
         },
       ],
     },
     {
+      // Paso 3: Notas y motivo de la visita
       fields: [
         {
           name: 'notes',
           label: 'Notes',
           type: 'textarea',
-          placeholder: 'Enter additional notes',
-        },
-        {
-          name: 'pathology',
-          label: 'Pathology',
-          placeholder: 'Enter pathology (if any)',
+          placeholder: 'Enter notes',
         },
         {
           name: 'reason_for_visit',
           label: 'Reason for visit',
+          type: 'text',
           placeholder: 'Enter reason for visit',
+        },
+        {
+          name: 'has_medical_record',
+          label: 'Do you have a medical history?',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Sí', value: 'true' },
+            { label: 'No', value: 'false' },
+          ],
+          placeholder: 'Do you have a medical history?',
         },
       ],
     },
@@ -245,51 +253,28 @@ const Appointments = () => {
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'appointments') {
+      const patientObj = patients.find((p) => p.user_id === formData.patient)
+      const professionalObj = professionals.find((p) => p.user_id === formData.professional)
+
       const newAppointment = {
-        ...formData,
-        id: String(Date.now()), // Genera un ID único temporal
         scheduled_at: formData.scheduled_at,
-        status: formData.status || 'pending',
-        city: formData.city || '',
-        notes: formData.notes || '',
-        pathology: formData.pathology || '',
-        reason_for_visit: formData.reason_for_visit || '',
+        status: formData.status,
+        notes: formData.notes,
+        reason_for_visit: formData.reason_for_visit,
+        patient_id: patientObj ? patientObj.id : null,
+        professional_id: professionalObj ? professionalObj.id : null,
+        city_id: formData.city_id,
+        has_medical_record: formData.has_medical_record === 'true',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
 
-      try {
-        const response = await fetch('http://localhost:8000/appointments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newAppointment),
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to save appointment')
-        }
-
-        const savedAppointment = await response.json()
-
-        // Enriquecer los datos de la cita con nombres de patient y professional
-        const patient = usersData.find((user) => user.id === savedAppointment.patient)
-        const professional = usersData.find(
-          (user) =>
-            user.id === savedAppointment.professional &&
-            ['Doctor', 'Nurse', 'Therapist'].includes(user.role_id),
-        )
-
-        const enrichedAppointment = {
-          ...savedAppointment,
-          patient: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown',
-          professional: professional
-            ? `${professional.first_name} ${professional.last_name}`
-            : 'Unknown',
-        }
-
-        setAppointments((prev) => [...prev, enrichedAppointment])
-        setFilteredAppointments((prev) => [...prev, enrichedAppointment])
-      } catch (error) {
-        console.error('Error adding appointment:', error)
-      }
+      await fetch('http://localhost:8000/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAppointment),
+      })
+      await fetchAppointments()
     }
   }
 
@@ -347,8 +332,7 @@ const Appointments = () => {
           { label: 'Pending', value: 'pending' },
           { label: 'Confirmed', value: 'confirmed' },
           { label: 'Completed', value: 'completed' },
-          { label: 'Canceled by patient', value: 'Canceled by patient' },
-          { label: 'Canceled by professional', value: 'Canceled by professional' },
+          { label: 'Canceled', value: 'canceled' },
         ]
         break
       case 'city':
@@ -437,14 +421,104 @@ const Appointments = () => {
         return 'info'
       case 'completed':
         return 'success'
-      case 'canceled by patient':
+      case 'canceled':
         return 'danger'
-      case 'canceled by professional':
-        return 'dark'
       default:
         return 'secondary'
     }
   }
+
+  const customFields = {
+    patient: ({ value, onChange, error, helperText, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={loadPatients}
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Buscar paciente...'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    professional: ({ value, onChange, error, helperText, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={loadProfessionals}
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Buscar profesional...'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    city_id: ({ value, onChange, error, helperText, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={loadCities}
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Buscar ciudad...'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    scheduled_at: ({ value, onChange, error, helperText, placeholder }) => (
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DateTimePicker
+          label="Scheduled At"
+          value={value ? new Date(value) : null}
+          onChange={(newValue) => {
+            onChange(newValue ? newValue.toISOString() : '')
+          }}
+          format="dd/MM/yyyy HH:mm"
+          slotProps={{
+            textField: {
+              variant: 'standard',
+              fullWidth: true,
+              error: !!error,
+              helperText,
+              placeholder,
+            },
+          }}
+        />
+      </LocalizationProvider>
+    ),
+    has_medical_record: ({ value, onChange, placeholder }) => (
+      <select
+        className="form-select"
+        value={
+          value === true || value === 'true'
+            ? 'true'
+            : value === false || value === 'false'
+              ? 'false'
+              : ''
+        }
+        onChange={(e) => {
+          const val = e.target.value
+          if (val === 'true') onChange('true')
+          else if (val === 'false') onChange('false')
+          else onChange('')
+        }}
+        required
+      >
+        <option value="">{placeholder || 'Do you have a medical history?'}</option>
+        <option value="true">Sí</option>
+        <option value="false">No</option>
+      </select>
+    ),
+  }
+
+  // Supón que tienes estos datos cargados:
+
+  useEffect(() => {
+    // ...otros fetch...
+    const fetchCities = async () => {
+      const res = await fetch('http://localhost:8000/city')
+      const data = await res.json()
+      setCities(data)
+    }
+    fetchCities()
+  }, [])
 
   return (
     <>
@@ -552,7 +626,8 @@ const Appointments = () => {
                 <strong>Professional:</strong> {selectedAppointment.professional}
               </p>
               <p>
-                <strong>Scheduled At:</strong> {selectedAppointment.scheduled_at}
+                <strong>Scheduled At:</strong>{' '}
+                {formatDate(selectedAppointment.scheduled_at, 'DATETIME')}
               </p>
               <p>
                 <strong>Status:</strong> {selectedAppointment.status}
@@ -561,21 +636,15 @@ const Appointments = () => {
                 <strong>City:</strong> {selectedAppointment.city}
               </p>
               <p>
-                <strong>Category:</strong> {selectedAppointment.category}
-              </p>
-              <p>
-                <strong>Specialty:</strong> {selectedAppointment.specialty}
-              </p>
-              <p>
-                <strong>Pathology:</strong>{' '}
-                {selectedAppointment.pathology || 'No pathology available'}
-              </p>
-              <p>
                 <strong>Notes:</strong> {selectedAppointment.notes || 'No notes available'}
               </p>
               <p>
                 <strong>Reason for visit:</strong>{' '}
                 {selectedAppointment.reason_for_visit || 'No notes available'}
+              </p>
+              <p>
+                <strong>Medical history:</strong>{' '}
+                {selectedAppointment.has_medical_record ? 'Yes' : 'No'}
               </p>
             </div>
           ) : (
@@ -590,6 +659,7 @@ const Appointments = () => {
         steps={appointmentSteps}
         onFinish={handleFinish}
         purpose="appointments"
+        customFields={customFields}
       />
     </>
   )

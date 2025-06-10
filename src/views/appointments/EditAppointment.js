@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './styles/EditAppointment.css'
+import AsyncSelect from 'react-select/async'
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+
 import {
   CButton,
   CCard,
@@ -32,6 +37,8 @@ const EditAppointment = () => {
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [cities, setCities] = useState([])
+  const [citiesLoading, setCitiesLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
@@ -49,6 +56,12 @@ const EditAppointment = () => {
       }
     }
     setLoading(false)
+    setCitiesLoading(true)
+    fetch('http://localhost:8000/city')
+      .then((res) => res.json())
+      .then((data) => setCities(data))
+      .catch((err) => setCities([]))
+      .finally(() => setCitiesLoading(false))
   }, [location])
 
   const handleFieldsDisabled = () => {
@@ -189,39 +202,34 @@ const EditAppointment = () => {
         <CCard className=" mb-4">
           <CCardBody>
             <CCardTitle>Edit Information</CCardTitle>
-            <CFormInput
-              type="text"
-              id="patient"
-              floatingLabel="Patient"
-              value={editedAppointment.patient}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, patient: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="professional"
-              floatingLabel="Professional"
-              value={editedAppointment.professional}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, professional: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="datetime-local"
-              id="scheduled_at"
-              floatingLabel="Date"
-              value={editedAppointment.scheduled_at}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, scheduled_at: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
+
+            {/* Scheduled At con DateTimePicker */}
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DateTimePicker
+                label="Scheduled At"
+                value={
+                  editedAppointment.scheduled_at ? new Date(editedAppointment.scheduled_at) : null
+                }
+                onChange={(newValue) =>
+                  setEditedAppointment({
+                    ...editedAppointment,
+                    scheduled_at: newValue ? newValue.toISOString() : '',
+                  })
+                }
+                format="dd/MM/yyyy HH:mm"
+                slotProps={{
+                  textField: {
+                    variant: 'standard',
+                    fullWidth: true,
+                    className: 'mb-3',
+                    disabled: fieldsDisabled,
+                  },
+                }}
+                disabled={fieldsDisabled}
+              />
+            </LocalizationProvider>
+
+            {/* Status */}
             <CFormSelect
               id="status"
               floatingLabel="Status"
@@ -238,67 +246,52 @@ const EditAppointment = () => {
               <option value="canceled by patient">Canceled by patient</option>
               <option value="completed">Completed</option>
             </CFormSelect>
-            <CFormSelect
-              id="city"
-              floatingLabel="City"
-              value={editedAppointment.city}
-              onChange={(e) => setEditedAppointment({ ...editedAppointment, city: e.target.value })}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            >
-              <option value="San Cristóbal">San Cristóbal</option>
-              <option value="Táriba">Táriba</option>
-              <option value="La Fría">La Fría</option>
-              <option value="San Antonio del Táchira">San Antonio del Táchira</option>
-              <option value="Rubio">Rubio</option>
-              <option value="La Grita">La Grita</option>
-            </CFormSelect>
-            <CFormSelect
-              id="category"
-              floatingLabel="Category"
-              value={editedAppointment.category}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, category: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            >
-              <option value="Consulta médica">Consulta médica</option>
-              <option value="Rehabilitación">Rehabilitación</option>
-              <option value="Emergencias">Emergencias</option>
-              <option value="Prevención">Prevención</option>
-              <option value="Atención de enfermería">Atención de enfermería</option>
-              <option value="Especialidad médica">Especialidad médica</option>
-            </CFormSelect>
-            <CFormSelect
-              id="specialty"
-              floatingLabel="Specialty"
-              value={editedAppointment.specialty}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, specialty: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            >
-              <option value="Pediatría">Pediatría</option>
-              <option value="Fisioterapia">Fisioterapia</option>
-              <option value="Medicina Intensiva">Medicina Intensiva</option>
-              <option value="Medicina General">Medicina General</option>
-              <option value="Terapia Ocupacional">Terapia Ocupacional</option>
-              <option value="Enfermería">Enfermería</option>
-              <option value="Dermatología">Dermatología</option>
-            </CFormSelect>
-            <CFormInput
-              type="text"
-              id="pathology"
-              floatingLabel="Pathology"
-              value={editedAppointment.pathology}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, pathology: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
+
+            {/* City con AsyncSelect */}
+            <div className="mb-3">
+              <AsyncSelect
+                cacheOptions
+                defaultOptions={
+                  cities
+                    .slice(0, 5)
+                    .map((city) => ({
+                      label: city.name,
+                      value: city.id,
+                    }))
+                }
+                value={
+                  cities
+                    .map((city) => ({
+                      label: city.name,
+                      value: city.id,
+                    }))
+                    .find((opt) => String(opt.value) === String(editedAppointment.city_id)) || null
+                }
+                loadOptions={async (inputValue) =>
+                  cities
+                    .filter((city) =>
+                      !inputValue
+                        ? true
+                        : city.name.toLowerCase().startsWith(inputValue.toLowerCase())
+                    )
+                    .map((city) => ({
+                      label: city.name,
+                      value: city.id,
+                    }))
+                }
+                onChange={(option) =>
+                  setEditedAppointment({
+                    ...editedAppointment,
+                    city_id: option ? option.value : '',
+                  })
+                }
+                placeholder={citiesLoading ? 'Cargando ciudades...' : 'Buscar ciudad...'}
+                isClearable
+                isDisabled={fieldsDisabled || citiesLoading}
+                styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+              />
+            </div>
+
             <CFormTextarea
               id="notes"
               floatingLabel="Notes"
@@ -319,6 +312,31 @@ const EditAppointment = () => {
               className="mb-3"
               disabled={fieldsDisabled}
             />
+            <CFormSelect
+              id="has_medical_record"
+              floatingLabel="¿Tiene historial médico?"
+              value={
+                editedAppointment.has_medical_record === true ||
+                editedAppointment.has_medical_record === 'true'
+                  ? 'true'
+                  : editedAppointment.has_medical_record === false ||
+                      editedAppointment.has_medical_record === 'false'
+                    ? 'false'
+                    : ''
+              }
+              onChange={(e) =>
+                setEditedAppointment({
+                  ...editedAppointment,
+                  has_medical_record: e.target.value === 'true',
+                })
+              }
+              className="mb-3"
+              disabled={fieldsDisabled}
+            >
+              <option value="">Seleccione una opción</option>
+              <option value="true">Sí</option>
+              <option value="false">No</option>
+            </CFormSelect>
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : saveChanges}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
               {fieldsDisabled ? 'Edit' : 'Save'}

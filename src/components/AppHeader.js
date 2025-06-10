@@ -15,22 +15,16 @@ import {
   useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import {
-  cilBell,
-  cilContrast,
-  cilEnvelopeOpen,
-  cilList,
-  cilMenu,
-  cilMoon,
-  cilSun,
-  cilChatBubble,
-} from '@coreui/icons'
+import { cilContrast, cilMenu, cilMoon, cilSun, cilTranslate } from '@coreui/icons'
 import { NotificationPopover } from '../views/notificationsProfessional/NotificationsProfessional'
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
+import { useTranslation } from 'react-i18next'
 
 const AppHeader = () => {
   const headerRef = useRef()
+  const { i18n } = useTranslation()
+
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
 
   const dispatch = useDispatch()
@@ -42,6 +36,19 @@ const AppHeader = () => {
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
     })
   }, [])
+
+  const changeLanguage = () => {
+    const currentLang = localStorage.getItem('i18nextLng') || 'en'
+    const newLang = currentLang === 'en' ? 'es' : 'en'
+
+    i18n
+      .changeLanguage(newLang)
+      .then(() => {
+        localStorage.setItem('i18nextLng', newLang) // Actualizar en localStorage
+        console.log(`Idioma cambiado a: ${newLang}`)
+      })
+      .catch((error) => console.error('Error al cambiar idioma:', error))
+  }
 
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
@@ -61,9 +68,10 @@ const AppHeader = () => {
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
           <CNavItem>
-            <NavLink to="/notifications-professional" className=" nav-link">
-              <CIcon icon={cilChatBubble} size="lg" />
-            </NavLink>
+            <CHeaderNav className="nav-link" style={{ cursor: 'pointer' }} onClick={changeLanguage}>
+              <CIcon icon={cilTranslate} size="lg" />
+              <span className="ms-1">{i18n.language.toUpperCase()}</span>
+            </CHeaderNav>
           </CNavItem>
         </CHeaderNav>
         <CHeaderNav>

@@ -44,6 +44,18 @@ export const Professionls = () => {
   const ModalAddRef = useRef()
   const [alert, setAlert] = useState(null)
   const [userToDelete, setUserToDelete] = useState(null)
+  const [professionalTypes, setProfessionalTypes] = useState([])
+  const [specialties, setSpecialties] = useState([])
+
+  useEffect(() => {
+    // Cargar tipos de profesional y especialidades
+    fetch('http://localhost:8000/professional_type')
+      .then((res) => res.json())
+      .then(setProfessionalTypes)
+    fetch('http://localhost:8000/specialty')
+      .then((res) => res.json())
+      .then(setSpecialties)
+  }, [])
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
@@ -81,29 +93,98 @@ export const Professionls = () => {
           : 'No birth date available',
         gender: formData.gender || '',
         avatar: formData.avatar || defaultAvatar,
-        role_id: formData.role || 'No role assigned',
+        role_id: '2',
         status: formData.status || 'Active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
 
       try {
-        const response = await fetch('http://localhost:8000/users', {
+        // 1. Crear usuario
+        const userRes = await fetch('http://localhost:8000/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(completeUser),
         })
+        if (!userRes.ok) {
+          const errorText = await userRes.text()
+          throw new Error('Error al crear usuario: ' + errorText)
+        }
+        const savedUser = await userRes.json()
 
-        const savedUser = await response.json()
+        // 2. Crear professional
+        const professionalRes = await fetch('http://localhost:8000/professionals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: savedUser.id,
+            professional_type_id: formData.professional_type_id,
+            biography: formData.biography || '',
+            years_of_experience: formData.years_of_experience
+              ? Number(formData.years_of_experience)
+              : 0,
+            created_at: new Date().toISOString(),
+          }),
+        })
+        if (!professionalRes.ok) {
+          const errorText = await professionalRes.text()
+          throw new Error('Error al crear professional: ' + errorText)
+        }
+        const savedProfessional = await professionalRes.json()
 
-        setUsers((prev) => [...prev, { ...savedUser }])
-        setFilteredUsers((prev) => [...prev, { ...savedUser }])
+        // 3. Crear professional_specialty (especialidad)
+        await fetch('http://localhost:8000/professional_specialty', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            professional_id: savedProfessional.id,
+            specialty_id: formData.specialty_id,
+          }),
+        })
+        // 3b. Si hay subespecialidad, crear también
+        if (formData.subspecialty_id) {
+          await fetch('http://localhost:8000/professional_specialty', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              professional_id: savedProfessional.id,
+              specialty_id: formData.subspecialty_id,
+            }),
+          })
+        }
+        // 4. Actualizar estado local
+        setUsers((prev) => [
+          ...prev,
+          {
+            ...savedUser,
+            professional_id: savedProfessional.id,
+            professional_type_id: formData.professional_type_id,
+            specialty_id: formData.specialty_id,
+            subspecialty_id: formData.subspecialty_id || null,
+          },
+        ])
+        setFilteredUsers((prev) => [
+          ...prev,
+          {
+            ...savedUser,
+            professional_id: savedProfessional.id,
+            professional_type_id: formData.professional_type_id,
+            specialty_id: formData.specialty_id,
+            subspecialty_id: formData.subspecialty_id || null,
+          },
+        ])
+        Notifications.showAlert(setAlert, 'Professional created successfully!', 'success')
       } catch (error) {
-        console.error('Error saving user:', error)
-        Notifications.showAlert(setAlert, 'An error occurred while saving the user.', 'error')
+        console.error('Error saving professional:', error)
+        Notifications.showAlert(
+          setAlert,
+          'An error occurred while saving the professional.',
+          'error',
+        )
       }
     }
   }
+
   const userSteps = [
     {
       fields: [
@@ -149,15 +230,45 @@ export const Professionls = () => {
     {
       fields: [
         {
-          name: 'role',
-          label: 'Role',
-          type: 'select', // Cambiado a tipo select
+          name: 'professional_type_id',
+          label: 'Professional Type',
+          type: 'select',
           required: true,
-          options: [
-            { label: 'Doctor', value: 'Doctor' },
-            { label: 'Nurse', value: 'Nurse' },
-            { label: 'Therapist', value: 'Therapist' },
-          ],
+          options: professionalTypes.map((t) => ({ label: t.name, value: t.id })),
+        },
+        // Solo specialties (1-15)
+        {
+          name: 'specialty_id',
+          label: 'Specialty',
+          type: 'select',
+          required: true,
+          options: specialties
+            .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
+            .map((s) => ({ label: s.name, value: s.id })),
+        },
+        // Subspecialty (16-60)
+        {
+          name: 'subspecialty_id',
+          label: 'Subspecialty',
+          type: 'select',
+          required: false,
+          options: specialties
+            .filter((s) => Number(s.id) >= 16 && Number(s.id) <= 60)
+            .map((s) => ({ label: s.name, value: s.id })),
+        },
+        {
+          name: 'biography',
+          label: 'Biography',
+          type: 'textarea',
+          placeholder: 'Enter biography',
+          required: false,
+        },
+        {
+          name: 'years_of_experience',
+          label: 'Years of Experience',
+          type: 'number',
+          placeholder: 'Enter years of experience',
+          required: false,
         },
         {
           name: 'status',
@@ -189,29 +300,48 @@ export const Professionls = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
-        // Realiza la solicitud DELETE al backend
+        // 1. Buscar professional por user_id
+        const profRes = await fetch(
+          `http://localhost:8000/professionals?user_id=${userToDelete.id}`,
+        )
+        const professionals = await profRes.json()
+        for (const professional of professionals) {
+          // 2. Buscar y eliminar todos los professional_specialty relacionados
+          const specRes = await fetch(
+            `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
+          )
+          const specialties = await specRes.json()
+          if (Array.isArray(specialties)) {
+            await Promise.all(
+              specialties.map((s) =>
+                fetch(`http://localhost:8000/professional_specialty/${s.id}`, {
+                  method: 'DELETE',
+                }),
+              ),
+            )
+          }
+          // 3. Eliminar professional
+          await fetch(`http://localhost:8000/professionals/${professional.id}`, {
+            method: 'DELETE',
+          })
+        }
+        // 4. Eliminar usuario
         const response = await fetch(`http://localhost:8000/users/${userToDelete.id}`, {
           method: 'DELETE',
         })
-
         if (response.ok) {
-          // Actualiza la lista de usuarios eliminando el usuario borrado
           setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
           setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-
-          // Muestra una notificación de éxito
           Notifications.showAlert(setAlert, 'User deleted', 'success')
         } else {
-          // Muestra una notificación de error
           Notifications.showAlert(setAlert, 'Failed to delete the user. Please try again.', 'error')
         }
       } catch (error) {
         console.error('Error deleting user:', error)
-        // Muestra una notificación de error
         Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'error')
       } finally {
-        setVisible(false) // Cierra la modal
-        setUserToDelete(null) // Limpia el usuario seleccionado
+        setVisible(false)
+        setUserToDelete(null)
       }
     }
   }
@@ -290,25 +420,53 @@ export const Professionls = () => {
     setFilters(resetValues)
     setFilteredUsers(users)
   }
-  useEffect(() => {
-    const roles = ['Doctor', 'Nurse', 'Therapist']
 
+  useEffect(() => {
     fetch('http://localhost:8000/users')
       .then((res) => {
-        if (!res.ok) {
-          throw new Error('Error al obtener los usuarios.')
-        }
+        if (!res.ok) throw new Error('Error al obtener los usuarios.')
         return res.json()
       })
-      .then((data) => {
-        // Filtrar usuarios por roles en el cliente
-        const filteredData = data.filter((user) => roles.includes(user.role_id))
-        const normalizedUsers = filteredData.map((user) => ({
-          ...user,
-          id: String(user.id), // asegura que todos los IDs sean string
-        }))
-        setUsers(normalizedUsers)
-        setFilteredUsers(normalizedUsers)
+      .then(async (data) => {
+        // Solo usuarios con role_id = 2 (Professional)
+        const professionals = data.filter((user) => String(user.role_id) === '2')
+        // Cargar datos de professional y especialidad
+        const professionalsData = await Promise.all(
+          professionals.map(async (user) => {
+            // Busca professional por user_id
+            const profRes = await fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
+            const profArr = await profRes.json()
+            const professional = profArr[0] || {}
+
+            // Busca todas las especialidades de este professional
+            let specialty_id = null
+            let subspecialty_id = null
+            if (professional.id) {
+              const specRes = await fetch(
+                `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
+              )
+              const specArr = await specRes.json()
+              // Buscar por rango de IDs
+              specArr.forEach((spec) => {
+                const idNum = Number(spec.specialty_id)
+                if (idNum >= 1 && idNum <= 15) specialty_id = spec.specialty_id
+                if (idNum >= 16 && idNum <= 60) subspecialty_id = spec.specialty_id
+              })
+            }
+            return {
+              ...user,
+              professional_id: professional.id,
+              professional_type_id: professional.professional_type_id,
+              specialty_id,
+              subspecialty_id,
+              biography: professional.biography || '',
+              years_of_experience: professional.years_of_experience || '',
+              created_at: professional.created_at || '',
+            }
+          }),
+        )
+        setUsers(professionalsData)
+        setFilteredUsers(professionalsData)
       })
       .catch((error) => {
         console.error('Error al cargar los usuarios:', error)
@@ -402,7 +560,7 @@ export const Professionls = () => {
       />
       <ModalInformation
         visible={infoVisible}
-        onClose={() => setInfoVisible(false)} // Cierra la modal
+        onClose={() => setInfoVisible(false)}
         title="Professional information"
         content={
           selectedProfessional ? (
@@ -416,6 +574,26 @@ export const Professionls = () => {
               <p>
                 <strong>Email:</strong> {selectedProfessional.email}
               </p>
+              <p>
+                <strong>Professional Type:</strong>{' '}
+                {professionalTypes.find(
+                  (t) => String(t.id) === String(selectedProfessional.professional_type_id),
+                )?.name || 'N/A'}
+              </p>
+              <p>
+                <strong>Specialty:</strong>{' '}
+                {specialties.find((s) => String(s.id) === String(selectedProfessional.specialty_id))
+                  ?.name || 'N/A'}
+              </p>
+              {/* Si quieres mostrar la subespecialidad, puedes agregar esto: */}
+              {selectedProfessional.subspecialty_id && (
+                <p>
+                  <strong>Subspecialty:</strong>{' '}
+                  {specialties.find(
+                    (s) => String(s.id) === String(selectedProfessional.subspecialty_id),
+                  )?.name || 'N/A'}
+                </p>
+              )}
               <p>
                 <strong>Address:</strong> {selectedProfessional.address || 'No address available'}
               </p>
@@ -431,6 +609,19 @@ export const Professionls = () => {
               </p>
               <p>
                 <strong>Status:</strong> {selectedProfessional.status}
+              </p>
+              <p>
+                <strong>Biography:</strong> {selectedProfessional.biography || 'N/A'}
+              </p>
+              <p>
+                <strong>Years of Experience:</strong>{' '}
+                {selectedProfessional.years_of_experience || 'N/A'}
+              </p>
+              <p>
+                <strong>Created At:</strong>{' '}
+                {selectedProfessional.created_at
+                  ? new Date(selectedProfessional.created_at).toLocaleString()
+                  : 'N/A'}
               </p>
             </div>
           ) : (
