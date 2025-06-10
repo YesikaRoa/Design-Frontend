@@ -2,8 +2,9 @@ import React from 'react'
 import '../views/users/styles/filter.css'
 import { CFormInput, CFormSelect } from '@coreui/react'
 import '@coreui/coreui/dist/css/coreui.min.css' // Importa el CSS base de CoreUI
-
+import { useTranslation } from 'react-i18next'
 const UserFilter = ({ onFilter, resetFilters, dataFilter }) => {
+  const { t } = useTranslation()
   return (
     <div className="filter-container">
       {dataFilter.map((filter) =>
@@ -37,10 +38,10 @@ const UserFilter = ({ onFilter, resetFilters, dataFilter }) => {
 
       <div className="filter-buttons">
         <button onClick={onFilter} className="btn btn-primary search-button">
-          Search
+          {t('Search')}
         </button>
         <button className="reset-button" onClick={resetFilters}>
-          Reset
+          {t('Reset')}
         </button>
       </div>
     </div>

@@ -44,12 +44,22 @@ const UserDetails = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [selectedPatientId, setselectedPatientId] = useState(null)
 
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [roles, setRoles] = useState([])
+  const [patient, setPatient] = useState(null)
+  const [medicalData, setMedicalData] = useState('')
 
+  useEffect(() => {
+    // ...existing code...
+    // Obtener roles
+    fetch('http://localhost:8000/role')
+      .then((res) => res.json())
+      .then(setRoles)
+  }, [location, navigate])
+
+  const getRoleName = (roleId) => {
+    const role = roles.find((r) => String(r.id) === String(roleId))
+    return role ? role.name : roleId
+  }
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
   }
@@ -88,6 +98,19 @@ const UserDetails = () => {
         setUser(result)
         Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
       }
+
+      // Actualizar medical_data en patient
+      if (patient) {
+        await fetch(`http://localhost:8000/patient/${patient.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...patient,
+            medical_data: medicalData,
+            updated_at: new Date().toISOString(),
+          }),
+        })
+      }
     } catch (error) {
       console.error('Error saving changes:', error)
       Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
@@ -105,13 +128,33 @@ const UserDetails = () => {
       setUser(newUser)
       localStorage.setItem('selectedPatient', JSON.stringify(newUser))
 
+      // Obtener datos del paciente
+      fetch(`http://localhost:8000/patient?user_id=${newUser.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.length > 0) {
+            setPatient(data[0])
+            setMedicalData(data[0].medical_data)
+          }
+        })
+
       const firstName = newUser.first_name.split(' ')[0]
       const normalizedFirstName = normalizeNameForURL(firstName)
       navigate(`/patients/${normalizedFirstName}`, { replace: true })
     } else {
       const storedUser = localStorage.getItem('selectedPatient')
       if (storedUser) {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
+        // Obtener datos del paciente
+        fetch(`http://localhost:8000/patient?user_id=${parsedUser.id}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.length > 0) {
+              setPatient(data[0])
+              setMedicalData(data[0].medical_data)
+            }
+          })
       }
       setLoading(false)
     }
@@ -119,41 +162,6 @@ const UserDetails = () => {
 
   if (loading) return <p>Cargando usuario...</p>
   if (!user) return <p>No se encontró el usuario.</p>
-
-  const handleChangePassword = () => {
-    setShowChangePasswordModal(true)
-  }
-
-  const handlePasswordChangeSubmit = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Todos los campos son obligatorios.', 'danger')
-    }
-    if (newPassword !== confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Las contraseñas nuevas no coinciden.', 'warning')
-    }
-    try {
-      const res = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!res.ok) throw new Error('Usuario no encontrado.')
-      const dbUser = await res.json()
-      if (dbUser.password !== currentPassword) {
-        return Notifications.showAlert(setAlert, 'The current password is incorrect.', 'danger')
-      }
-      const updateRes = await fetch(`http://localhost:8000/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...dbUser, password: newPassword }),
-      })
-      if (!updateRes.ok) throw new Error('Error updating password.')
-      Notifications.showAlert(setAlert, 'Password updated correctly.', 'success')
-      setShowChangePasswordModal(false)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-    } catch (err) {
-      console.error(err)
-      Notifications.showAlert(setAlert, 'Error changing password.', 'danger')
-    }
-  }
 
   const handleToggleStatus = async (userId) => {
     try {
@@ -185,7 +193,18 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/users/${selectedPatientId}`, {
+      // 1. Buscar el paciente por user_id
+      const patientRes = await fetch(`http://localhost:8000/patient?user_id=${user.id}`)
+      const patientData = await patientRes.json()
+      if (patientData && patientData.length > 0) {
+        // 2. Eliminar el paciente
+        await fetch(`http://localhost:8000/patient/${patientData[0].id}`, {
+          method: 'DELETE',
+        })
+      }
+
+      // 3. Eliminar el usuario
+      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
         method: 'DELETE',
       })
 
@@ -225,7 +244,7 @@ const UserDetails = () => {
             </CCardTitle>
             <CCardText>
               <strong>Email:</strong> {user.email} <br />
-              <strong>Role:</strong> {user.role_id} <br />
+              <strong>Role:</strong> {getRoleName(user.role_id)} <br />
               <strong>Status:</strong> {user.status} <br />
               <strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()} <br />
               <strong>Last Updated:</strong> {new Date(user.updated_at).toLocaleDateString()}
@@ -235,10 +254,6 @@ const UserDetails = () => {
         <CCard className="mt-3">
           <CCardBody>
             <div className="card-actions-container">
-              <span className="card-actions-link change-password" onClick={handleChangePassword}>
-                <CIcon icon={cilLockLocked} className="me-2" width={24} height={24} />
-                Change Password
-              </span>
               <span
                 className={`card-actions-link ${user.status === 'Active' ? 'deactivate-user' : 'activate-user'}`}
                 onClick={() => handleToggleStatus(user.id)}
@@ -262,7 +277,7 @@ const UserDetails = () => {
           </CCardBody>
         </CCard>
       </CCol>
-      <CCol md={8}>
+      <CCol md={8} className="space-component">
         <CCard>
           <CCardBody>
             <CCardTitle>Edit Patient</CCardTitle>
@@ -306,6 +321,15 @@ const UserDetails = () => {
               className="mb-3"
               disabled={fieldsDisabled}
             />
+            <CFormInput
+              type="text"
+              id="medicalData"
+              floatingLabel="Medical Data"
+              value={medicalData}
+              className="mb-3"
+              disabled={fieldsDisabled}
+              onChange={(e) => setMedicalData(e.target.value)}
+            />
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
               {fieldsDisabled ? 'Edit' : 'Save'}
@@ -321,70 +345,6 @@ const UserDetails = () => {
         title="Delete user"
         message="Are you sure you want to delete this user? This action cannot be undone."
       />
-
-      <CModal
-        alignment="center"
-        visible={showChangePasswordModal}
-        onClose={() => setShowChangePasswordModal(false)}
-      >
-        <CModalHeader>
-          <CModalTitle>Change Password</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm>
-            <CInputGroup className="mb-2">
-              <CFormInput
-                type={showPasswords.current ? 'text' : 'password'}
-                placeholder="Current password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, current: !prev.current }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.current ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-            <CInputGroup className="mb-2">
-              <CFormInput
-                type={showPasswords.new ? 'text' : 'password'}
-                placeholder="New password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, new: !prev.new }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.new ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-            <CInputGroup>
-              <CFormInput
-                type={showPasswords.confirm ? 'text' : 'password'}
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, confirm: !prev.confirm }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.confirm ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-          </CForm>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowChangePasswordModal(false)}>
-            Cancel
-          </CButton>
-          <CButton color="primary" onClick={handlePasswordChangeSubmit}>
-            Change Password
-          </CButton>
-        </CModalFooter>
-      </CModal>
     </CRow>
   )
 }

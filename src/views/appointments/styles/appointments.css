@@ -11,6 +11,23 @@
 .d-flex {
   display: flex;
 }
+/* Forzar tamaño compacto del pop-up del calendario de MUI X */
+.MuiPickersPopper-root .MuiPaper-root {
+  min-width: 220px !important;
+  max-width: 260px !important;
+  width: 220px !important;
+  min-height: 220px !important;
+  max-height: 220px !important; /* Permite suficiente alto para todo el contenido */
+  height: auto !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Forzar el layout interno del calendario */
+.MuiPickersLayout-root {
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
 
 .justify-content-end {
   justify-content: flex-end;

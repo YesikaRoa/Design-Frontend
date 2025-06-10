@@ -11,7 +11,7 @@
       "birth_date": "1985-11-20",
       "gender": "M",
       "avatar": "src/assets/images/avatars/1.jpg",
-      "role_id": "Patient",
+      "role_id": "3",
       "status": "Inactive",
       "created_at": "2023-01-02T10:00:00Z",
       "updated_at": "2024-01-02T10:00:00Z"
@@ -27,7 +27,7 @@
       "birth_date": "1985-11-20",
       "gender": "M",
       "avatar": "src/assets/images/avatars/2.jpg",
-      "role_id": "Patient",
+      "role_id": "3",
       "status": "Active",
       "created_at": "2023-01-02T10:00:00Z",
       "updated_at": "2024-01-02T10:00:00Z"
@@ -43,14 +43,20 @@
       "birth_date": "1992-08-15",
       "gender": "M",
       "avatar": "src/assets/images/avatars/3.jpg",
-      "role_id": "Therapist",
+      "role_id": "2",
       "description": "Terapeuta con enfoque en rehabilitación física y mental.",
       "specialty": "Terapeuta",
       "subspecialty": "Fisioterapia",
       "years_experience": "7",
-      "status": "Active",
+      "status": "Inactive",
       "created_at": "2023-01-03T10:00:00Z",
-      "updated_at": "2024-01-03T10:00:00Z"
+      "updated_at": "2024-01-03T10:00:00Z",
+      "professional_id": "new_id_1",
+      "professional_type_id": "3",
+      "specialty_id": null,
+      "subspecialty_id": null,
+      "biography": "Terapeuta con enfoque en rehabilitación física y mental.",
+      "years_of_experience": 7
     },
     {
       "id": "4",
@@ -63,7 +69,7 @@
       "birth_date": "1995-03-10",
       "gender": "F",
       "avatar": "src/assets/images/avatars/4.jpg",
-      "role_id": "Patient",
+      "role_id": "3",
       "status": "Active",
       "created_at": "2023-01-04T10:00:00Z",
       "updated_at": "2024-01-04T10:00:00Z"
@@ -79,7 +85,7 @@
       "birth_date": "1988-07-30",
       "gender": "F",
       "avatar": "src/assets/images/avatars/5.jpg",
-      "role_id": "Administrator",
+      "role_id": "1",
       "status": "Inactive",
       "created_at": "2023-01-05T10:00:00Z",
       "updated_at": "2024-01-05T10:00:00Z"
@@ -95,7 +101,7 @@
       "birth_date": "1991-12-01",
       "gender": "M",
       "avatar": "src/assets/images/avatars/2.jpg",
-      "role_id": "Nurse",
+      "role_id": "2",
       "description": "Enfermero comprometido con el cuidado humanizado de pacientes.",
       "specialty": "Enfermero",
       "subspecialty": "Cuidados intensivos",
@@ -115,7 +121,7 @@
       "birth_date": "1994-04-25",
       "gender": "F",
       "avatar": "src/assets/images/avatars/7.jpg",
-      "role_id": "Patient",
+      "role_id": "3",
       "status": "Active",
       "created_at": "2023-01-07T10:00:00Z",
       "updated_at": "2024-01-07T10:00:00Z"
@@ -131,7 +137,7 @@
       "birth_date": "1987-06-18",
       "gender": "F",
       "avatar": "src/assets/images/avatars/8.jpg",
-      "role_id": "Doctor",
+      "role_id": "2",
       "description": "Médica general con enfoque en salud preventiva.",
       "specialty": "Médico",
       "subspecialty": "Medicina interna",
@@ -151,7 +157,7 @@
       "birth_date": "1996-10-10",
       "gender": "M",
       "avatar": "src/assets/images/avatars/9.jpg",
-      "role_id": "Administrator",
+      "role_id": "1",
       "status": "Active",
       "created_at": "2023-01-09T10:00:00Z",
       "updated_at": "2024-01-09T10:00:00Z"
@@ -167,7 +173,7 @@
       "birth_date": "1993-09-22",
       "gender": "F",
       "avatar": "src/assets/images/avatars/4.jpg",
-      "role_id": "Therapist",
+      "role_id": "2",
       "description": "Terapeuta apasionada por mejorar la calidad de vida de sus pacientes.",
       "specialty": "Terapeuta",
       "subspecialty": "Terapia ocupacional",
@@ -177,301 +183,923 @@
       "updated_at": "2024-01-10T10:00:00Z"
     },
     {
-      "id": "0e29",
-      "first_name": "Jorgito",
-      "last_name": "Sánchez",
-      "email": "luisduque2302@gmail.com",
-      "password": "$2b$10$RM7MT42yAxHPTHGK8nMA0uXCaAONXzaA35qQ8VQJTBCLACtra99..",
-      "address": "Av. Rotaria, San Cristóbal",
-      "phone": "0426100000",
-      "birth_date": "2025-05-07",
-      "gender": "M",
-      "description": "Enfermero comprometido con el cuidado humanizado de pacientes.",
-      "specialty": "Technical",
-      "subspecialty": "Technical Support",
-      "years_experience": "1",
-      "avatar": "src/assets/images/avatars/2.jpg",
-      "role_id": "Administrator",
-      "status": "Active"
-    },
-    {
-      "id": "057b",
-      "first_name": "Jorge",
-      "last_name": "Sánchez",
-      "email": "jcbarragan1994@gmail.com",
-      "password": "$2b$10$xfGwlv12R9nq/ygNrSOPyuDnVbX6H8RieVIsyh9b4ZYzcHXJppVWG",
-      "address": "Av. Rotaria, San Cristóbal",
-      "phone": "31233222222",
-      "birth_date": "2025-05-15",
-      "gender": "M",
-      "description": "Enfermero comprometido con el cuidado humanizado de pacientes.",
-      "specialty": "General",
-      "subspecialty": "Administrative Management",
-      "years_experience": "2",
-      "avatar": "/src/assets/images/avatars/avatar.png",
-      "role_id": "Administrator",
-      "status": "Active"
-    },
-    {
-      "id": "192f",
-      "first_name": "Juan",
-      "last_name": "Colmenares",
-      "email": "asd@asd.ci",
+      "id": "d069",
+      "first_name": "Carlos",
+      "last_name": "sf",
+      "email": "jcbarrag8an1994@gmail.com",
       "password": "hashed_password_default",
-      "address": "La blanca",
-      "phone": "31233222222",
-      "birth_date": "22/05/2025",
-      "gender": "M",
+      "address": "Calle 3, Táriba",
+      "phone": "04261000003",
+      "birth_date": "30/06/2025",
+      "gender": "F",
       "avatar": "/src/assets/images/avatars/avatar.png",
-      "role_id": "Patient",
+      "role_id": "2",
       "status": "Inactive",
-      "created_at": "2025-05-22T00:07:57.906Z",
-      "updated_at": "2025-05-22T00:07:57.907Z"
+      "state_id": "2",
+      "city_id": "2",
+      "created_at": "2025-06-04T03:31:42.519Z",
+      "updated_at": "2025-06-04T03:31:42.519Z"
     },
     {
-      "id": "e27a",
-      "first_name": "Caraota",
-      "last_name": "Lenteja",
-      "email": "caraotra@gmail.com",
-      "password": "hashed_password_default",
-      "address": "Barrio Libertador",
-      "phone": "31233222222",
-      "birth_date": "21/05/2025",
-      "gender": "F",
-      "avatar": "/src/assets/images/avatars/avatar.png",
-      "role_id": "Doctor",
-      "status": "Active",
-      "created_at": "2025-05-22T00:08:54.315Z",
-      "updated_at": "2025-05-22T00:08:54.315Z"
-    },
-    {
-      "id": "a7ed",
-      "first_name": "Shlendy",
-      "last_name": "Rincon",
-      "email": "shlendyrincon13@gmail.com",
-      "password": "$2b$10$gxF0L5jDcIJXRRC5gIK0yuQUnAGLLTAtGYcPgO.BMnxIv6bQFM.rG",
-      "address": "Madrejuana",
-      "phone": "04124207992",
-      "birth_date": "2002-05-13",
-      "gender": "F",
-      "description": "Un buen administrador",
-      "specialty": "General",
-      "subspecialty": "Administrative Management",
-      "years_experience": "4",
-      "avatar": "/src/assets/images/avatars/avatar.png",
-      "role_id": "Administrator",
-      "status": "Active"
-    },
-    {
-      "id": "b3d4",
-      "first_name": "Lupita",
-      "last_name": "Sánchez",
-      "email": "admin@admin.com",
-      "password": "$2b$10$Ry6aJM5pnhl4kj3cYffzLeyDvQfpUFZpvYaSga37wW8oi0LmPjxRK",
-      "address": "Av. Rotaria, San Cristóbal",
-      "phone": "31233222222",
-      "birth_date": "2025-05-06",
-      "gender": "F",
-      "description": "Un buen administrador",
-      "specialty": "LiderTecnico",
-      "subspecialty": "Revisión de Código",
-      "years_experience": "2",
-      "avatar": "/src/assets/images/avatars/avatar.png",
-      "role_id": "Administrator",
-      "status": "Active"
-    },
-    {
-      "id": "fc56",
-      "first_name": "Yesika ",
+      "id": "a3ab",
+      "first_name": "Yesikita",
       "last_name": "Roa",
       "email": "yroa1402@gmail.com",
-      "password": "$2b$10$rYYmcI7.tSARtnC6LtzWLOUD7fpbgnLbm2yswVsL8zUHp1yiRahxy",
-      "address": "Barrio Libertador",
-      "phone": "31233222222",
+      "password": "$2b$10$6lTi6fxTAiqCnwasQ0T1Je6tB.XwD.FZCFlZWt4RluaRb4CTjE6DW",
+      "address": "Av. Rotaria, San Cristóbal",
+      "phone": "04261000003",
       "birth_date": "2001-02-14",
       "gender": "F",
-      "description": "Administradora encargada de la parte técnica",
-      "specialty": "DevOps",
-      "subspecialty": "Integración y Entrega Continua (CI/CD)",
-      "years_experience": "1",
-      "avatar": "src/assets/images/avatars/7.jpg",
-      "role_id": "Administrator",
-      "status": "Active"
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": 2,
+      "status": "Active",
+      "created_at": "2025-06-04T15:35:27.293Z",
+      "updated_at": "2025-06-04T15:35:27.293Z",
+      "biography": "La mejor desarrolladora",
+      "years_experience": 2,
+      "specialty": "4,3",
+      "subspecialty": "25,19"
     },
     {
-      "id": "6acb",
-      "first_name": "Ana Maria",
-      "last_name": "Abreu",
-      "email": "Ana.abreu@gmail.com",
-      "password": "$2b$10$hZmnhiblOBzoWNX3JxyOC.80UcMV09RGFdLvIOqioaLlpE/iA53FC",
-      "address": "Barrio Libertador",
-      "phone": "0426100000",
-      "birth_date": "2000-02-12",
+      "id": "98b8",
+      "first_name": "Eileen",
+      "last_name": "Colmenares",
+      "email": "yroa14302@gmail.com",
+      "password": "hashed_password_default",
+      "address": "Av. Rotaria, San Cristóbal",
+      "phone": "04261000003",
+      "birth_date": "13/02/2004",
       "gender": "F",
-      "description": "Terapeuta con enfoque en rehabilitación física y mental.",
-      "specialty": "TerapiaOcupacional",
-      "subspecialty": "Terapia de la Mano",
-      "years_experience": "2",
       "avatar": "/src/assets/images/avatars/avatar.png",
-      "role_id": "Therapist",
-      "status": "Active"
+      "state_id": "6",
+      "city_id": "11",
+      "role_id": "3",
+      "status": "Active",
+      "created_at": "2025-06-04T16:34:43.457Z",
+      "updated_at": "2025-06-04T16:34:43.457Z"
+    },
+    {
+      "id": "ae0b",
+      "first_name": "Carlos",
+      "last_name": "Sánchez",
+      "email": "yroa140244@gmail.com",
+      "password": "hashed_password_default",
+      "address": "Barrio Libertador",
+      "phone": "04261000003",
+      "birth_date": "08/06/2025",
+      "gender": "M",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "3",
+      "status": "Inactive",
+      "created_at": "2025-06-08T19:50:16.877Z",
+      "updated_at": "2025-06-08T19:50:16.877Z"
+    },
+    {
+      "id": "361f",
+      "first_name": "Carlos",
+      "last_name": "Garcia",
+      "email": "yroeeea1402@gmail.com",
+      "password": "hashed_password_default",
+      "address": "Calle 3, Táriba",
+      "phone": "04261000003",
+      "birth_date": "12/06/2025",
+      "gender": "M",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "2",
+      "status": "Inactive",
+      "created_at": "2025-06-08T19:53:45.378Z",
+      "updated_at": "2025-06-08T19:53:45.378Z"
+    },
+    {
+      "id": "bbfc",
+      "first_name": "Juana",
+      "last_name": "Garcia",
+      "email": "jcbarwwragan1994@gmail.com",
+      "password": "$2b$10$Iuk.Kx49RZL9V7ylFFk1eej/Qf2Rqmw9aBeb8pQy4CzT1QrB7WQnm",
+      "address": "La blanca",
+      "phone": "04261000003",
+      "birth_date": "08/06/2025",
+      "gender": "F",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "2",
+      "status": "Inactive",
+      "created_at": "2025-06-08T20:00:36.145Z",
+      "updated_at": "2025-06-08T20:00:36.145Z"
     }
   ],
   "appointments": [
     {
-      "id": "2",
-      "scheduled_at": "2025-04-26T10:30:00",
-      "rescheduled_at": null,
-      "status": "completed",
-      "canceled_at": null,
-      "notes": "Revisión de movilidad. Se evaluará respuesta muscular tras accidente.",
-      "patient": "4",
-      "professional": "3",
+      "id": "d742",
+      "scheduled_at": "2025-06-04T04:00:00.000Z",
+      "status": "confirmed",
+      "notes": "medicamento",
+      "reason_for_visit": "Consulta pediátrica",
+      "patient_id": "new_id_7",
+      "professional_id": "new_id_2",
+      "city_id": "1",
+      "has_medical_record": false,
+      "created_at": "2025-06-04T22:53:52.614Z",
+      "updated_at": "2025-06-04T22:53:52.614Z"
+    },
+    {
+      "id": "ce59",
+      "scheduled_at": "2025-06-01T04:00:00.000Z",
+      "status": "pending",
+      "notes": "Persona mayor",
+      "reason_for_visit": "Consulta pediátrica",
+      "patient_id": "new_id_8",
+      "professional_id": "new_id_2",
+      "city_id": "3",
+      "has_medical_record": false,
+      "created_at": "2025-06-04T23:36:25.378Z",
+      "updated_at": "2025-06-04T23:36:25.378Z"
+    },
+    {
+      "id": "63e2",
+      "scheduled_at": "2025-06-03T17:10:00.000Z",
+      "status": "confirmed",
+      "notes": "medicamentoss",
+      "reason_for_visit": "Dolor de lumbar",
+      "patient_id": "new_id_8",
+      "professional_id": "new_id_3",
+      "city_id": "10",
       "has_medical_record": true,
-      "city": "Táriba",
-      "reason_for_visit": "Fisioterapia",
-      "category": "Rehabilitación",
-      "ended_at": null,
-      "pathology": "Lesión de ligamento cruzado",
-      "specialty": "Fisioterapia"
+      "created_at": "2025-06-09T17:43:42.816Z",
+      "updated_at": "2025-06-09T17:43:42.816Z",
+      "patient": "María Fernández",
+      "professional": "Diana Moreno",
+      "city": "San Cristóbal"
     },
     {
-      "id": "3",
-      "scheduled_at": "2025-04-26T14:00:00",
-      "rescheduled_at": null,
-      "status": "completed",
-      "canceled_at": null,
-      "notes": "Consulta de ingreso a cuidados intensivos. Se iniciará monitoreo constante.",
-      "patient": "7",
-      "professional": "6",
-      "has_medical_record": false,
-      "city": "San Cristóbal",
-      "reason_for_visit": "Cuidados intensivos",
-      "category": "Emergencias",
-      "ended_at": null,
-      "pathology": "Insuficiencia respiratoria aguda",
-      "specialty": "Cuidados intensivos"
-    },
-    {
-      "id": "4",
-      "scheduled_at": "2025-04-27T08:30:00",
-      "rescheduled_at": null,
+      "id": "6406",
+      "scheduled_at": "2025-06-02T17:10:00.000Z",
       "status": "confirmed",
-      "canceled_at": null,
-      "notes": "Chequeo general preventivo. Se realizará hemograma y control de presión.",
-      "patient": "2",
-      "professional": "8",
-      "has_medical_record": false,
-      "city": "La Fría",
-      "reason_for_visit": "Medicina interna",
-      "category": "Prevención",
-      "ended_at": null,
-      "pathology": "Hipertensión leve",
-      "specialty": "Medicina interna"
+      "notes": "medicamentoss",
+      "reason_for_visit": "ojos rojos",
+      "patient_id": "new_id_8",
+      "professional_id": "new_id_4",
+      "city_id": "2",
+      "has_medical_record": true,
+      "created_at": "2025-06-09T19:20:44.984Z",
+      "updated_at": "2025-06-09T19:20:44.984Z",
+      "patient": "María Fernández",
+      "professional": "Camila Rivas",
+      "city": "Maracaibo"
     },
     {
-      "id": "5",
-      "scheduled_at": "2025-04-27T11:00:00",
-      "rescheduled_at": null,
-      "status": "pending",
-      "canceled_at": null,
-      "notes": "Terapia ocupacional enfocada en la motricidad fina. Se evaluará progreso.",
-      "patient": "4",
-      "professional": "10",
-      "has_medical_record": false,
-      "city": "San Cristóbal",
-      "reason_for_visit": "Terapia ocupacional",
-      "category": "Rehabilitación",
-      "ended_at": null,
-      "pathology": "Parálisis cerebral leve",
-      "specialty": "Terapia ocupacional"
-    },
-    {
-      "id": "1747871816184",
-      "patient": "4",
-      "professional": "e7ed",
-      "scheduled_at": "2025-05-21T19:56",
+      "id": "9875",
+      "scheduled_at": "2025-06-09T19:10:00.000Z",
       "status": "confirmed",
-      "city": "Táriba",
-      "category": "Consulta médica",
-      "specialty": "Pediatrics",
-      "notes": "medicamentoss",
-      "pathology": "tension alta",
-      "reason_for_visit": "Consulta pediátrica"
+      "notes": "medicamento",
+      "reason_for_visit": "Consulta pediátrica",
+      "patient_id": "new_id_8",
+      "professional_id": "f434",
+      "city_id": "4",
+      "has_medical_record": false,
+      "created_at": "2025-06-09T19:21:32.063Z",
+      "updated_at": "2025-06-09T19:21:32.063Z",
+      "patient": "María Fernández",
+      "professional": "Yesikita Roa",
+      "city": "Los Teques"
     },
     {
-      "id": "1747871883708",
-      "patient": "2",
-      "professional": "3",
-      "scheduled_at": "2025-05-21T19:57",
+      "id": "2e33",
+      "scheduled_at": "2025-06-09T18:05:00.000Z",
+      "status": "canceled",
+      "notes": "medicamentoss",
+      "reason_for_visit": "ojos rojos",
+      "patient_id": "new_id_6",
+      "professional_id": "new_id_2",
+      "city_id": "2",
+      "has_medical_record": true,
+      "created_at": "2025-06-09T19:21:57.188Z",
+      "updated_at": "2025-06-09T19:21:57.188Z"
+    },
+    {
+      "id": "0bc1",
+      "scheduled_at": "2025-05-15T17:15:00.000Z",
       "status": "completed",
-      "city": "San Cristóbal",
-      "category": "Consulta médica",
-      "specialty": "Terapeuta",
-      "notes": "Persona hermosa",
-      "pathology": "tension alta",
-      "reason_for_visit": "ojos rojos"
+      "notes": "Toma ibuprofeno",
+      "reason_for_visit": "Dolor de lumbar",
+      "patient_id": "new_id_9",
+      "professional_id": "f434",
+      "city_id": "10",
+      "has_medical_record": false,
+      "created_at": "2025-06-10T00:11:55.792Z",
+      "updated_at": "2025-06-10T00:11:55.792Z"
     },
     {
-      "id": "1747872033686",
-      "patient": "7",
-      "professional": "10",
-      "scheduled_at": "2025-05-29T20:00",
-      "status": "Canceled by patient",
-      "city": "Táriba",
-      "category": "Emergencias",
-      "specialty": "Terapeuta",
-      "notes": "medicamentoss",
-      "pathology": "tension alta",
-      "reason_for_visit": "Dolor de lumbar"
-    },
-    {
-      "id": "1747872349774",
-      "patient": "2",
-      "professional": "8",
-      "scheduled_at": "2025-05-21T20:05",
-      "status": "pending",
-      "city": "San Cristóbal",
-      "category": "Rehabilitación",
-      "specialty": "Médico",
+      "id": "401e",
+      "scheduled_at": "2025-05-31T04:00:00.000Z",
+      "status": "confirmed",
       "notes": "medicamento",
-      "pathology": "tension alta",
-      "reason_for_visit": "Consulta pediátrica"
-    },
-    {
-      "id": "1748381681434",
-      "patient": "1",
-      "professional": "8",
-      "scheduled_at": "2025-05-23T17:34",
-      "status": "pending",
-      "city": "Táriba",
-      "category": "Rehabilitación física",
-      "specialty": "Médico",
-      "notes": "medicamento",
-      "pathology": "tension alta",
-      "reason_for_visit": "Consulta pediátrica"
+      "reason_for_visit": "Consulta pediátrica",
+      "patient_id": "new_id_7",
+      "professional_id": "new_id_1",
+      "city_id": "1",
+      "has_medical_record": false,
+      "created_at": "2025-06-10T00:19:43.981Z",
+      "updated_at": "2025-06-10T00:19:43.981Z"
     }
   ],
   "medical_records": [
     {
-      "id": "1747872368602",
-      "appointment_id": "1747872349774",
-      "created_at": "2025-05-19T20:06",
+      "id": "1749492459324",
+      "appointment_id": "63e2",
+      "created_at": "2025-06-09T07:15:00.000Z",
       "general_notes": "Chequeo",
-      "patient_id": "2",
-      "professional_id": "8",
+      "patient_id": "new_id_8",
+      "professional_id": "new_id_3",
       "attachment_image_url": null,
       "attachment_document_url": null
     },
     {
-      "id": "1748381751364",
-      "appointment_id": "3",
-      "created_at": "2025-05-27T17:35",
+      "id": "1749492489196",
+      "appointment_id": "d742",
+      "created_at": "2025-06-09T17:05:00.000Z",
+      "general_notes": "paciente de asma",
+      "patient_id": "new_id_7",
+      "professional_id": "new_id_2",
+      "attachment_image_url": null,
+      "attachment_document_url": null
+    },
+    {
+      "id": "1749497012102",
+      "appointment_id": "2e33",
+      "created_at": "2025-06-10T07:10:00.000Z",
       "general_notes": "Chequeo",
-      "patient_id": "7",
-      "professional_id": "6",
+      "patient_id": "new_id_6",
+      "professional_id": "new_id_2",
       "attachment_image_url": null,
       "attachment_document_url": null
     }
-  ]
+  ],
+  "specialty": [
+    {
+      "id": "1",
+      "name": "Medicina General",
+      "parent_id": null
+    },
+    {
+      "id": "2",
+      "name": "Cardiología",
+      "parent_id": null
+    },
+    {
+      "id": "3",
+      "name": "Dermatología",
+      "parent_id": null
+    },
+    {
+      "id": "4",
+      "name": "Neurología",
+      "parent_id": null
+    },
+    {
+      "id": "5",
+      "name": "Pediatría",
+      "parent_id": null
+    },
+    {
+      "id": "6",
+      "name": "Oncología",
+      "parent_id": null
+    },
+    {
+      "id": "16",
+      "name": "Atención Preventiva",
+      "parent_id": 1
+    },
+    {
+      "id": "17",
+      "name": "Manejo de Enfermedades Crónicas",
+      "parent_id": 1
+    },
+    {
+      "id": "18",
+      "name": "Educación en Salud",
+      "parent_id": 1
+    },
+    {
+      "id": "19",
+      "name": "Cardiología Intervencionista",
+      "parent_id": 2
+    },
+    {
+      "id": "20",
+      "name": "Cardiología Pediátrica",
+      "parent_id": 2
+    },
+    {
+      "id": "21",
+      "name": "Manejo de Insuficiencia Cardíaca",
+      "parent_id": 2
+    },
+    {
+      "id": "22",
+      "name": "Dermatología Cosmética",
+      "parent_id": 3
+    },
+    {
+      "id": "23",
+      "name": "Dermatología Pediátrica",
+      "parent_id": 3
+    },
+    {
+      "id": "24",
+      "name": "Dermatopatología",
+      "parent_id": 3
+    },
+    {
+      "id": "25",
+      "name": "Neurología Clínica",
+      "parent_id": 4
+    },
+    {
+      "id": "26",
+      "name": "Neurofisiología",
+      "parent_id": 4
+    },
+    {
+      "id": "27",
+      "name": "Manejo de Accidentes Cerebrovasculares",
+      "parent_id": 4
+    },
+    {
+      "id": "28",
+      "name": "Neonatología",
+      "parent_id": 5
+    },
+    {
+      "id": "29",
+      "name": "Oncología Pediátrica",
+      "parent_id": 5
+    },
+    {
+      "id": "30",
+      "name": "Pediatría del Desarrollo",
+      "parent_id": 5
+    },
+    {
+      "id": "31",
+      "name": "Oncología Médica",
+      "parent_id": 6
+    },
+    {
+      "id": "32",
+      "name": "Oncología Radioterápica",
+      "parent_id": 6
+    },
+    {
+      "id": "33",
+      "name": "Oncología Quirúrgica",
+      "parent_id": 6
+    },
+    {
+      "id": "7",
+      "name": "Cuidados Generales",
+      "parent_id": null
+    },
+    {
+      "id": "8",
+      "name": "Quirúrgico",
+      "parent_id": null
+    },
+    {
+      "id": "9",
+      "name": "Salud Comunitaria",
+      "parent_id": null
+    },
+    {
+      "id": "10",
+      "name": "Cuidados Críticos",
+      "parent_id": null
+    },
+    {
+      "id": "34",
+      "name": "Cuidado de Heridas",
+      "parent_id": 7
+    },
+    {
+      "id": "35",
+      "name": "Administración de Medicamentos",
+      "parent_id": 7
+    },
+    {
+      "id": "36",
+      "name": "Monitoreo de Signos Vitales",
+      "parent_id": 7
+    },
+    {
+      "id": "37",
+      "name": "Enfermería Perioperatoria",
+      "parent_id": 8
+    },
+    {
+      "id": "38",
+      "name": "Enfermería Postoperatoria",
+      "parent_id": 8
+    },
+    {
+      "id": "39",
+      "name": "Enfermería Oncológica Quirúrgica",
+      "parent_id": 8
+    },
+    {
+      "id": "40",
+      "name": "Enfermería de Salud Pública",
+      "parent_id": 9
+    },
+    {
+      "id": "41",
+      "name": "Cuidado en el Hogar",
+      "parent_id": 9
+    },
+    {
+      "id": "42",
+      "name": "Educación Comunitaria",
+      "parent_id": 9
+    },
+    {
+      "id": "43",
+      "name": "Enfermería en UCI",
+      "parent_id": 10
+    },
+    {
+      "id": "44",
+      "name": "Enfermería de Emergencias",
+      "parent_id": 10
+    },
+    {
+      "id": "45",
+      "name": "Enfermería de Trauma",
+      "parent_id": 10
+    },
+    {
+      "id": "11",
+      "name": "Fisioterapia",
+      "parent_id": null
+    },
+    {
+      "id": "12",
+      "name": "Terapia Ocupacional",
+      "parent_id": null
+    },
+    {
+      "id": "13",
+      "name": "Terapia del Habla",
+      "parent_id": null
+    },
+    {
+      "id": "14",
+      "name": "Terapia Deportiva",
+      "parent_id": null
+    },
+    {
+      "id": "15",
+      "name": "Terapia Mental",
+      "parent_id": null
+    },
+    {
+      "id": "46",
+      "name": "Rehabilitación Ortopédica",
+      "parent_id": 11
+    },
+    {
+      "id": "47",
+      "name": "Rehabilitación Neurológica",
+      "parent_id": 11
+    },
+    {
+      "id": "48",
+      "name": "Terapia Geriátrica",
+      "parent_id": 11
+    },
+    {
+      "id": "49",
+      "name": "Terapia de la Mano",
+      "parent_id": 12
+    },
+    {
+      "id": "50",
+      "name": "Rehabilitación Pediátrica",
+      "parent_id": 12
+    },
+    {
+      "id": "51",
+      "name": "Terapia Vocacional",
+      "parent_id": 12
+    },
+    {
+      "id": "52",
+      "name": "Terapia para Trastornos de la Voz",
+      "parent_id": 13
+    },
+    {
+      "id": "53",
+      "name": "Terapia para Trastornos de Deglución",
+      "parent_id": 13
+    },
+    {
+      "id": "54",
+      "name": "Terapia de Articulación",
+      "parent_id": 13
+    },
+    {
+      "id": "55",
+      "name": "Prevención de Lesiones",
+      "parent_id": 14
+    },
+    {
+      "id": "56",
+      "name": "Rehabilitación Post-Lesión",
+      "parent_id": 14
+    },
+    {
+      "id": "57",
+      "name": "Mejora del Rendimiento Deportivo",
+      "parent_id": 14
+    },
+    {
+      "id": "58",
+      "name": "Terapia Cognitivo-Conductual",
+      "parent_id": 15
+    },
+    {
+      "id": "59",
+      "name": "Terapia de Trauma",
+      "parent_id": 15
+    },
+    {
+      "id": "60",
+      "name": "Manejo del Estrés",
+      "parent_id": 15
+    }
+  ],
+  "professional_type": [
+    {
+      "id": "1",
+      "name": "Doctor"
+    },
+    {
+      "id": "2",
+      "name": "Nurse"
+    },
+    {
+      "id": "3",
+      "name": "Therapist"
+    }
+  ],
+  "professionals": [
+    {
+      "id": "3983",
+      "user_id": "d069",
+      "professional_type_id": "1",
+      "biography": "Terapeuta dedicada",
+      "years_of_experience": 9,
+      "created_at": "2025-06-04T03:31:42.540Z"
+    },
+    {
+      "id": "f434",
+      "user_id": "a3ab",
+      "professional_type_id": 1,
+      "biography": "La mejor desarrolladora",
+      "years_of_experience": 2,
+      "created_at": "2025-06-04T15:35:27.293Z"
+    },
+    {
+      "id": "new_id_1",
+      "user_id": "3",
+      "professional_type_id": "3",
+      "biography": "Terapeuta con enfoque en rehabilitación física y mental.",
+      "years_of_experience": 7,
+      "created_at": "2023-01-03T10:00:00Z"
+    },
+    {
+      "id": "new_id_2",
+      "user_id": "6",
+      "professional_type_id": "2",
+      "biography": "Enfermero comprometido con el cuidado humanizado de pacientes.",
+      "years_of_experience": 7,
+      "created_at": "2023-01-06T10:00:00Z"
+    },
+    {
+      "id": "new_id_3",
+      "user_id": "8",
+      "professional_type_id": "1",
+      "biography": "Médica general con enfoque en salud preventiva.",
+      "years_of_experience": 10,
+      "created_at": "2023-01-08T10:00:00Z"
+    },
+    {
+      "id": "new_id_4",
+      "user_id": "10",
+      "professional_type_id": "3",
+      "biography": "Terapeuta apasionada por mejorar la calidad de vida de sus pacientes.",
+      "years_of_experience": 5,
+      "created_at": "2023-01-10T10:00:00Z"
+    },
+    {
+      "id": "new_id_5",
+      "user_id": "98b8",
+      "professional_type_id": "2",
+      "biography": "Bio no especificada",
+      "years_of_experience": 0,
+      "created_at": "2025-06-04T16:34:43.501Z"
+    },
+    {
+      "id": "861d",
+      "user_id": "361f",
+      "professional_type_id": "1",
+      "biography": "Terapeuta dedicada",
+      "years_of_experience": 5,
+      "created_at": "2025-06-08T19:53:45.402Z"
+    },
+    {
+      "id": "5895",
+      "user_id": "bbfc",
+      "professional_type_id": "1",
+      "biography": "Terapeuta dedicada",
+      "years_of_experience": "3",
+      "created_at": "2025-06-08T20:00:36.187Z"
+    }
+  ],
+  "professional_specialty": [
+    {
+      "id": "b43f",
+      "professional_id": "3983",
+      "specialty_id": "5"
+    },
+    {
+      "id": "340e",
+      "professional_id": "3983",
+      "specialty_id": "24"
+    },
+    {
+      "id": "7a56",
+      "professional_id": "861d",
+      "specialty_id": "2"
+    },
+    {
+      "id": "507b",
+      "professional_id": "861d",
+      "specialty_id": "18"
+    },
+    {
+      "id": "024e",
+      "professional_id": "5895",
+      "specialty_id": "5"
+    },
+    {
+      "id": "d607",
+      "professional_id": "5895",
+      "specialty_id": "20"
+    },
+    {
+      "id": "3",
+      "professional_id": "new_id_1",
+      "specialty_id": "3"
+    },
+    {
+      "id": "4",
+      "professional_id": "new_id_2",
+      "specialty_id": "4"
+    },
+    {
+      "id": "5",
+      "professional_id": "new_id_3",
+      "specialty_id": "5"
+    },
+    {
+      "id": "6",
+      "professional_id": "new_id_4",
+      "specialty_id": "6"
+    },
+    {
+      "id": "7",
+      "professional_id": "new_id_5",
+      "specialty_id": "7"
+    },
+    {
+      "id": "b03b",
+      "professional_id": "f434",
+      "specialty_id": 4
+    },
+    {
+      "id": "b6ab",
+      "professional_id": "f434",
+      "specialty_id": 3
+    },
+    {
+      "id": "b29e",
+      "professional_id": "f434",
+      "specialty_id": 25
+    },
+    {
+      "id": "ceec",
+      "professional_id": "f434",
+      "specialty_id": 19
+    }
+  ],
+  "patient": [
+    {
+      "id": "3c65",
+      "user_id": "98b8",
+      "medical_data": "sefsfsfef",
+      "created_at": "2025-06-04T16:34:43.501Z",
+      "updated_at": "2025-06-04T16:34:43.501Z"
+    },
+    {
+      "id": "new_id_6",
+      "user_id": "1",
+      "medical_data": "Historial médico no especificado.",
+      "created_at": "2023-01-02T10:00:00Z"
+    },
+    {
+      "id": "new_id_7",
+      "user_id": "2",
+      "medical_data": "Historial médico no especificado.",
+      "created_at": "2023-01-02T10:00:00Z"
+    },
+    {
+      "id": "new_id_8",
+      "user_id": "4",
+      "medical_data": "Historial médico no especificado.",
+      "created_at": "2023-01-04T10:00:00Z"
+    },
+    {
+      "id": "new_id_9",
+      "user_id": "7",
+      "medical_data": "Historial médico no especificado.",
+      "created_at": "2023-01-07T10:00:00Z"
+    },
+    {
+      "id": "d100",
+      "user_id": "ae0b",
+      "medical_data": "cdcscsdfc camila",
+      "created_at": "2025-06-08T19:50:16.920Z",
+      "updated_at": "2025-06-08T19:50:16.920Z"
+    }
+  ],
+  "role": [
+    {
+      "id": "1",
+      "name": "Admin"
+    },
+    {
+      "id": "2",
+      "name": "Professional"
+    },
+    {
+      "id": "3",
+      "name": "Patient"
+    }
+  ],
+  "state": [
+    {
+      "id": "1",
+      "name": "Distrito Capital"
+    },
+    {
+      "id": "2",
+      "name": "Zulia"
+    },
+    {
+      "id": "3",
+      "name": "Miranda"
+    },
+    {
+      "id": "4",
+      "name": "Carabobo"
+    },
+    {
+      "id": "5",
+      "name": "Lara"
+    },
+    {
+      "id": "6",
+      "name": "Táchira"
+    },
+    {
+      "id": "7",
+      "name": "Anzoátegui"
+    },
+    {
+      "id": "8",
+      "name": "Bolívar"
+    },
+    {
+      "id": "9",
+      "name": "Mérida"
+    },
+    {
+      "id": "10",
+      "name": "Aragua"
+    }
+  ],
+  "city": [
+    {
+      "id": "1",
+      "name": "Caracas",
+      "state_id": 1
+    },
+    {
+      "id": "2",
+      "name": "Maracaibo",
+      "state_id": 2
+    },
+    {
+      "id": "3",
+      "name": "San Francisco",
+      "state_id": 2
+    },
+    {
+      "id": "4",
+      "name": "Los Teques",
+      "state_id": 3
+    },
+    {
+      "id": "5",
+      "name": "Charallave",
+      "state_id": 3
+    },
+    {
+      "id": "6",
+      "name": "Valencia",
+      "state_id": 4
+    },
+    {
+      "id": "7",
+      "name": "Puerto Cabello",
+      "state_id": 4
+    },
+    {
+      "id": "8",
+      "name": "Barquisimeto",
+      "state_id": 5
+    },
+    {
+      "id": "9",
+      "name": "Cabudare",
+      "state_id": 5
+    },
+    {
+      "id": "10",
+      "name": "San Cristóbal",
+      "state_id": 6
+    },
+    {
+      "id": "11",
+      "name": "Rubio",
+      "state_id": 6
+    },
+    {
+      "id": "12",
+      "name": "Puerto La Cruz",
+      "state_id": 7
+    },
+    {
+      "id": "13",
+      "name": "Barcelona",
+      "state_id": 7
+    },
+    {
+      "id": "14",
+      "name": "Ciudad Bolívar",
+      "state_id": 8
+    },
+    {
+      "id": "15",
+      "name": "Ciudad Guayana",
+      "state_id": 8
+    },
+    {
+      "id": "16",
+      "name": "Mérida",
+      "state_id": 9
+    },
+    {
+      "id": "17",
+      "name": "Ejido",
+      "state_id": 9
+    },
+    {
+      "id": "18",
+      "name": "Maracay",
+      "state_id": 10
+    },
+    {
+      "id": "19",
+      "name": "La Victoria",
+      "state_id": 10
+    },
+    {
+      "id": "20",
+      "name": "Turmero",
+      "state_id": 10
+    }
+  ],
+  "notification": [],
+  "permission": [],
+  "role_permission": []
 }

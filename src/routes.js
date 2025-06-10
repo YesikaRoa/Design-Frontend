@@ -1,4 +1,5 @@
 import React from 'react'
+import { Navigate } from 'react-router-dom'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Users = React.lazy(() => import('./views/users/Users'))
@@ -13,9 +14,11 @@ const EditAppointment = React.lazy(() => import('./views/appointments/EditAppoin
 const EditMedicalHistory = React.lazy(() => import('./views/medicalHistory/EditMedicalHistory'))
 const MedicalHistory = React.lazy(() => import('./views/medicalHistory/MedicalHistory'))
 const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
+const Login = React.lazy(() => import('./views/login/Login'))
 
 const routes = [
-  { path: '/', exact: true, name: 'Home' },
+  { path: '/', exact: true, element: () => <Navigate to="/login" replace /> },
+  { path: '/login', name: 'Login', element: <Login /> },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   { path: '/users', name: 'Users', element: Users },
   { path: '/users/:id', name: 'UserDetails', element: UserDetails },

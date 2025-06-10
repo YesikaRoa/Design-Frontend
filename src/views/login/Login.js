@@ -15,7 +15,7 @@ import {
   CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser } from '@coreui/icons'
+import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
 import ModalSendInformation from '../../components/ModalSendInformation'
 import Notifications from '../../components/Notifications'
 import emailjs from 'emailjs-com'
@@ -25,7 +25,7 @@ import bcrypt from 'bcryptjs'
 const Login = () => {
   const [modalVisible, setModalVisible] = useState(false)
   const [alert, setAlert] = useState(null)
-  const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false)
 
   const generateTemporaryPassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -100,8 +100,10 @@ const Login = () => {
   }
 
   const handleLogin = async () => {
-    const username = document.querySelector('#username-input').value
-    const password = document.querySelector('#password-input').value
+    const usernameInput = document.querySelector('#username-input')
+    const passwordInput = document.querySelector('#password-input')
+    const username = usernameInput.value
+    const password = passwordInput.value
 
     if (!username || !password) {
       Notifications.showAlert(setAlert, 'Por favor, complete todos los campos.', 'danger')
@@ -115,6 +117,8 @@ const Login = () => {
 
       if (users.length === 0) {
         Notifications.showAlert(setAlert, 'No tienes una cuenta registrada.', 'danger')
+        usernameInput.value = '' // Limpiar campo email
+        passwordInput.value = '' // Limpiar campo password
         return
       }
 
@@ -125,6 +129,7 @@ const Login = () => {
 
       if (!isPasswordValid) {
         Notifications.showAlert(setAlert, 'Contraseña incorrecta.', 'danger')
+        passwordInput.value = '' // Limpiar campo password
         return
       }
 
@@ -132,6 +137,7 @@ const Login = () => {
       localStorage.setItem('authToken', 'your-auth-token') // Guarda un token de autenticación
       localStorage.setItem('userId', user.id)
       window.location.href = '/#/dashboard'
+      window.location.reload()
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
       Notifications.showAlert(setAlert, 'Hubo un error al iniciar sesión.', 'danger')
@@ -161,12 +167,15 @@ const Login = () => {
                       <CFormInput id="username-input" placeholder="Email" autoComplete="email" />
                     </CInputGroup>
                     <CInputGroup className="mb-4">
-                      <CInputGroupText>
-                        <CIcon icon={cilLockLocked} />
+                      <CInputGroupText
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setShowPassword((prev) => !prev)}
+                      >
+                        <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
                       </CInputGroupText>
                       <CFormInput
                         id="password-input"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Password"
                         autoComplete="current-password"
                       />

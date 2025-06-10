@@ -4,6 +4,10 @@ import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import Notifications from '../../components/Notifications'
+import AsyncSelect from 'react-select/async'
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 
 import '../appointments/styles/appointments.css'
 import '../users/styles/filter.css'
@@ -44,64 +48,88 @@ const MedicalHistory = () => {
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedMedicalHistory, setselectedMedicalHistory] = useState(null)
   const ModalAddRef = useRef()
+
   const [userMap, setUserMap] = useState({})
+  const [patientToUserMap, setPatientToUserMap] = useState({})
+  const [professionalToUserMap, setProfessionalToUserMap] = useState({})
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log('Fetching data...')
       try {
-        const [appointmentsRes, medicalRecordsRes, usersRes] = await Promise.all([
-          fetch('http://localhost:8000/appointments'),
-          fetch('http://localhost:8000/medical_records'),
-          fetch('http://localhost:8000/users'), // Endpoint de usuarios
-        ])
+        const [appointmentsRes, medicalRecordsRes, usersRes, patientsRes, professionalsRes] =
+          await Promise.all([
+            fetch('http://localhost:8000/appointments'),
+            fetch('http://localhost:8000/medical_records'),
+            fetch('http://localhost:8000/users'),
+            fetch('http://localhost:8000/patient'), // Endpoint de pacientes
+            fetch('http://localhost:8000/professionals'), // Endpoint de profesionales
+          ])
 
-        if (!appointmentsRes.ok || !medicalRecordsRes.ok || !usersRes.ok) {
+        if (
+          !appointmentsRes.ok ||
+          !medicalRecordsRes.ok ||
+          !usersRes.ok ||
+          !patientsRes.ok ||
+          !professionalsRes.ok
+        ) {
           throw new Error('Failed to fetch data')
         }
 
         const appointmentsData = await appointmentsRes.json()
         const medicalRecordsData = await medicalRecordsRes.json()
         const usersData = await usersRes.json()
+        const patientsData = await patientsRes.json()
+        const professionalsData = await professionalsRes.json()
 
-        // Filtrar usuarios con roles profesionales
-        const professionalRoles = ['Doctor', 'Therapist', 'Nurse']
-        const professionals = usersData.filter((user) => professionalRoles.includes(user.role_id))
-
-        // Crear un mapa de IDs de usuarios a sus nombres y especialidades
+        // Crear un mapa de `user_id`
         const userMapData = usersData.reduce((acc, user) => {
           acc[user.id] = {
             name: `${user.first_name} ${user.last_name}`,
-            specialty: user.specialty || 'Especialidad no definida',
           }
           return acc
         }, {})
-        setUserMap(userMapData)
 
+        // Crear un mapa de `patient_id` y `professional_id` a `user_id`
+        const patientToUserMap = patientsData.reduce((acc, patient) => {
+          acc[patient.id] = patient.user_id
+          return acc
+        }, {})
+
+        const professionalToUserMap = professionalsData.reduce((acc, professional) => {
+          acc[professional.id] = professional.user_id
+          return acc
+        }, {})
+
+        // Enriquecer las citas con nombres de pacientes y profesionales
         const enrichedAppointments = appointmentsData.map((appt) => ({
           ...appt,
-          patientName: userMapData[appt.patient]?.name || 'Paciente no identificado',
-          professionalName: userMapData[appt.professional]?.name || 'Profesional no identificado',
+          patientName:
+            userMapData[patientToUserMap[appt.patient_id]]?.name || 'Paciente no identificado',
+          professionalName:
+            userMapData[professionalToUserMap[appt.professional_id]]?.name ||
+            'Profesional no identificado',
         }))
 
         // Enriquecer los registros médicos con información de usuarios
         const enrichedMedicalRecords = medicalRecordsData.map((record) => {
-          const professional = userMapData[record.professional_id] || {
+          const professional = userMapData[professionalToUserMap[record.professional_id]] || {
             name: 'Profesional no identificado',
-            specialty: 'Especialidad no definida',
           }
 
           return {
             ...record,
-            patient: userMapData[record.patient_id]?.name || 'Paciente no identificado',
+            patient:
+              userMapData[patientToUserMap[record.patient_id]]?.name || 'Paciente no identificado',
             professional: professional.name,
-            professional_specialty: professional.specialty,
           }
         })
 
         setAppointments(enrichedAppointments)
         setMedicalHistory(enrichedMedicalRecords) // Actualizar historial médico enriquecido
-        setFilteredMedicalHistory(enrichedMedicalRecords) // Filtro inicial
+        setFilteredMedicalHistory(enrichedMedicalRecords)
+        setUserMap(userMapData)
+        setPatientToUserMap(patientToUserMap)
+        setProfessionalToUserMap(professionalToUserMap) // Filtro inicial
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -124,8 +152,8 @@ const MedicalHistory = () => {
         id: String(Date.now()),
         created_at: formData.created_at,
         appointment_id: formData.appointment_id,
-        patient_id: selectedAppointment.patient,
-        professional_id: selectedAppointment.professional,
+        patient_id: selectedAppointment.patient_id, // <-- aquí
+        professional_id: selectedAppointment.professional_id,
         general_notes: formData.general_notes || '',
         attachment_image_url:
           formData.attachment_image instanceof File
@@ -152,11 +180,12 @@ const MedicalHistory = () => {
 
         const enrichedRecord = {
           ...savedMedicalHistory,
-          patient: userMap[savedMedicalHistory.patient_id]?.name || 'Paciente no identificado',
+          patient:
+            userMap[patientToUserMap[savedMedicalHistory.patient_id]]?.name ||
+            'Paciente no identificado',
           professional:
-            userMap[savedMedicalHistory.professional_id]?.name || 'Profesional no identificado',
-          professional_specialty:
-            userMap[savedMedicalHistory.professional_id]?.specialty || 'Especialidad no definida',
+            userMap[professionalToUserMap[savedMedicalHistory.professional_id]]?.name ||
+            'Profesional no identificado',
         }
 
         setMedicalHistory((prev) => [...prev, enrichedRecord])
@@ -168,10 +197,14 @@ const MedicalHistory = () => {
       }
     }
   }
-  const appointmentIdOptions = appointments.map((appt) => ({
-    label: `${appt.id} - Patient: ${appt.patientName} - Professional: ${appt.professionalName} - ${appt.reason_for_visit || 'Motivo no especificado'} (${appt.scheduled_at || 'Sin fecha'})`,
-    value: appt.id,
-  }))
+  const appointmentIdOptions = appointments.map((appt) => {
+    const formattedDate = appt.created_at ? formatDate(appt.created_at, 'DATETIME') : 'Sin fecha'
+
+    return {
+      label: `${appt.id} - Patient: ${appt.patientName} - Professional: ${appt.professionalName} - ${appt.reason_for_visit || 'Motivo no especificado'} (${formattedDate})`,
+      value: appt.id,
+    }
+  })
 
   const medicalHistorySteps = [
     {
@@ -179,17 +212,18 @@ const MedicalHistory = () => {
         {
           name: 'appointment_id',
           label: 'Appointment ID',
-          type: 'select',
+          type: 'custom',
           placeholder: 'Select appointment',
-          options: appointmentIdOptions,
           required: true,
+          options: [], // Mapeo a customFields
         },
         {
           name: 'created_at',
-          type: 'datetime-local',
-          label: 'Created at',
+          type: 'custom',
+          label: 'Created At',
           placeholder: 'Select date and time',
           required: true,
+          custom: 'created_at', // Mapeo a customFields
         },
       ],
     },
@@ -222,6 +256,51 @@ const MedicalHistory = () => {
       ],
     },
   ]
+  // Custom handlers for fields
+  const customFields = {
+    appointment_id: ({ value, onChange, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={loadAppointments}
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Select appointment'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    created_at: ({ value, onChange, placeholder }) => (
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DateTimePicker
+          label="Created At"
+          value={value ? new Date(value) : null}
+          onChange={(newValue) => onChange(newValue ? newValue.toISOString() : '')}
+          format="dd/MM/yyyy HH:mm"
+          slotProps={{
+            textField: {
+              variant: 'standard',
+              fullWidth: true,
+              placeholder,
+            },
+          }}
+        />
+      </LocalizationProvider>
+    ),
+  }
+
+  // Load appointments
+  const loadAppointments = async (inputValue) => {
+    // Filtrar las opciones de citas según el valor ingresado
+    const filteredAppointments = appointmentIdOptions.filter((option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase()),
+    )
+
+    // Limitar los resultados a un máximo de 5
+    return filteredAppointments.slice(0, 5).map((option) => ({
+      label: option.label, // El texto que se mostrará en el dropdown
+      value: option.value, // El valor asociado (por ejemplo, el ID de la cita)
+    }))
+  }
 
   const addMedicalHistory = () => {
     ModalAddRef.current.open()
@@ -371,7 +450,6 @@ const MedicalHistory = () => {
               <CTableRow>
                 <CTableHeaderCell className="table-header">Patient</CTableHeaderCell>
                 <CTableHeaderCell className="table-header">Professional</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Specialty</CTableHeaderCell>
                 <CTableHeaderCell className="table-header">Appointment</CTableHeaderCell>
                 <CTableHeaderCell className="table-header">created_at</CTableHeaderCell>
                 <CTableHeaderCell className="table-header avatar-header">Actions</CTableHeaderCell>
@@ -389,7 +467,6 @@ const MedicalHistory = () => {
                   <CTableRow key={index}>
                     <CTableDataCell>{record.patient}</CTableDataCell>
                     <CTableDataCell>{record.professional}</CTableDataCell>
-                    <CTableDataCell>{record.professional_specialty}</CTableDataCell>
                     <CTableDataCell>{record.appointment_id}</CTableDataCell>
                     <CTableDataCell>{formatDate(record.created_at, 'DATETIME')}</CTableDataCell>
                     <CTableDataCell>
@@ -448,9 +525,6 @@ const MedicalHistory = () => {
                 <strong>Professional:</strong> {selectedMedicalHistory.professional}
               </p>
               <p>
-                <strong>Specialty:</strong> {selectedMedicalHistory.professional_specialty || 'N/A'}
-              </p>
-              <p>
                 <strong>Appointment:</strong> {selectedMedicalHistory.appointment_id}
               </p>
               <p>
@@ -500,6 +574,7 @@ const MedicalHistory = () => {
         steps={medicalHistorySteps}
         onFinish={handleFinish}
         purpose="MedicalHistory"
+        customFields={customFields}
       />
     </>
   )

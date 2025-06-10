@@ -44,11 +44,52 @@ const UserDetails = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [selectedProfessionalId, setselectedProfessionalId] = useState(null)
 
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [professional, setProfessional] = useState(null)
+  const [specialty, setSpecialty] = useState(null)
+  const [subspecialty, setSubspecialty] = useState(null)
+  const [professionalTypes, setProfessionalTypes] = useState([])
+  const [specialties, setSpecialties] = useState([])
+  const [roles, setRoles] = useState([])
+
+  useEffect(() => {
+    fetch('http://localhost:8000/role')
+      .then((res) => res.json())
+      .then(setRoles)
+    fetch('http://localhost:8000/professional_type')
+      .then((res) => res.json())
+      .then(setProfessionalTypes)
+    fetch('http://localhost:8000/specialty')
+      .then((res) => res.json())
+      .then(setSpecialties)
+  }, [])
+
+  useEffect(() => {
+    if (user && user.id) {
+      // Cargar professional
+      fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
+        .then((res) => res.json())
+        .then(async (profArr) => {
+          const prof = profArr[0]
+          setProfessional(prof)
+          if (prof && prof.id) {
+            // Cargar specialties
+            const specRes = await fetch(
+              `http://localhost:8000/professional_specialty?professional_id=${prof.id}`,
+            )
+            const specArr = await specRes.json()
+            let specialtyId = null
+            let subspecialtyId = null
+            specArr.forEach((spec) => {
+              const idNum = Number(spec.specialty_id)
+              if (idNum >= 1 && idNum <= 15) specialtyId = spec.specialty_id
+              if (idNum >= 16 && idNum <= 60) subspecialtyId = spec.specialty_id
+            })
+            setSpecialty(specialtyId)
+            setSubspecialty(subspecialtyId)
+          }
+        })
+    }
+  }, [user])
 
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
@@ -86,14 +127,66 @@ const UserDetails = () => {
       if (putResponse.ok) {
         const result = await putResponse.json()
         setUser(result)
-        Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
       }
+
+      // Actualizar professional_type
+      const professionalTypeId = document.getElementById('professionalType').value
+      const biography = document.getElementById('biography').value
+      const years_of_experience = document.getElementById('years_of_experience').value
+
+      if (professional && professionalTypeId) {
+        await fetch(`http://localhost:8000/professionals/${professional.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...professional,
+            professional_type_id: professionalTypeId,
+            biography,
+            years_of_experience: years_of_experience ? Number(years_of_experience) : 0,
+          }),
+        })
+      }
+
+      // Actualizar specialty y subspecialty
+      const specialtyId = document.getElementById('specialty').value
+      const subspecialtyId = document.getElementById('subspecialty').value
+
+      // Elimina las especialidades actuales
+      if (professional && professional.id) {
+        await fetch(
+          `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
+          { method: 'DELETE' },
+        )
+        // Crea la nueva especialidad
+        if (specialtyId) {
+          await fetch('http://localhost:8000/professional_specialty', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              professional_id: professional.id,
+              specialty_id: specialtyId,
+            }),
+          })
+        }
+        // Crea la nueva subespecialidad si existe
+        if (subspecialtyId) {
+          await fetch('http://localhost:8000/professional_specialty', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              professional_id: professional.id,
+              specialty_id: subspecialtyId,
+            }),
+          })
+        }
+      }
+
+      Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
+      setFieldsDisabled(true)
     } catch (error) {
       console.error('Error saving changes:', error)
       Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
     }
-
-    handleFieldsDisabled()
   }
 
   useEffect(() => {
@@ -119,41 +212,6 @@ const UserDetails = () => {
 
   if (loading) return <p>Cargando usuario...</p>
   if (!user) return <p>No se encontró el usuario.</p>
-
-  const handleChangePassword = () => {
-    setShowChangePasswordModal(true)
-  }
-
-  const handlePasswordChangeSubmit = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Todos los campos son obligatorios.', 'danger')
-    }
-    if (newPassword !== confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Las contraseñas nuevas no coinciden.', 'warning')
-    }
-    try {
-      const res = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!res.ok) throw new Error('Usuario no encontrado.')
-      const dbUser = await res.json()
-      if (dbUser.password !== currentPassword) {
-        return Notifications.showAlert(setAlert, 'The current password is incorrect.', 'danger')
-      }
-      const updateRes = await fetch(`http://localhost:8000/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...dbUser, password: newPassword }),
-      })
-      if (!updateRes.ok) throw new Error('Error updating password.')
-      Notifications.showAlert(setAlert, 'Password updated correctly.', 'success')
-      setShowChangePasswordModal(false)
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-    } catch (err) {
-      console.error(err)
-      Notifications.showAlert(setAlert, 'Error changing password.', 'danger')
-    }
-  }
 
   const handleToggleStatus = async (userId) => {
     try {
@@ -185,7 +243,32 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/users/${selectedProfessionalId}`, {
+      // 1. Buscar professional por user_id
+      const profRes = await fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
+      const profArr = await profRes.json()
+      const professional = profArr[0]
+      if (professional) {
+        // 2. Buscar y eliminar todas las especialidades asociadas
+        const specRes = await fetch(
+          `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
+        )
+        const specialties = await specRes.json()
+        if (Array.isArray(specialties)) {
+          await Promise.all(
+            specialties.map((s) =>
+              fetch(`http://localhost:8000/professional_specialty/${s.id}`, {
+                method: 'DELETE',
+              }),
+            ),
+          )
+        }
+        // 3. Eliminar professional
+        await fetch(`http://localhost:8000/professionals/${professional.id}`, {
+          method: 'DELETE',
+        })
+      }
+      // 4. Eliminar usuario
+      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
         method: 'DELETE',
       })
 
@@ -225,7 +308,9 @@ const UserDetails = () => {
             </CCardTitle>
             <CCardText>
               <strong>Email:</strong> {user.email} <br />
-              <strong>Role:</strong> {user.role_id} <br />
+              <strong>Role:</strong>{' '}
+              {roles.find((r) => String(r.id) === String(user.role_id))?.name || user.role_id}{' '}
+              <br />
               <strong>Status:</strong> {user.status} <br />
               <strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()} <br />
               <strong>Last Updated:</strong> {new Date(user.updated_at).toLocaleDateString()}
@@ -235,10 +320,6 @@ const UserDetails = () => {
         <CCard className="mt-3">
           <CCardBody>
             <div className="card-actions-container">
-              <span className="card-actions-link change-password" onClick={handleChangePassword}>
-                <CIcon icon={cilLockLocked} className="me-2" width={24} height={24} />
-                Change Password
-              </span>
               <span
                 className={`card-actions-link ${user.status === 'Active' ? 'deactivate-user' : 'activate-user'}`}
                 onClick={() => handleToggleStatus(user.id)}
@@ -262,7 +343,7 @@ const UserDetails = () => {
           </CCardBody>
         </CCard>
       </CCol>
-      <CCol md={8}>
+      <CCol md={8} className="space-component">
         <CCard>
           <CCardBody>
             <CCardTitle>Edit Professional</CCardTitle>
@@ -306,6 +387,135 @@ const UserDetails = () => {
               className="mb-3"
               disabled={fieldsDisabled}
             />
+            {professional && (
+              <>
+                {fieldsDisabled ? (
+                  <>
+                    <CFormInput
+                      type="text"
+                      id="professionalType"
+                      floatingLabel="Professional Type"
+                      value={
+                        professionalTypes.find(
+                          (pt) => String(pt.id) === String(professional.professional_type_id),
+                        )?.name || ''
+                      }
+                      className="mb-3"
+                      disabled
+                    />
+                    <CFormInput
+                      type="text"
+                      id="specialty"
+                      floatingLabel="Specialty"
+                      value={
+                        specialties.find((s) => String(s.id) === String(specialty))?.name || ''
+                      }
+                      className="mb-3"
+                      disabled
+                    />
+                    {subspecialty && (
+                      <CFormInput
+                        type="text"
+                        id="subspecialty"
+                        floatingLabel="Subspecialty"
+                        value={
+                          specialties.find((s) => String(s.id) === String(subspecialty))?.name || ''
+                        }
+                        className="mb-3"
+                        disabled
+                      />
+                    )}
+                    <CFormInput
+                      type="text"
+                      id="biography"
+                      floatingLabel="Biography"
+                      value={professional.biography || ''}
+                      className="mb-3"
+                      disabled
+                    />
+                    <CFormInput
+                      type="number"
+                      id="years_of_experience"
+                      floatingLabel="Years of Experience"
+                      value={professional.years_of_experience || ''}
+                      className="mb-3"
+                      disabled
+                    />
+                  </>
+                ) : (
+                  <>
+                    <select
+                      id="professionalType"
+                      className="form-select mb-3"
+                      defaultValue={professional.professional_type_id}
+                    >
+                      <option value="">Select Professional Type</option>
+                      {professionalTypes.map((pt) => (
+                        <option key={pt.id} value={pt.id}>
+                          {pt.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      id="specialty"
+                      className="form-select mb-3"
+                      defaultValue={specialty || ''}
+                    >
+                      <option value="">Select Specialty</option>
+                      {specialties
+                        .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                    </select>
+                    <select
+                      id="subspecialty"
+                      className="form-select mb-3"
+                      defaultValue={subspecialty || ''}
+                    >
+                      <option value="">Select Subspecialty</option>
+                      {specialties
+                        .filter((s) => Number(s.id) >= 16 && Number(s.id) <= 60)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                    </select>
+                    <CFormInput
+                      type="text"
+                      id="biography"
+                      floatingLabel="Biography"
+                      defaultValue={professional.biography || ''}
+                      className="mb-3"
+                      disabled={fieldsDisabled}
+                    />
+                    <CFormInput
+                      type="number"
+                      id="years_of_experience"
+                      floatingLabel="Years of Experience"
+                      defaultValue={professional.years_of_experience || ''}
+                      className="mb-3"
+                      disabled={fieldsDisabled}
+                    />
+                    <CFormInput
+                      type="text"
+                      id="created_at"
+                      floatingLabel="Created At"
+                      value={
+                        professional.created_at
+                          ? new Date(professional.created_at).toLocaleString()
+                          : ''
+                      }
+                      className="mb-3"
+                      disabled
+                    />
+                  </>
+                )}
+              </>
+            )}
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
               {fieldsDisabled ? 'Edit' : 'Save'}
@@ -321,70 +531,6 @@ const UserDetails = () => {
         title="Delete user"
         message="Are you sure you want to delete this user? This action cannot be undone."
       />
-
-      <CModal
-        alignment="center"
-        visible={showChangePasswordModal}
-        onClose={() => setShowChangePasswordModal(false)}
-      >
-        <CModalHeader>
-          <CModalTitle>Change Password</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm>
-            <CInputGroup className="mb-2">
-              <CFormInput
-                type={showPasswords.current ? 'text' : 'password'}
-                placeholder="Current password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, current: !prev.current }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.current ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-            <CInputGroup className="mb-2">
-              <CFormInput
-                type={showPasswords.new ? 'text' : 'password'}
-                placeholder="New password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, new: !prev.new }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.new ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-            <CInputGroup>
-              <CFormInput
-                type={showPasswords.confirm ? 'text' : 'password'}
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              <CInputGroupText
-                onClick={() => setShowPasswords((prev) => ({ ...prev, confirm: !prev.confirm }))}
-                style={{ cursor: 'pointer' }}
-              >
-                <CIcon icon={showPasswords.confirm ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-            </CInputGroup>
-          </CForm>
-        </CModalBody>
-        <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowChangePasswordModal(false)}>
-            Cancel
-          </CButton>
-          <CButton color="primary" onClick={handlePasswordChangeSubmit}>
-            Change Password
-          </CButton>
-        </CModalFooter>
-      </CModal>
     </CRow>
   )
 }
