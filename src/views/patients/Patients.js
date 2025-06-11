@@ -9,6 +9,7 @@ import { useCallback } from 'react'
 
 import '../users/styles/users.css'
 import '../users/styles/filter.css'
+import { useTranslation } from 'react-i18next'
 
 import {
   CTable,
@@ -31,6 +32,8 @@ import { useNavigate } from 'react-router-dom'
 
 export const Patients = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
+
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])
   const [filters, setFilters] = useState({
@@ -124,26 +127,31 @@ export const Patients = () => {
       fields: [
         {
           name: 'first_name',
-          label: 'First Name',
-          placeholder: 'Enter first name',
+          label: 'Nombre',
+          placeholder: 'Ingrese el nombre',
           required: true,
         },
-        { name: 'last_name', label: 'Last Name', placeholder: 'Enter last name', required: true },
+        {
+          name: 'last_name',
+          label: 'Apellido',
+          placeholder: 'Ingrese el apellido',
+          required: true,
+        },
         {
           name: 'birth_date',
           type: 'date',
-          label: 'Birth Date',
-          placeholder: 'Enter birth date',
+          label: 'Fecha de Nacimiento',
+          placeholder: 'Ingrese la fecha de nacimiento',
           required: true,
         },
         {
           name: 'gender',
-          label: 'Gender',
+          label: 'Género',
           type: 'select',
           required: true,
           options: [
-            { label: 'Female', value: 'F' },
-            { label: 'Male', value: 'M' },
+            { label: 'Femenino', value: 'F' },
+            { label: 'Masculino', value: 'M' },
           ],
         },
       ],
@@ -152,32 +160,40 @@ export const Patients = () => {
       fields: [
         {
           name: 'email',
-          label: 'Email',
+          label: 'Correo Electrónico',
           type: 'email',
-          placeholder: 'Enter email',
+          placeholder: 'Ingrese el correo electrónico',
           required: true,
         },
-        { name: 'phone', label: 'Phone', placeholder: 'Enter phone number' },
-        { name: 'address', label: 'Address', placeholder: 'Enter address' },
+        {
+          name: 'phone',
+          label: 'Teléfono',
+          placeholder: 'Ingrese el número de teléfono',
+        },
+        {
+          name: 'address',
+          label: 'Dirección',
+          placeholder: 'Ingrese la dirección',
+        },
       ],
     },
     {
       fields: [
         {
           name: 'status',
-          label: 'Status',
+          label: 'Estado',
           type: 'select',
           required: true,
           options: [
-            { label: 'Active', value: 'Active' },
-            { label: 'Inactive', value: 'Inactive' },
+            { label: 'Activo', value: 'Active' },
+            { label: 'Inactivo', value: 'Inactive' },
           ],
         },
         {
           name: 'medical_data',
-          label: 'Medical Data',
+          label: 'Datos Médicos',
           type: 'textarea',
-          placeholder: 'Enter medical data',
+          placeholder: 'Ingrese los datos médicos',
           required: false,
         },
       ],
@@ -257,17 +273,20 @@ export const Patients = () => {
 
     switch (key) {
       case 'first_name':
-        label = 'First name'
+        label = 'Primer nombre'
         break
       case 'last_name':
-        label = 'Last name'
+        label = 'Apellido'
+        break
+      case 'Email':
+        label = 'Correo Electrónico'
         break
       case 'status':
-        label = 'Status'
+        label = 'Estado'
         type = 'select' // Cambiar a tipo select
         options = [
-          { label: 'Active', value: 'Active' },
-          { label: 'Inactive', value: 'Inactive' },
+          { label: 'Activo', value: 'Active' },
+          { label: 'Inactivo', value: 'Inactive' },
         ]
         break
       default:
@@ -331,12 +350,12 @@ export const Patients = () => {
     <>
       <div className="d-flex justify-content-end mb-3">
         <CButton color="primary" onClick={() => addUser()}>
-          <CIcon icon={cilUserPlus} className="me-2" /> Add patient
+          <CIcon icon={cilUserPlus} className="me-2" /> {t('Add patient')}
         </CButton>
       </div>
 
       <CCard className="mb-4">
-        <CCardHeader>Patients</CCardHeader>
+        <CCardHeader>{t('Patients')}</CCardHeader>
         <div className="filter-container">
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
@@ -353,11 +372,11 @@ export const Patients = () => {
                 <CTableHeaderCell className="avatar-header">
                   <CIcon icon={cilPeople} />
                 </CTableHeaderCell>
-                <CTableHeaderCell className="table-header">First name</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Last name</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Email</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Status</CTableHeaderCell>
-                <CTableHeaderCell className="avatar-header">Actions</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('First name')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Last name')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Email')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Status')}</CTableHeaderCell>
+                <CTableHeaderCell className="avatar-header">{t('Actions')}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -409,53 +428,54 @@ export const Patients = () => {
           setUserToDelete(null) // Limpia el usuario seleccionado al cerrar la modal
         }}
         onConfirm={confirmDelete}
-        title="Confirm patient deletion"
-        message={`Are you sure you want to remove ${userToDelete?.first_name} ${userToDelete?.last_name}?`}
+        title={t('Confirm patient deletion')}
+        message={`${t('Are you sure you want to remove')} ${userToDelete?.first_name} ${userToDelete?.last_name}?`}
       />
       <ModalInformation
         visible={infoVisible}
         onClose={() => setInfoVisible(false)} // Cierra la modal
-        title="Patient information"
+        title={t('Patient information')}
         content={
           selectedPatient ? (
             <div>
               <p>
-                <strong>First Name:</strong> {selectedPatient.first_name}
+                <strong>{t('First name')}:</strong> {selectedPatient.first_name}
               </p>
               <p>
-                <strong>Last Name:</strong> {selectedPatient.last_name}
+                <strong>{t('Last name')}:</strong> {selectedPatient.last_name}
               </p>
               <p>
-                <strong>Email:</strong> {selectedPatient.email}
+                <strong>{t('Email')}:</strong> {selectedPatient.email}
               </p>
               <p>
-                <strong>Address:</strong> {selectedPatient.address || 'No address available'}
+                <strong>{t('Address')}:</strong> {selectedPatient.address || 'No address available'}
               </p>
               <p>
-                <strong>Phone:</strong> {selectedPatient.phone || 'No phone available'}
+                <strong>{t('Phone')}:</strong> {selectedPatient.phone || 'No phone available'}
               </p>
               <p>
-                <strong>Birth Date:</strong>{' '}
+                <strong>{t('Birth Date')}:</strong>{' '}
                 {selectedPatient.birth_date || 'No birth date available'}
               </p>
               <p>
-                <strong>Gender:</strong> {selectedPatient.gender === 'F' ? 'Female' : 'Male'}
+                <strong>{t('Gender')}:</strong> {selectedPatient.gender === 'F' ? 'Female' : 'Male'}
               </p>
               <p>
-                <strong>Status:</strong> {selectedPatient.status}
+                <strong>{t('Status')}:</strong> {selectedPatient.status}
               </p>
               <p>
-                <strong>Medical Data:</strong> {selectedPatient.medical_data || 'No medical data'}
+                <strong>{t('Medical Data')}:</strong>{' '}
+                {selectedPatient.medical_data || 'No medical data'}
               </p>
             </div>
           ) : (
-            <p>No information available.</p>
+            <p>{t('No information available')}.</p>
           )
         }
       />
       <ModalAdd
         ref={ModalAddRef}
-        title="Add new patient"
+        title={t('Add new patient')}
         steps={userSteps}
         onFinish={handleFinish}
         purpose="users"

@@ -1,7 +1,10 @@
 import React from 'react'
 import { CModal, CModalBody, CModalFooter, CModalHeader, CModalTitle, CButton } from '@coreui/react'
+import { useTranslation } from 'react-i18next'
 
 const ModalDelete = ({ visible, onClose, onConfirm, title, message }) => {
+  const { t } = useTranslation()
+
   return (
     <CModal visible={visible} onClose={onClose} alignment="center" aria-labelledby="modalDelete">
       <CModalHeader>
@@ -10,10 +13,10 @@ const ModalDelete = ({ visible, onClose, onConfirm, title, message }) => {
       <CModalBody>{message || '¿Estás seguro de que deseas eliminar este elemento?'}</CModalBody>
       <CModalFooter>
         <CButton color="secondary" onClick={onClose}>
-          Cancel
+          {t('Cancel')}
         </CButton>
         <CButton color="danger" onClick={onConfirm}>
-          Delete
+          {t('Delete')}
         </CButton>
       </CModalFooter>
     </CModal>

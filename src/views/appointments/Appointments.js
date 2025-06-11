@@ -8,6 +8,7 @@ import AsyncSelect from 'react-select/async'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { useTranslation } from 'react-i18next'
 
 import './styles/appointments.css'
 import '../users/styles/filter.css'
@@ -34,6 +35,8 @@ import { useNavigate } from 'react-router-dom'
 
 const Appointments = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
+
   const [alert, setAlert] = useState(null)
   const [appointments, setAppointments] = useState([])
   const [filteredAppointments, setFilteredAppointments] = useState([])
@@ -173,18 +176,18 @@ const Appointments = () => {
       fields: [
         {
           name: 'patient',
-          label: 'Patient',
+          label: 'Paciente',
           type: 'select',
           required: true,
-          placeholder: 'Select patient',
+          placeholder: 'Seleccione al paciente',
           options: [], // Usado por customFields con AsyncSelect
         },
         {
           name: 'professional',
-          label: 'Professional',
+          label: 'Profesional',
           type: 'select',
           required: true,
-          placeholder: 'Select professional',
+          placeholder: 'Seleccione al profesional',
           options: [], // Usado por customFields con AsyncSelect
         },
       ],
@@ -195,29 +198,29 @@ const Appointments = () => {
         {
           name: 'scheduled_at',
           type: 'text', // o simplemente omite el type
-          label: 'Scheduled At',
+          label: 'Fecha Programada',
           required: true,
-          placeholder: 'Select date and time',
+          placeholder: 'Seleccione la fecha y hora',
         },
         {
           name: 'status',
-          label: 'Status',
+          label: 'Estado',
           type: 'select',
           required: true,
           options: [
-            { label: 'Pending', value: 'pending' },
-            { label: 'Confirmed', value: 'confirmed' },
-            { label: 'Completed', value: 'completed' },
-            { label: 'Canceled', value: 'canceled' },
+            { label: 'Pendiente', value: 'pending' },
+            { label: 'Confirmada', value: 'confirmed' },
+            { label: 'Completada', value: 'completed' },
+            { label: 'Cancelada', value: 'canceled' },
           ],
         },
         {
           name: 'city_id',
-          label: 'City',
+          label: 'Ciudad',
           type: 'select',
           required: true,
           options: [], // Usado por customFields con AsyncSelect
-          placeholder: 'Select city',
+          placeholder: 'Seleccione la ciudad',
         },
       ],
     },
@@ -226,26 +229,26 @@ const Appointments = () => {
       fields: [
         {
           name: 'notes',
-          label: 'Notes',
+          label: 'Notas',
           type: 'textarea',
-          placeholder: 'Enter notes',
+          placeholder: 'Ingrese las notas',
         },
         {
           name: 'reason_for_visit',
-          label: 'Reason for visit',
+          label: 'Motivo de la visita',
           type: 'text',
-          placeholder: 'Enter reason for visit',
+          placeholder: 'Ingrese el motivo de la visita',
         },
         {
           name: 'has_medical_record',
-          label: 'Do you have a medical history?',
+          label: '¿Tiene un historial médico?',
           type: 'select',
           required: true,
           options: [
             { label: 'Sí', value: 'true' },
             { label: 'No', value: 'false' },
           ],
-          placeholder: 'Do you have a medical history?',
+          placeholder: '¿Tiene un historial médico?',
         },
       ],
     },
@@ -315,37 +318,40 @@ const Appointments = () => {
 
     switch (key) {
       case 'startDate':
+        label = 'Fecha de Inicio'
+        type = 'date' // Cambiar el tipo a 'date'
+        break
       case 'endDate':
-        label = key === 'startDate' ? 'Start Date' : 'End Date'
+        label = 'Fecha de Fin'
         type = 'date' // Cambiar el tipo a 'date'
         break
       case 'patient':
-        label = 'Patient'
+        label = 'Paciente'
         break
       case 'professional':
-        label = 'Professional'
+        label = 'Profesional'
         break
       case 'status':
-        label = 'Status'
+        label = 'Estado'
         type = 'select'
         options = [
-          { label: 'Pending', value: 'pending' },
-          { label: 'Confirmed', value: 'confirmed' },
-          { label: 'Completed', value: 'completed' },
-          { label: 'Canceled', value: 'canceled' },
+          { label: 'Pendiente', value: 'pending' },
+          { label: 'Confirmada', value: 'confirmed' },
+          { label: 'Completada', value: 'completed' },
+          { label: 'Cancelada', value: 'canceled' },
         ]
         break
       case 'city':
-        label = 'City'
+        label = 'Ciudad'
         break
       default:
-        label = key.charAt(0).toUpperCase() + key.slice(1)
+        label = key.charAt(0).toUpperCase() + key.slice(1) // Capitalizar el primer carácter
     }
 
     return {
       name: key,
       label,
-      placeholder: `Search by ${label}`,
+      placeholder: `Buscar por ${label}`,
       type,
       options,
       value:
@@ -364,6 +370,7 @@ const Appointments = () => {
       },
     }
   })
+
   const normalizeText = (text) =>
     text
       .toString()
@@ -524,12 +531,12 @@ const Appointments = () => {
     <>
       <div className="d-flex justify-content-end mb-3">
         <CButton color="primary" onClick={() => addAppointment()}>
-          <CIcon icon={cilPlus} className="me-2" /> Add Appointment
+          <CIcon icon={cilPlus} className="me-2" /> {t('Add Appointment')}
         </CButton>
       </div>
 
       <CCard className="mb-4">
-        <CCardHeader>Appointments</CCardHeader>
+        <CCardHeader>{t('Appointments')}</CCardHeader>
         <div className="filter-container">
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
@@ -542,19 +549,21 @@ const Appointments = () => {
           <CTable align="middle" className="mb-0 border" hover responsive>
             <CTableHead className="text-nowrap">
               <CTableRow>
-                <CTableHeaderCell className="table-header">Patient</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Professional</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Scheduled At</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Status</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">City</CTableHeaderCell>
-                <CTableHeaderCell className="table-header avatar-header">Actions</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Patient')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Professional')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Scheduled At')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Status')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('City')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header avatar-header">
+                  {t('Actions')}
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
               {filteredAppointments.length === 0 ? (
                 <CTableRow>
                   <CTableDataCell colSpan={6} className="text-center">
-                    No appointments available
+                    {t('No appointments available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
@@ -608,54 +617,55 @@ const Appointments = () => {
           }
           setVisible(false) // Close the modal after confirming
         }}
-        title="Confirm appointment deletion"
-        message="Are you sure you want to delete this appointment?"
+        title={t('Confirm appointment deletion')}
+        message={t('Are you sure you want to delete this appointment?')}
       />
 
       <ModalInformation
         visible={infoVisible}
         onClose={() => setInfoVisible(false)}
-        title="Appointment Information"
+        title={t('Appointment Information')}
         content={
           selectedAppointment ? (
             <div>
               <p>
-                <strong>Patient:</strong> {selectedAppointment.patient}
+                <strong>{t('Patient')}:</strong> {selectedAppointment.patient}
               </p>
               <p>
-                <strong>Professional:</strong> {selectedAppointment.professional}
+                <strong>{t('Professional')}:</strong> {selectedAppointment.professional}
               </p>
               <p>
-                <strong>Scheduled At:</strong>{' '}
+                <strong>{t('Scheduled At')}:</strong>{' '}
                 {formatDate(selectedAppointment.scheduled_at, 'DATETIME')}
               </p>
               <p>
-                <strong>Status:</strong> {selectedAppointment.status}
+                <strong>{t('Status')}:</strong> {selectedAppointment.status}
               </p>
               <p>
-                <strong>City:</strong> {selectedAppointment.city}
+                <strong>{t('City')}:</strong> {selectedAppointment.city}
               </p>
               <p>
-                <strong>Notes:</strong> {selectedAppointment.notes || 'No notes available'}
+                <strong>{t('Notes')}:</strong>{' '}
+                {selectedAppointment.notes || t('No notes available')}
               </p>
               <p>
-                <strong>Reason for visit:</strong>{' '}
-                {selectedAppointment.reason_for_visit || 'No notes available'}
+                <strong>{t('Reason for visit')}:</strong>{' '}
+                {selectedAppointment.reason_for_visit || t('No notes available')}
               </p>
               <p>
-                <strong>Medical history:</strong>{' '}
-                {selectedAppointment.has_medical_record ? 'Yes' : 'No'}
+                <strong>{t('Medical history')}:</strong>{' '}
+                {selectedAppointment.has_medical_record ? t('Yes') : t('No')}
               </p>
             </div>
           ) : (
-            <p>No information available.</p>
+            <p>{t('No information available')}.</p>
           )
         }
       />
 
       <ModalAdd
         ref={ModalAddRef}
-        title="Add new appointment"
+        title={t('Add new appointment')}
         steps={appointmentSteps}
         onFinish={handleFinish}
         purpose="appointments"

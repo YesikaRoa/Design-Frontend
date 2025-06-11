@@ -5,6 +5,7 @@ import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import defaultAvatar from '../../assets/images/avatars/avatar.png'
 import Notifications from '../../components/Notifications'
+import { useTranslation } from 'react-i18next'
 
 import '../users/styles/users.css'
 import '../users/styles/filter.css'
@@ -46,6 +47,7 @@ export const Professionls = () => {
   const [userToDelete, setUserToDelete] = useState(null)
   const [professionalTypes, setProfessionalTypes] = useState([])
   const [specialties, setSpecialties] = useState([])
+  const { t } = useTranslation()
 
   useEffect(() => {
     // Cargar tipos de profesional y especialidades
@@ -67,12 +69,12 @@ export const Professionls = () => {
         const existingUsers = await emailCheckResponse.json()
 
         if (existingUsers.length > 0) {
-          Notifications.showAlert(setAlert, 'The email is already in use.', 'warning')
+          Notifications.showAlert(setAlert, t('The email is already in use'), 'warning')
           return
         }
       } catch (error) {
         console.error('Error checking email:', error)
-        Notifications.showAlert(setAlert, 'An error occurred while checking the email.', 'error')
+        Notifications.showAlert(setAlert, t('An error occurred while checking the email'), 'error')
         return
       }
 
@@ -190,26 +192,31 @@ export const Professionls = () => {
       fields: [
         {
           name: 'first_name',
-          label: 'First Name',
-          placeholder: 'Enter first name',
+          label: 'Nombre',
+          placeholder: 'Ingrese su nombre',
           required: true,
         },
-        { name: 'last_name', label: 'Last Name', placeholder: 'Enter last name', required: true },
+        {
+          name: 'last_name',
+          label: 'Apellido',
+          placeholder: 'Ingrese su apellido',
+          required: true,
+        },
         {
           name: 'birth_date',
           type: 'date', // Cambiar a texto
-          label: 'Birth Date',
-          placeholder: 'Enter birth date', // Placeholder para guiar al usuario
+          label: 'Fecha de Nacimiento',
+          placeholder: 'Ingrese su fecha de nacimiento', // Placeholder para guiar al usuario
           required: true,
         },
         {
           name: 'gender',
-          label: 'Gender',
+          label: 'Género',
           type: 'select',
           required: true,
           options: [
-            { label: 'Female', value: 'F' },
-            { label: 'Male', value: 'M' },
+            { label: 'Femenino', value: 'F' },
+            { label: 'Masculino', value: 'M' },
           ],
         },
       ],
@@ -218,38 +225,36 @@ export const Professionls = () => {
       fields: [
         {
           name: 'email',
-          label: 'Email',
+          label: 'Correo Electrónico',
           type: 'email',
-          placeholder: 'Enter email',
+          placeholder: 'Ingrese su correo electrónico',
           required: true,
         },
-        { name: 'phone', label: 'Phone', placeholder: 'Enter phone number' },
-        { name: 'address', label: 'Address', placeholder: 'Enter address' },
+        { name: 'phone', label: 'Teléfono', placeholder: 'Ingrese su número de teléfono' },
+        { name: 'address', label: 'Dirección', placeholder: 'Ingrese su dirección' },
       ],
     },
     {
       fields: [
         {
           name: 'professional_type_id',
-          label: 'Professional Type',
+          label: 'Tipo de Profesional',
           type: 'select',
           required: true,
           options: professionalTypes.map((t) => ({ label: t.name, value: t.id })),
         },
-        // Solo specialties (1-15)
         {
           name: 'specialty_id',
-          label: 'Specialty',
+          label: 'Especialidad',
           type: 'select',
           required: true,
           options: specialties
             .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
             .map((s) => ({ label: s.name, value: s.id })),
         },
-        // Subspecialty (16-60)
         {
           name: 'subspecialty_id',
-          label: 'Subspecialty',
+          label: 'Subespecialidad',
           type: 'select',
           required: false,
           options: specialties
@@ -258,26 +263,26 @@ export const Professionls = () => {
         },
         {
           name: 'biography',
-          label: 'Biography',
+          label: 'Biografía',
           type: 'textarea',
-          placeholder: 'Enter biography',
+          placeholder: 'Ingrese su biografía',
           required: false,
         },
         {
           name: 'years_of_experience',
-          label: 'Years of Experience',
+          label: 'Años de Experiencia',
           type: 'number',
-          placeholder: 'Enter years of experience',
+          placeholder: 'Ingrese sus años de experiencia',
           required: false,
         },
         {
           name: 'status',
-          label: 'Status',
+          label: 'Estado',
           type: 'select', // Cambiado a tipo select
           required: true,
           options: [
-            { label: 'Active', value: 'Active' },
-            { label: 'Inactive', value: 'Inactive' },
+            { label: 'Activo', value: 'Active' },
+            { label: 'Inactivo', value: 'Inactive' },
           ],
         },
       ],
@@ -363,17 +368,20 @@ export const Professionls = () => {
 
     switch (key) {
       case 'first_name':
-        label = 'First name'
+        label = 'Primer nombre'
         break
       case 'last_name':
-        label = 'Last name'
+        label = 'Apellido'
+        break
+      case 'email':
+        label = 'Correo electrónico'
         break
       case 'status':
-        label = 'Status'
+        label = 'Estado'
         type = 'select' // Cambiar a tipo select
         options = [
-          { label: 'Active', value: 'Active' },
-          { label: 'Inactive', value: 'Inactive' },
+          { label: 'Activo', value: 'Active' },
+          { label: 'Inactivo', value: 'Inactive' },
         ]
         break
       default:
@@ -477,12 +485,12 @@ export const Professionls = () => {
     <>
       <div className="d-flex justify-content-end mb-3">
         <CButton color="primary" onClick={() => addUser()}>
-          <CIcon icon={cilUserPlus} className="me-2" /> Add professional
+          <CIcon icon={cilUserPlus} className="me-2" /> {t('Add professional')}
         </CButton>
       </div>
 
       <CCard className="mb-4">
-        <CCardHeader>Professional</CCardHeader>
+        <CCardHeader>{t('Professional')}</CCardHeader>
         <div className="filter-container">
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
@@ -499,18 +507,18 @@ export const Professionls = () => {
                 <CTableHeaderCell className="avatar-header">
                   <CIcon icon={cilPeople} />
                 </CTableHeaderCell>
-                <CTableHeaderCell className="table-header">First name</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Last name</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Email</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Status</CTableHeaderCell>
-                <CTableHeaderCell className="avatar-header">Actions</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('First name')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Last name')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Email')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Status')}</CTableHeaderCell>
+                <CTableHeaderCell className="avatar-header">{t('Actions')}</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
               {filteredUsers.length === 0 ? (
                 <CTableRow>
                   <CTableDataCell colSpan={6} className="text-center">
-                    No hay usuarios disponibles
+                    {t('No users available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
@@ -555,83 +563,84 @@ export const Professionls = () => {
           setUserToDelete(null) // Limpia el usuario seleccionado al cerrar la modal
         }}
         onConfirm={confirmDelete}
-        title="Confirm professional deletion"
-        message={`Are you sure you want to remove ${userToDelete?.first_name} ${userToDelete?.last_name}?`}
+        title={t('Confirm professional deletion')}
+        message={`${t('Are you sure you want to remove')} ${userToDelete?.first_name} ${userToDelete?.last_name}?`}
       />
       <ModalInformation
         visible={infoVisible}
         onClose={() => setInfoVisible(false)}
-        title="Professional information"
+        title={t('Professional information')}
         content={
           selectedProfessional ? (
             <div>
               <p>
-                <strong>First Name:</strong> {selectedProfessional.first_name}
+                <strong>{t('First name')}:</strong> {selectedProfessional.first_name}
               </p>
               <p>
-                <strong>Last Name:</strong> {selectedProfessional.last_name}
+                <strong>{t('Last name')}:</strong> {selectedProfessional.last_name}
               </p>
               <p>
-                <strong>Email:</strong> {selectedProfessional.email}
+                <strong>{t('Email')}:</strong> {selectedProfessional.email}
               </p>
               <p>
-                <strong>Professional Type:</strong>{' '}
+                <strong>{t('Professional Type')}:</strong>{' '}
                 {professionalTypes.find(
                   (t) => String(t.id) === String(selectedProfessional.professional_type_id),
                 )?.name || 'N/A'}
               </p>
               <p>
-                <strong>Specialty:</strong>{' '}
+                <strong>{t('Specialty')}:</strong>{' '}
                 {specialties.find((s) => String(s.id) === String(selectedProfessional.specialty_id))
                   ?.name || 'N/A'}
               </p>
-              {/* Si quieres mostrar la subespecialidad, puedes agregar esto: */}
               {selectedProfessional.subspecialty_id && (
                 <p>
-                  <strong>Subspecialty:</strong>{' '}
+                  <strong>{t('Subspecialty')}:</strong>{' '}
                   {specialties.find(
                     (s) => String(s.id) === String(selectedProfessional.subspecialty_id),
                   )?.name || 'N/A'}
                 </p>
               )}
               <p>
-                <strong>Address:</strong> {selectedProfessional.address || 'No address available'}
+                <strong>{t('Address')}:</strong>{' '}
+                {selectedProfessional.address || 'No address available'}
               </p>
               <p>
-                <strong>Phone:</strong> {selectedProfessional.phone || 'No phone available'}
+                <strong>{t('Phone')}:</strong> {selectedProfessional.phone || 'No phone available'}
               </p>
               <p>
-                <strong>Birth Date:</strong>{' '}
+                <strong>{t('Birth Date')}:</strong>{' '}
                 {selectedProfessional.birth_date || 'No birth date available'}
               </p>
               <p>
-                <strong>Gender:</strong> {selectedProfessional.gender === 'F' ? 'Female' : 'Male'}
+                <strong>{t('Gender')}:</strong>{' '}
+                {selectedProfessional.gender === 'F' ? 'Female' : 'Male'}
               </p>
               <p>
-                <strong>Status:</strong> {selectedProfessional.status}
+                <strong>{t('Status')}:</strong> {selectedProfessional.status}
               </p>
               <p>
-                <strong>Biography:</strong> {selectedProfessional.biography || 'N/A'}
+                <strong>{t('Biography')}:</strong> {selectedProfessional.biography || 'N/A'}
               </p>
               <p>
-                <strong>Years of Experience:</strong>{' '}
+                <strong>{t('Years of Experience')}:</strong>{' '}
                 {selectedProfessional.years_of_experience || 'N/A'}
               </p>
               <p>
-                <strong>Created At:</strong>{' '}
+                <strong>{t('Created at')}:</strong>{' '}
                 {selectedProfessional.created_at
                   ? new Date(selectedProfessional.created_at).toLocaleString()
                   : 'N/A'}
               </p>
             </div>
           ) : (
-            <p>No information available.</p>
+            <p>{t('No information available')}</p>
           )
         }
       />
       <ModalAdd
         ref={ModalAddRef}
-        title="Add new professional"
+        title={t('Add new professional')}
         steps={userSteps}
         onFinish={handleFinish}
         purpose="users"

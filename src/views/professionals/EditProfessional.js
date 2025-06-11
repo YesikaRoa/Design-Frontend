@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import '../users/styles/UserDetails.css'
+import { useTranslation } from 'react-i18next'
 
 import {
   CButton,
@@ -37,6 +38,7 @@ import ModalDelete from '../../components/ModalDelete'
 const UserDetails = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
@@ -293,7 +295,7 @@ const UserDetails = () => {
   return (
     <CRow>
       <CCol md={12}>
-        <h3 className="mb-4">Professional Details</h3>
+        <h3 className="mb-4">{t('Professional Details')}</h3>
         {alert && (
           <CAlert color={alert.type} className="text-center alert-fixed">
             {alert.message}
@@ -307,13 +309,14 @@ const UserDetails = () => {
               {user.first_name} {user.last_name}
             </CCardTitle>
             <CCardText>
-              <strong>Email:</strong> {user.email} <br />
-              <strong>Role:</strong>{' '}
+              <strong>{t('Email')}:</strong> {user.email} <br />
+              <strong>{t('Role')}:</strong>{' '}
               {roles.find((r) => String(r.id) === String(user.role_id))?.name || user.role_id}{' '}
               <br />
-              <strong>Status:</strong> {user.status} <br />
-              <strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()} <br />
-              <strong>Last Updated:</strong> {new Date(user.updated_at).toLocaleDateString()}
+              <strong>{t('Status')}:</strong> {user.status} <br />
+              <strong>{t('Created at')}:</strong> {new Date(user.created_at).toLocaleDateString()}{' '}
+              <br />
+              <strong>{t('Last Updated')}:</strong> {new Date(user.updated_at).toLocaleDateString()}
             </CCardText>
           </CCardBody>
         </CCard>
@@ -330,14 +333,16 @@ const UserDetails = () => {
                   width={24}
                   height={24}
                 />
-                {user.status === 'Active' ? 'Deactivate Professional' : 'Activate Professional'}
+                {user.status === 'Active'
+                  ? t('Deactivate Professional')
+                  : t('Activate Professional')}
               </span>
               <span
                 className="card-actions-link delete-user"
                 onClick={() => openDeleteModal(user.id)}
               >
                 <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
-                Delete Professional
+                {t('Delete Professional')}
               </span>
             </div>
           </CCardBody>
@@ -346,11 +351,11 @@ const UserDetails = () => {
       <CCol md={8} className="space-component">
         <CCard>
           <CCardBody>
-            <CCardTitle>Edit Professional</CCardTitle>
+            <CCardTitle>{t('Edit Professional')}</CCardTitle>
             <CFormInput
               type="text"
               id="firstName"
-              floatingLabel="First Name"
+              floatingLabel={t('First name')}
               defaultValue={user.first_name}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -358,7 +363,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="lastName"
-              floatingLabel="Last Name"
+              floatingLabel={t('Last name')}
               defaultValue={user.last_name}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -366,7 +371,7 @@ const UserDetails = () => {
             <CFormInput
               type="email"
               id="email"
-              floatingLabel="Email"
+              floatingLabel={t('Email')}
               defaultValue={user.email}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -374,7 +379,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="address"
-              floatingLabel="Address"
+              floatingLabel={t('Address')}
               defaultValue={user.address}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -382,7 +387,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="phone"
-              floatingLabel="Phone"
+              floatingLabel={t('Phone')}
               defaultValue={user.phone}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -394,7 +399,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="text"
                       id="professionalType"
-                      floatingLabel="Professional Type"
+                      floatingLabel={t('Professional Type')}
                       value={
                         professionalTypes.find(
                           (pt) => String(pt.id) === String(professional.professional_type_id),
@@ -406,7 +411,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="text"
                       id="specialty"
-                      floatingLabel="Specialty"
+                      floatingLabel={t('Specialty')}
                       value={
                         specialties.find((s) => String(s.id) === String(specialty))?.name || ''
                       }
@@ -417,7 +422,7 @@ const UserDetails = () => {
                       <CFormInput
                         type="text"
                         id="subspecialty"
-                        floatingLabel="Subspecialty"
+                        floatingLabel={t('Subspecialty')}
                         value={
                           specialties.find((s) => String(s.id) === String(subspecialty))?.name || ''
                         }
@@ -428,7 +433,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="text"
                       id="biography"
-                      floatingLabel="Biography"
+                      floatingLabel={t('Biography')}
                       value={professional.biography || ''}
                       className="mb-3"
                       disabled
@@ -436,7 +441,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="number"
                       id="years_of_experience"
-                      floatingLabel="Years of Experience"
+                      floatingLabel={t('Years of Experience')}
                       value={professional.years_of_experience || ''}
                       className="mb-3"
                       disabled
@@ -487,7 +492,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="text"
                       id="biography"
-                      floatingLabel="Biography"
+                      floatingLabel={t('Biography')}
                       defaultValue={professional.biography || ''}
                       className="mb-3"
                       disabled={fieldsDisabled}
@@ -495,7 +500,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="number"
                       id="years_of_experience"
-                      floatingLabel="Years of Experience"
+                      floatingLabel={t('Years of Experience')}
                       defaultValue={professional.years_of_experience || ''}
                       className="mb-3"
                       disabled={fieldsDisabled}
@@ -503,7 +508,7 @@ const UserDetails = () => {
                     <CFormInput
                       type="text"
                       id="created_at"
-                      floatingLabel="Created At"
+                      floatingLabel={t('Created at')}
                       value={
                         professional.created_at
                           ? new Date(professional.created_at).toLocaleString()
@@ -518,7 +523,7 @@ const UserDetails = () => {
             )}
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? 'Edit' : 'Save'}
+              {fieldsDisabled ? t('Edit') : t('Save')}
             </CButton>
           </CCardBody>
         </CCard>
@@ -528,8 +533,8 @@ const UserDetails = () => {
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
         onConfirm={handleDeleteUser}
-        title="Delete user"
-        message="Are you sure you want to delete this user? This action cannot be undone."
+        title={t('Delete user')}
+        message={t('Are you sure you want to delete this user? This action cannot be undone.')}
       />
     </CRow>
   )

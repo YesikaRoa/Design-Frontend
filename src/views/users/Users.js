@@ -196,90 +196,113 @@ export const Users = () => {
       fields: [
         {
           name: 'first_name',
-          label: 'First Name',
-          placeholder: 'Enter first name',
+          label: 'Primer nombre',
+          placeholder: 'Ingrese el primer nombre',
           required: true,
         },
-        { name: 'last_name', label: 'Last Name', placeholder: 'Enter last name', required: true },
-        { name: 'birth_date', type: 'date', label: 'Birth Date', required: true },
+        {
+          name: 'last_name',
+          label: 'Apellido',
+          placeholder: 'Ingrese el apellido',
+          required: true,
+        },
+        {
+          name: 'birth_date',
+          type: 'date',
+          label: 'Fecha de nacimiento',
+          required: true,
+        },
         {
           name: 'gender',
-          label: 'Gender',
+          label: 'Género',
           type: 'select',
           required: true,
           options: [
-            { label: 'Female', value: 'F' },
-            { label: 'Male', value: 'M' },
+            { label: 'Femenino', value: 'F' },
+            { label: 'Masculino', value: 'M' },
           ],
         },
       ],
     },
     {
       fields: [
-        { name: 'email', label: 'Email', type: 'email', required: true },
-        { name: 'phone', label: 'Phone', placeholder: 'Enter phone number' },
-        { name: 'address', label: 'Address', placeholder: 'Enter address' },
+        {
+          name: 'email',
+          label: 'Correo electrónico',
+          type: 'email',
+          required: true,
+        },
+        {
+          name: 'phone',
+          label: 'Teléfono',
+          placeholder: 'Ingrese el número de teléfono',
+        },
+        {
+          name: 'address',
+          label: 'Dirección',
+          placeholder: 'Ingrese la dirección',
+        },
       ],
     },
     {
       fields: [
         {
           name: 'role_id',
-          label: 'Role',
+          label: 'Rol',
           type: 'select',
           required: true,
           options: roles
-            .filter((r) => ['1', '2', '3'].includes(String(r.id))) // Solo los 3 roles
-            .map((r) => ({ label: r.name, value: r.id })),
+            .filter((r) => ['1', '2', '3'].includes(String(r.id)))
+            .map((r) => ({ label: r.name, value: r.id })), // suponiendo que 'r.name' ya está en español o es dinámico
         },
         {
           name: 'status',
-          label: 'Status',
+          label: 'Estado',
           type: 'select',
           required: true,
           options: [
-            { label: 'Active', value: 'Active' },
-            { label: 'Inactive', value: 'Inactive' },
+            { label: 'Activo', value: 'Active' },
+            { label: 'Inactivo', value: 'Inactive' },
           ],
         },
         ...(formData.role_id === '2'
           ? [
               {
                 name: 'professional_type_id',
-                label: 'Professional Type',
+                label: 'Tipo de profesional',
                 type: 'select',
                 required: true,
                 options: professionalTypes.map((pt) => ({ label: pt.name, value: pt.id })),
               },
               {
                 name: 'biography',
-                label: 'Biography',
-                placeholder: 'Enter biography',
+                label: 'Biografía',
+                placeholder: 'Ingrese la biografía',
                 required: false,
               },
               {
                 name: 'years_of_experience',
-                label: 'Years of Experience',
+                label: 'Años de experiencia',
                 type: 'number',
-                placeholder: 'Enter years of experience',
+                placeholder: 'Ingrese los años de experiencia',
                 required: false,
               },
               {
                 name: 'specialty_id',
-                label: 'Specialty',
+                label: 'Especialidad',
                 type: 'select',
                 required: true,
-                multiple: true, // Permitir selección múltiple
+                multiple: true,
                 options: specialties
                   .filter((s) => s.id >= 1 && s.id <= 15)
                   .map((s) => ({ label: s.name, value: s.id })),
               },
               {
                 name: 'subspecialty_id',
-                label: 'Subspecialty',
+                label: 'Subespecialidad',
                 type: 'select',
                 required: false,
-                multiple: true, // Permitir selección múltiple
+                multiple: true,
                 options: specialties
                   .filter((s) => s.id >= 16 && s.id <= 60)
                   .map((s) => ({ label: s.name, value: s.id })),
@@ -290,8 +313,8 @@ export const Users = () => {
           ? [
               {
                 name: 'medical_data',
-                label: 'Medical Data',
-                placeholder: 'Enter medical data',
+                label: 'Datos médicos',
+                placeholder: 'Ingrese los datos médicos',
                 required: false,
               },
             ]
@@ -603,7 +626,7 @@ export const Users = () => {
 
       <ModalAdd
         ref={ModalAddRef}
-        title="Add new user"
+        title={t('Add new user')}
         steps={getUserSteps} // Pasa la función, no el resultado
         onFinish={handleFinish}
         purpose="users"

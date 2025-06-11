@@ -28,9 +28,11 @@ import './styles/Profile.css' // Asegúrate de que la ruta sea correcta
 import Notifications from '../../components/Notifications'
 import { useDispatch } from 'react-redux'
 import Select from 'react-select'
+import { useTranslation } from 'react-i18next'
 
 const Profile = () => {
   const dispatch = useDispatch()
+  const { t } = useTranslation()
   const [user, setUser] = useState(null)
   const [formData, setFormData] = useState({})
   const [modalVisible, setModalVisible] = useState(false)
@@ -361,22 +363,22 @@ const Profile = () => {
               <CCol md={6} className="d-flex align-items-stretch">
                 <CCard className="inner-card">
                   <CCardBody>
-                    <CCardTitle>Personal Information</CCardTitle>
+                    <CCardTitle>{t('Personal Information')}</CCardTitle>
                     <CListGroup flush>
                       <CListGroupItem>
-                        <strong>Email:</strong> {user.email}
+                        <strong>{t('Email')}:</strong> {user.email}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Phone:</strong> {user.phone}
+                        <strong>{t('Phone')}:</strong> {user.phone}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Address:</strong> {user.address}
+                        <strong>{t('Address')}:</strong> {user.address}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Birth Date:</strong> {user.birth_date}
+                        <strong>{t('Birth Date')}:</strong> {user.birth_date}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Gender:</strong> {user.gender}
+                        <strong>{t('Gender')}:</strong> {user.gender}
                       </CListGroupItem>
                     </CListGroup>
                   </CCardBody>
@@ -385,23 +387,25 @@ const Profile = () => {
               <CCol md={6} className="d-flex align-items-stretch">
                 <CCard className="inner-card">
                   <CCardBody>
-                    <CCardTitle>Professional Information</CCardTitle>
+                    <CCardTitle>{t('Professional Information')}</CCardTitle>
                     <CListGroup flush>
                       <CListGroupItem>
-                        <strong>Type:</strong> {professionalType ? professionalType.name : '-'}
+                        <strong>{t('Type')}:</strong>{' '}
+                        {professionalType ? professionalType.name : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Biography:</strong> {professional ? professional.biography : '-'}
+                        <strong>{t('Biography')}:</strong>{' '}
+                        {professional ? professional.biography : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Years experience:</strong>{' '}
+                        <strong>{t('Years of experience')}:</strong>{' '}
                         {professional ? professional.years_of_experience : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Specialties:</strong> {getSpecialtyNames()}
+                        <strong>{t('Specialties')}:</strong> {getSpecialtyNames()}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>Subspecialties:</strong> {getSubspecialtyNames()}
+                        <strong>{t('Subspecialties')}:</strong> {getSubspecialtyNames()}
                       </CListGroupItem>
                     </CListGroup>
                   </CCardBody>
@@ -416,7 +420,7 @@ const Profile = () => {
                 onClick={handleEditInformation}
               >
                 <CIcon icon={cilPencil} className="me-2" />
-                Edit Information
+                {t('Edit Information')}
               </CButton>
               <CButton
                 color="primary"
@@ -425,60 +429,60 @@ const Profile = () => {
                 onClick={handleChangePassword}
               >
                 <CIcon icon={cilLockLocked} className="me-2" width={17} height={17} />
-                Change Password
+                {t('Change Password')}
               </CButton>
             </CRow>
           </CContainer>
 
           <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
             <CModalHeader>
-              <CModalTitle>Edit Information</CModalTitle>
+              <CModalTitle>{t('Edit Information')}</CModalTitle>
             </CModalHeader>
             <CModalBody>
               <CFormInput
                 type="text"
                 name="first_name"
-                label={<strong>First Name:</strong>}
+                label={<strong>{t('First name')}:</strong>}
                 value={formData.first_name || ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="last_name"
-                label={<strong>Last Name:</strong>}
+                label={<strong>{t('Last name')}:</strong>}
                 value={formData.last_name || ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="email"
                 name="email"
-                label={<strong>Email:</strong>}
+                label={<strong>{t('Email')}:</strong>}
                 value={formData.email || ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="phone"
-                label={<strong>Phone:</strong>}
+                label={<strong>{t('Phone')}:</strong>}
                 value={formData.phone || ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="address"
-                label={<strong>Address:</strong>}
+                label={<strong>{t('Address')}:</strong>}
                 value={formData.address || ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="biography"
-                label={<strong>Biography:</strong>}
+                label={<strong>{t('Biography')}:</strong>}
                 value={formData.biography || ''}
                 onChange={handleInputChange}
               />
               <label>
-                <strong>Specialty:</strong>
+                <strong>{t('Specialty')}:</strong>
               </label>
               <Select
                 isMulti
@@ -496,7 +500,7 @@ const Profile = () => {
                 placeholder="Selecciona especialidades"
               />
               <label>
-                <strong>Subspecialty:</strong>
+                <strong>{t('Subspecialty')}:</strong>
               </label>
               <Select
                 isMulti
@@ -517,7 +521,7 @@ const Profile = () => {
               <CFormInput
                 type="number"
                 name="years_experience"
-                label={<strong>Years of Experience:</strong>}
+                label={<strong>{t('Years of Experience')}:</strong>}
                 value={formData.years_experience || ''}
                 onChange={handleInputChange}
               />
@@ -525,11 +529,11 @@ const Profile = () => {
             <CModalFooter>
               <CButton color="secondary" onClick={() => setModalVisible(false)}>
                 <CIcon icon={cilExitToApp} className="me-2" />
-                Close
+                {t('Close')}
               </CButton>
               <CButton color="primary" onClick={handleSaveChanges}>
                 <CIcon icon={cilSave} className="me-2" />
-                Save Changes
+                {t('Save Changes')}
               </CButton>
             </CModalFooter>
           </CModal>
@@ -539,14 +543,14 @@ const Profile = () => {
             onClose={() => setShowChangePasswordModal(false)}
           >
             <CModalHeader>
-              <CModalTitle>Change Password</CModalTitle>
+              <CModalTitle>{t('Change Password')}</CModalTitle>
             </CModalHeader>
             <CModalBody>
               <CForm>
                 <CInputGroup className="mb-2">
                   <CFormInput
                     type={showPasswords.current ? 'text' : 'password'}
-                    placeholder="Current password"
+                    placeholder={t('Current password')}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                   />
@@ -562,7 +566,7 @@ const Profile = () => {
                 <CInputGroup className="mb-2">
                   <CFormInput
                     type={showPasswords.new ? 'text' : 'password'}
-                    placeholder="New password"
+                    placeholder={t('New password')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
@@ -576,7 +580,7 @@ const Profile = () => {
                 <CInputGroup>
                   <CFormInput
                     type={showPasswords.confirm ? 'text' : 'password'}
-                    placeholder="Confirm new password"
+                    placeholder={t('Confirm new password')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
@@ -593,10 +597,10 @@ const Profile = () => {
             </CModalBody>
             <CModalFooter>
               <CButton color="secondary" onClick={() => setShowChangePasswordModal(false)}>
-                Cancel
+                {t('Cancel')}
               </CButton>
               <CButton color="primary" onClick={handlePasswordChangeSubmit}>
-                Change Password
+                {t('Change Password')}
               </CButton>
             </CModalFooter>
           </CModal>

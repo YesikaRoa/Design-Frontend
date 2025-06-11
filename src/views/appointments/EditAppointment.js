@@ -5,6 +5,7 @@ import AsyncSelect from 'react-select/async'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import { useTranslation } from 'react-i18next'
 
 import {
   CButton,
@@ -31,6 +32,8 @@ import Notifications from '../../components/Notifications'
 const EditAppointment = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation()
+
   const [appointment, setAppointment] = useState(null)
   const [editedAppointment, setEditedAppointment] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -124,7 +127,7 @@ const EditAppointment = () => {
   return (
     <CRow>
       <CCol md={12}>
-        <h3 className="mb-4">Edit Appointment</h3>
+        <h3 className="mb-4">{t('Edit Appointment')}</h3>
         {alert && (
           <CAlert color={alert.type} className="text-center alert-fixed">
             {alert.message}
@@ -134,19 +137,22 @@ const EditAppointment = () => {
       <CCol md={4}>
         <CCard>
           <CCardBody>
-            <CCardTitle className="text-primary">Patient: {appointment.patient}</CCardTitle>
+            <CCardTitle className="text-primary">
+              {t('Patient')}: {appointment.patient_id}
+            </CCardTitle>
             <CCardText>
-              <strong>Professional:</strong> {appointment.professional} <br />
-              <strong>Status:</strong> {appointment.status} <br />
-              <strong>Date:</strong> {new Date(appointment.scheduled_at).toLocaleString()} <br />
-              <strong>City:</strong> {appointment.city} <br />
-              <strong>Reason:</strong> {appointment.reason_for_visit}
+              <strong>{t('Professional')}:</strong> {appointment.professional_id} <br />
+              <strong>{t('Status')}:</strong> {appointment.status} <br />
+              <strong>{t('Date')}:</strong> {new Date(appointment.scheduled_at).toLocaleString()}{' '}
+              <br />
+              <strong>{t('City')}:</strong> {appointment.city} <br />
+              <strong>{t('Reason for visit')}:</strong> {appointment.reason_for_visit}
             </CCardText>
           </CCardBody>
         </CCard>
         <CCard className="mt-3">
           <CCardBody>
-            <CCardTitle className="text-primary">Change Status</CCardTitle>
+            <CCardTitle className="text-primary">{t('Change Status')}</CCardTitle>
             <div className="mb-3">
               <CFormSelect
                 id="quickStatusChange"
@@ -184,11 +190,10 @@ const EditAppointment = () => {
                   }
                 }}
               >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="canceled by professional">Canceled by professional</option>
-                <option value="canceled by patient">Canceled by patient</option>
-                <option value="completed">Completed</option>
+                <option value="pending">{t('Pending')}</option>
+                <option value="confirmed">{t('Confirmed')}</option>
+                <option value="canceled">{t('Canceled')}</option>
+                <option value="completed">{t('Completed')}</option>
               </CFormSelect>
             </div>
             <CButton color="danger" onClick={() => setDeleteModalVisible(true)} className="mt-2">
@@ -201,12 +206,12 @@ const EditAppointment = () => {
       <CCol md={8}>
         <CCard className=" mb-4">
           <CCardBody>
-            <CCardTitle>Edit Information</CCardTitle>
+            <CCardTitle>{t('Edit Information')}</CCardTitle>
 
             {/* Scheduled At con DateTimePicker */}
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateTimePicker
-                label="Scheduled At"
+                label={t('Scheduled At')}
                 value={
                   editedAppointment.scheduled_at ? new Date(editedAppointment.scheduled_at) : null
                 }
@@ -232,7 +237,7 @@ const EditAppointment = () => {
             {/* Status */}
             <CFormSelect
               id="status"
-              floatingLabel="Status"
+              floatingLabel={t('Status')}
               value={editedAppointment.status}
               onChange={(e) =>
                 setEditedAppointment({ ...editedAppointment, status: e.target.value })
@@ -240,25 +245,20 @@ const EditAppointment = () => {
               className="mb-3"
               disabled={fieldsDisabled}
             >
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="canceled by professional">Canceled by professional</option>
-              <option value="canceled by patient">Canceled by patient</option>
-              <option value="completed">Completed</option>
+              <option value="pending">{t('Pending')}</option>
+              <option value="confirmed">{t('Confirmed')}</option>
+              <option value="canceled">{t('Canceled')}</option>
+              <option value="completed">{t('Completed')}</option>
             </CFormSelect>
 
             {/* City con AsyncSelect */}
             <div className="mb-3">
               <AsyncSelect
                 cacheOptions
-                defaultOptions={
-                  cities
-                    .slice(0, 5)
-                    .map((city) => ({
-                      label: city.name,
-                      value: city.id,
-                    }))
-                }
+                defaultOptions={cities.slice(0, 5).map((city) => ({
+                  label: city.name,
+                  value: city.id,
+                }))}
                 value={
                   cities
                     .map((city) => ({
@@ -272,7 +272,7 @@ const EditAppointment = () => {
                     .filter((city) =>
                       !inputValue
                         ? true
-                        : city.name.toLowerCase().startsWith(inputValue.toLowerCase())
+                        : city.name.toLowerCase().startsWith(inputValue.toLowerCase()),
                     )
                     .map((city) => ({
                       label: city.name,
@@ -294,7 +294,7 @@ const EditAppointment = () => {
 
             <CFormTextarea
               id="notes"
-              floatingLabel="Notes"
+              floatingLabel={t('Notes')}
               value={editedAppointment.notes}
               onChange={(e) =>
                 setEditedAppointment({ ...editedAppointment, notes: e.target.value })
@@ -304,7 +304,7 @@ const EditAppointment = () => {
             />
             <CFormTextarea
               id="reason_for_visit"
-              floatingLabel="Reason for Visit"
+              floatingLabel={t('Reason for visit')}
               value={editedAppointment.reason_for_visit}
               onChange={(e) =>
                 setEditedAppointment({ ...editedAppointment, reason_for_visit: e.target.value })
@@ -314,7 +314,7 @@ const EditAppointment = () => {
             />
             <CFormSelect
               id="has_medical_record"
-              floatingLabel="¿Tiene historial médico?"
+              floatingLabel={t('Has Medical Record')}
               value={
                 editedAppointment.has_medical_record === true ||
                 editedAppointment.has_medical_record === 'true'
@@ -339,7 +339,7 @@ const EditAppointment = () => {
             </CFormSelect>
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : saveChanges}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? 'Edit' : 'Save'}
+              {fieldsDisabled ? t('Edit') : t('Save')}
             </CButton>
           </CCardBody>
         </CCard>
@@ -351,15 +351,15 @@ const EditAppointment = () => {
         onClose={() => setDeleteModalVisible(false)}
       >
         <CModalHeader>
-          <CModalTitle>Delete Appointment</CModalTitle>
+          <CModalTitle>{t('Delete Appointment')}</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to delete this appointment?</CModalBody>
+        <CModalBody>{t('Are you sure you want to delete this appointment?')}</CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setDeleteModalVisible(false)}>
-            Cancel
+            {t('Cancel')}
           </CButton>
           <CButton color="danger" onClick={deleteAppointment}>
-            Delete
+            {t('Delete')}
           </CButton>
         </CModalFooter>
       </CModal>

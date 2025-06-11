@@ -1,7 +1,9 @@
 import React from 'react'
 import { CModal, CModalBody, CModalFooter, CModalHeader, CModalTitle, CButton } from '@coreui/react'
+import { useTranslation } from 'react-i18next'
 
 const ModalInformation = ({ visible, onClose, title, content }) => {
+  const { t } = useTranslation()
   return (
     <CModal
       alignment="center"
@@ -16,7 +18,7 @@ const ModalInformation = ({ visible, onClose, title, content }) => {
       <CModalBody>{content || <p>No hay información disponible.</p>}</CModalBody>
       <CModalFooter>
         <CButton color="secondary" onClick={onClose}>
-          Close
+          {t('Close')}
         </CButton>
       </CModalFooter>
     </CModal>

@@ -31,9 +31,11 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilInfo, cilTrash, cilPlus } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const MedicalHistory = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [alert, setAlert] = useState(null)
   const [medicalHistory, setMedicalHistory] = useState([])
   const [appointments, setAppointments] = useState([])
@@ -211,17 +213,17 @@ const MedicalHistory = () => {
       fields: [
         {
           name: 'appointment_id',
-          label: 'Appointment ID',
+          label: 'ID de la Cita',
           type: 'custom',
-          placeholder: 'Select appointment',
+          placeholder: 'Seleccione la cita',
           required: true,
           options: [], // Mapeo a customFields
         },
         {
           name: 'created_at',
           type: 'custom',
-          label: 'Created At',
-          placeholder: 'Select date and time',
+          label: 'Fecha de Creación',
+          placeholder: 'Seleccione la fecha y hora',
           required: true,
           custom: 'created_at', // Mapeo a customFields
         },
@@ -231,9 +233,9 @@ const MedicalHistory = () => {
       fields: [
         {
           name: 'general_notes',
-          label: 'General notes',
+          label: 'Notas Generales',
           type: 'textarea',
-          placeholder: 'Enter additional notes',
+          placeholder: 'Ingrese notas adicionales',
         },
       ],
     },
@@ -241,21 +243,22 @@ const MedicalHistory = () => {
       fields: [
         {
           name: 'attachment_image',
-          label: 'Attach Image',
+          label: 'Adjuntar Imagen',
           type: 'file',
-          placeholder: 'Upload an image',
+          placeholder: 'Cargar una imagen',
           accept: 'image/*',
         },
         {
           name: 'attachment_document',
-          label: 'Attach Document',
+          label: 'Adjuntar Documento',
           type: 'file',
-          placeholder: 'Upload a document',
+          placeholder: 'Cargar un documento',
           accept: '.pdf, .doc, .docx, .txt',
         },
       ],
     },
   ]
+
   // Custom handlers for fields
   const customFields = {
     appointment_id: ({ value, onChange, placeholder }) => (
@@ -340,18 +343,21 @@ const MedicalHistory = () => {
 
     switch (key) {
       case 'startDate':
+        label = 'Fecha de Inicio'
+        type = 'date' // Cambiar el tipo a 'date'
+        break
       case 'endDate':
-        label = key === 'startDate' ? 'Start Date' : 'End Date'
+        label = 'Fecha de Fin'
         type = 'date' // Cambiar el tipo a 'date'
         break
       case 'patient':
-        label = 'Patient'
+        label = 'Paciente'
         break
       case 'professional':
-        label = 'Professional'
+        label = 'Profesional'
         break
       default:
-        label = key.charAt(0).toUpperCase() + key.slice(1)
+        label = key.charAt(0).toUpperCase() + key.slice(1) // Capitalizar el primer carácter
     }
 
     return {
@@ -435,7 +441,7 @@ const MedicalHistory = () => {
       </div>
 
       <CCard className="mb-4">
-        <CCardHeader>Medical History</CCardHeader>
+        <CCardHeader>{t('Medical history')}</CCardHeader>
         <div className="filter-container">
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
@@ -448,11 +454,13 @@ const MedicalHistory = () => {
           <CTable align="middle" className="mb-0 border" hover responsive>
             <CTableHead className="text-nowrap">
               <CTableRow>
-                <CTableHeaderCell className="table-header">Patient</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Professional</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">Appointment</CTableHeaderCell>
-                <CTableHeaderCell className="table-header">created_at</CTableHeaderCell>
-                <CTableHeaderCell className="table-header avatar-header">Actions</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Patient')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Professional')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Appointment')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header">{t('Created at')}</CTableHeaderCell>
+                <CTableHeaderCell className="table-header avatar-header">
+                  {t('Actions')}
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -483,10 +491,10 @@ const MedicalHistory = () => {
                             setVisible(true)
                           }}
                         >
-                          <CIcon icon={cilTrash} />
+                          <CIcon icon={cilTrash} style={{ '--ci-primary-color': 'white' }} />
                         </CButton>
                         <CButton color="info" size="sm" onClick={() => handleInfo(record)}>
-                          <CIcon icon={cilInfo} />
+                          <CIcon icon={cilInfo} style={{ '--ci-primary-color': 'white' }} />
                         </CButton>
                       </div>
                     </CTableDataCell>
@@ -507,36 +515,37 @@ const MedicalHistory = () => {
           }
           setVisible(false) // Close the modal after confirming
         }}
-        title="Confirm medical history deletion"
-        message="Are you sure you want to delete this medical history?"
+        title={t('Confirm medical history deletion')}
+        message={t('Are you sure you want to delete this medical history?')}
       />
 
       <ModalInformation
         visible={infoVisible}
         onClose={() => setInfoVisible(false)}
-        title="Medical History Information"
+        title={t('Medical History Information')}
         content={
           selectedMedicalHistory ? (
             <div>
               <p>
-                <strong>Patient:</strong> {selectedMedicalHistory.patient}
+                <strong>{t('Patient')}:</strong> {selectedMedicalHistory.patient}
               </p>
               <p>
-                <strong>Professional:</strong> {selectedMedicalHistory.professional}
+                <strong>{t('Professional')}:</strong> {selectedMedicalHistory.professional}
               </p>
               <p>
-                <strong>Appointment:</strong> {selectedMedicalHistory.appointment_id}
+                <strong>{t('Appointment')}:</strong> {selectedMedicalHistory.appointment_id}
               </p>
               <p>
-                <strong>Created At:</strong> {selectedMedicalHistory.created_at}
+                <strong>{t('Created at')}:</strong>{' '}
+                {formatDate(selectedMedicalHistory.created_at, 'DATETIME')}
               </p>
               <p>
-                <strong>General notes:</strong>{' '}
+                <strong>{t('General notes')}:</strong>{' '}
                 {selectedMedicalHistory.general_notes || 'No notes available'}
               </p>
               {selectedMedicalHistory.attachment_image_url ? (
                 <div>
-                  <strong>Attached Image:</strong>
+                  <strong>{t('Attached Image:')}</strong>
                   <img
                     src={selectedMedicalHistory.attachment_image_url}
                     alt="Attached"
@@ -544,11 +553,11 @@ const MedicalHistory = () => {
                   />
                 </div>
               ) : (
-                <p>No image attached.</p>
+                <p>{t('No image attached')}.</p>
               )}
               {selectedMedicalHistory.attachment_document_url ? (
                 <div>
-                  <strong>Attached Document:</strong>
+                  <strong>{t('Attached Document')}:</strong>
                   <a
                     href={selectedMedicalHistory.attachment_document_url}
                     target="_blank"
@@ -559,18 +568,18 @@ const MedicalHistory = () => {
                   </a>
                 </div>
               ) : (
-                <p>No document attached.</p>
+                <p>{t('No document attached')}.</p>
               )}
             </div>
           ) : (
-            <p>No information available.</p>
+            <p>{t('No information available')}.</p>
           )
         }
       />
 
       <ModalAdd
         ref={ModalAddRef}
-        title="Add new medical history"
+        title={t('Add new medical history')}
         steps={medicalHistorySteps}
         onFinish={handleFinish}
         purpose="MedicalHistory"

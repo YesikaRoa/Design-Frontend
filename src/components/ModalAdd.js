@@ -5,7 +5,7 @@ import { cilPlus } from '@coreui/icons'
 import '../views/users/styles/modalAddUser.css'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
-import AsyncSelect from 'react-select/async'
+import { useTranslation } from 'react-i18next'
 
 function getStepsArray(steps, formData) {
   return typeof steps === 'function' ? steps(formData) : steps
@@ -17,6 +17,7 @@ const ModalAdd = forwardRef(
     const [stepIndex, setStepIndex] = useState(0)
     const [formData, setFormData] = useState({})
     const [errors, setErrors] = useState({}) // Estado para errores
+    const { t } = useTranslation()
 
     useImperativeHandle(ref, () => ({
       open: (initialData = {}) => {
@@ -219,10 +220,10 @@ const ModalAdd = forwardRef(
                 onClick={() => setVisible(false)}
                 className="full-width"
               >
-                Cancel
+                {t('Cancel')}
               </CButton>
               <CButton color="primary" onClick={nextStep} className="full-width">
-                Continue
+                {t('Continue')}
               </CButton>
             </div>
           )}
@@ -235,10 +236,10 @@ const ModalAdd = forwardRef(
                 onClick={prevStep}
                 className="full-width"
               >
-                Back
+                {t('Back')}
               </CButton>
               <CButton color="primary" onClick={nextStep} className="full-width">
-                Continue
+                {t('Continue')}
               </CButton>
             </div>
           )}
@@ -251,11 +252,11 @@ const ModalAdd = forwardRef(
                 onClick={prevStep}
                 className="full-width"
               >
-                Back
+                {t('Back')}
               </CButton>
               <CButton color="success" className="full-width" onClick={handleAdd}>
                 <CIcon icon={cilPlus} style={{ marginRight: '8px' }} />
-                Add
+                {t('Add')}
               </CButton>
             </div>
           )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import '../users/styles/UserDetails.css'
+import { useTranslation } from 'react-i18next'
 
 import {
   CButton,
@@ -43,6 +44,7 @@ const UserDetails = () => {
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [selectedPatientId, setselectedPatientId] = useState(null)
+  const { t } = useTranslation()
 
   const [roles, setRoles] = useState([])
   const [patient, setPatient] = useState(null)
@@ -243,11 +245,12 @@ const UserDetails = () => {
               {user.first_name} {user.last_name}
             </CCardTitle>
             <CCardText>
-              <strong>Email:</strong> {user.email} <br />
-              <strong>Role:</strong> {getRoleName(user.role_id)} <br />
-              <strong>Status:</strong> {user.status} <br />
-              <strong>Created:</strong> {new Date(user.created_at).toLocaleDateString()} <br />
-              <strong>Last Updated:</strong> {new Date(user.updated_at).toLocaleDateString()}
+              <strong>{t('Email')}:</strong> {user.email} <br />
+              <strong>{t('Role')}:</strong> {getRoleName(user.role_id)} <br />
+              <strong>{t('Status')}:</strong> {user.status} <br />
+              <strong>{t('Created at')}:</strong> {new Date(user.created_at).toLocaleDateString()}{' '}
+              <br />
+              <strong>{t('Last Updated')}:</strong> {new Date(user.updated_at).toLocaleDateString()}
             </CCardText>
           </CCardBody>
         </CCard>
@@ -264,14 +267,14 @@ const UserDetails = () => {
                   width={24}
                   height={24}
                 />
-                {user.status === 'Active' ? 'Deactivate Patient' : 'Activate Patient'}
+                {user.status === 'Active' ? t('Deactivate Patient') : t('Activate Patient')}
               </span>
               <span
                 className="card-actions-link delete-user"
                 onClick={() => openDeleteModal(user.id)}
               >
                 <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
-                Delete Patient
+                {t('Delete Patient')}
               </span>
             </div>
           </CCardBody>
@@ -280,11 +283,11 @@ const UserDetails = () => {
       <CCol md={8} className="space-component">
         <CCard>
           <CCardBody>
-            <CCardTitle>Edit Patient</CCardTitle>
+            <CCardTitle>{t('Edit Patient')}</CCardTitle>
             <CFormInput
               type="text"
               id="firstName"
-              floatingLabel="First Name"
+              floatingLabel={t('First name')}
               defaultValue={user.first_name}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -292,7 +295,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="lastName"
-              floatingLabel="Last Name"
+              floatingLabel={t('Last name')}
               defaultValue={user.last_name}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -300,7 +303,7 @@ const UserDetails = () => {
             <CFormInput
               type="email"
               id="email"
-              floatingLabel="Email"
+              floatingLabel={t('Email')}
               defaultValue={user.email}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -308,7 +311,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="address"
-              floatingLabel="Address"
+              floatingLabel={t('Address')}
               defaultValue={user.address}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -316,7 +319,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="phone"
-              floatingLabel="Phone"
+              floatingLabel={t('Phone')}
               defaultValue={user.phone}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -324,7 +327,7 @@ const UserDetails = () => {
             <CFormInput
               type="text"
               id="medicalData"
-              floatingLabel="Medical Data"
+              floatingLabel={t('Medical Data')}
               value={medicalData}
               className="mb-3"
               disabled={fieldsDisabled}
@@ -332,7 +335,7 @@ const UserDetails = () => {
             />
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? 'Edit' : 'Save'}
+              {fieldsDisabled ? t('Edit') : t('Save')}
             </CButton>
           </CCardBody>
         </CCard>
@@ -342,8 +345,8 @@ const UserDetails = () => {
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
         onConfirm={handleDeleteUser}
-        title="Delete user"
-        message="Are you sure you want to delete this user? This action cannot be undone."
+        title={t('Delete user')}
+        message={t('Are you sure you want to delete this user? This action cannot be undone.')}
       />
     </CRow>
   )

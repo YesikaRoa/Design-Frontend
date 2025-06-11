@@ -21,10 +21,12 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
+import { useTranslation } from 'react-i18next'
 
 const EditMedicalHistory = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [medicalHistory, setMedicalHistory] = useState(null)
   const [editedMedicalHistory, seteditedMedicalHistory] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -37,14 +39,24 @@ const EditMedicalHistory = () => {
     if (location.state?.medicalHistory) {
       const newMedicalHistory = location.state.medicalHistory
       setMedicalHistory(newMedicalHistory)
-      seteditedMedicalHistory({ ...newMedicalHistory })
+      seteditedMedicalHistory({
+        ...newMedicalHistory,
+        created_at: newMedicalHistory.created_at
+          ? new Date(newMedicalHistory.created_at).toISOString().slice(0, 16)
+          : '',
+      })
       localStorage.setItem('selectedMedicalHistory', JSON.stringify(newMedicalHistory))
     } else {
       const storedMedicalHistory = localStorage.getItem('selectedMedicalHistory')
       if (storedMedicalHistory) {
         const parsed = JSON.parse(storedMedicalHistory)
         setMedicalHistory(parsed)
-        seteditedMedicalHistory({ ...parsed })
+        seteditedMedicalHistory({
+          ...parsed,
+          created_at: parsed.created_at
+            ? new Date(parsed.created_at).toISOString().slice(0, 16)
+            : '',
+        })
       }
     }
     setLoading(false)
@@ -114,7 +126,7 @@ const EditMedicalHistory = () => {
   return (
     <CRow>
       <CCol md={12}>
-        <h3 className="mb-4">Edit Medical History</h3>
+        <h3 className="mb-4">{t('Edit Medical History')}</h3>
         {alert && (
           <CAlert color={alert.type} className="text-center alert-fixed">
             {alert.message}
@@ -124,10 +136,13 @@ const EditMedicalHistory = () => {
       <CCol md={4}>
         <CCard>
           <CCardBody>
-            <CCardTitle className="text-primary">Patient: {medicalHistory.patient}</CCardTitle>
+            <CCardTitle className="text-primary">
+              {t('Patient')}: {medicalHistory.patient}
+            </CCardTitle>
             <CCardText>
-              <strong>Professional:</strong> {medicalHistory.professional} <br />
-              <strong>Date:</strong> {new Date(medicalHistory.created_at).toLocaleString()} <br />
+              <strong>{t('Professional')}:</strong> {medicalHistory.professional} <br />
+              <strong>{t('Date')}:</strong> {new Date(medicalHistory.created_at).toLocaleString()}{' '}
+              <br />
             </CCardText>
           </CCardBody>
         </CCard>
@@ -139,7 +154,7 @@ const EditMedicalHistory = () => {
               className="mt-2 text-center"
             >
               <CIcon icon={cilTrash} className="me-2" />
-              Delete medicalHistory
+              {t('Delete medical history')}
             </CButton>
           </CCardBody>
         </CCard>
@@ -147,12 +162,12 @@ const EditMedicalHistory = () => {
       <CCol md={8}>
         <CCard className="mb-4">
           <CCardBody>
-            <CCardTitle>Edit Information</CCardTitle>
+            <CCardTitle>{t('Edit Information')}</CCardTitle>
 
             <CFormInput
               type="datetime-local"
               id="created_at"
-              floatingLabel="Created At"
+              floatingLabel={t('Created at')}
               value={editedMedicalHistory.created_at}
               onChange={(e) =>
                 seteditedMedicalHistory({ ...editedMedicalHistory, created_at: e.target.value })
@@ -163,7 +178,7 @@ const EditMedicalHistory = () => {
 
             <CFormTextarea
               id="general_notes"
-              floatingLabel="General Notes"
+              floatingLabel={t('General Notes')}
               value={editedMedicalHistory.general_notes}
               onChange={(e) =>
                 seteditedMedicalHistory({ ...editedMedicalHistory, general_notes: e.target.value })
@@ -175,7 +190,7 @@ const EditMedicalHistory = () => {
             <CFormInput
               type="file"
               id="attachment_image"
-              label="Attachment Image"
+              label={t('Attachment Image')}
               onChange={(e) =>
                 seteditedMedicalHistory({
                   ...editedMedicalHistory,
@@ -189,7 +204,7 @@ const EditMedicalHistory = () => {
             <CFormInput
               type="file"
               id="attachment_document"
-              label="Attachment Document"
+              label={t('Attachment Document')}
               onChange={(e) =>
                 seteditedMedicalHistory({
                   ...editedMedicalHistory,
@@ -202,7 +217,7 @@ const EditMedicalHistory = () => {
 
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : saveChanges}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? 'Edit' : 'Save'}
+              {fieldsDisabled ? t('Edit') : t('Save')}
             </CButton>
           </CCardBody>
         </CCard>
@@ -214,15 +229,15 @@ const EditMedicalHistory = () => {
         onClose={() => setDeleteModalVisible(false)}
       >
         <CModalHeader>
-          <CModalTitle>Delete medicalHistory </CModalTitle>
+          <CModalTitle>{t('Delete medical history')}</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to delete this medicalHistory ?</CModalBody>
+        <CModalBody>{t('Are you sure you want to delete this medical history?')}</CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setDeleteModalVisible(false)}>
-            Cancel
+            {t('Cancel')}
           </CButton>
           <CButton color="danger" onClick={deleteMedicalHistory}>
-            Delete
+            {t('Delete')}
           </CButton>
         </CModalFooter>
       </CModal>

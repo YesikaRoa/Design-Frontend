@@ -210,7 +210,7 @@
       "phone": "04261000003",
       "birth_date": "2001-02-14",
       "gender": "F",
-      "avatar": "/src/assets/images/avatars/avatar.png",
+      "avatar": "src/assets/images/avatars/7.jpg",
       "role_id": 2,
       "status": "Active",
       "created_at": "2025-06-04T15:35:27.293Z",
@@ -285,6 +285,70 @@
       "status": "Inactive",
       "created_at": "2025-06-08T20:00:36.145Z",
       "updated_at": "2025-06-08T20:00:36.145Z"
+    },
+    {
+      "id": "807b",
+      "first_name": "Anu",
+      "last_name": "Garcia",
+      "email": "yroa1402w2@gmail.com",
+      "password": "$2b$10$b9mK767qGG41WZHWywH56Oyr0gcU7yecoqu/hmcpyzDhzSuRPasAG",
+      "address": "Barrio Libertador",
+      "phone": "04261000003",
+      "birth_date": "01/06/2025",
+      "gender": "F",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "3",
+      "status": "Active",
+      "created_at": "2025-06-10T19:55:08.062Z",
+      "updated_at": "2025-06-10T19:55:08.062Z"
+    },
+    {
+      "id": "2cc9",
+      "first_name": "Jorge",
+      "last_name": "Garcia",
+      "email": "yroa14023@gmail.com",
+      "password": "$2b$10$pn87J31Le29MNmZjM/7Z0O7HgqVw2gGt25C7cfVv1C76PanvbR2Ee",
+      "address": "Calle 3, Táriba",
+      "phone": "04261000003",
+      "birth_date": "07/01/2025",
+      "gender": "M",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "3",
+      "status": "Active",
+      "created_at": "2025-06-10T19:58:23.502Z",
+      "updated_at": "2025-06-10T19:58:23.502Z"
+    },
+    {
+      "id": "efc5",
+      "first_name": "Carlos",
+      "last_name": "Sánchez",
+      "email": "yroa14ert02@gmail.com",
+      "password": "hashed_password_default",
+      "address": "Barrio Libertador",
+      "phone": "04261000003",
+      "birth_date": "10/06/2025",
+      "gender": "M",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "2",
+      "status": "Active",
+      "created_at": "2025-06-10T21:03:50.791Z",
+      "updated_at": "2025-06-10T21:03:50.791Z"
+    },
+    {
+      "id": "8322",
+      "first_name": "Jorge",
+      "last_name": "Sánchez",
+      "email": "yroa140uuuuu2@gmail.com",
+      "password": "hashed_password_default",
+      "address": "Barrio Libertador",
+      "phone": "04261000000",
+      "birth_date": "10/06/2025",
+      "gender": "F",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": "3",
+      "status": "Active",
+      "created_at": "2025-06-10T21:58:02.153Z",
+      "updated_at": "2025-06-10T21:58:02.153Z"
     }
   ],
   "appointments": [
@@ -299,7 +363,10 @@
       "city_id": "1",
       "has_medical_record": false,
       "created_at": "2025-06-04T22:53:52.614Z",
-      "updated_at": "2025-06-04T22:53:52.614Z"
+      "updated_at": "2025-06-04T22:53:52.614Z",
+      "patient": "Carlos Pérez",
+      "professional": "Jorgee Sánchez",
+      "city": "Bogota"
     },
     {
       "id": "ce59",
@@ -400,18 +467,33 @@
       "has_medical_record": false,
       "created_at": "2025-06-10T00:19:43.981Z",
       "updated_at": "2025-06-10T00:19:43.981Z"
+    },
+    {
+      "id": "a758",
+      "scheduled_at": "2025-06-10T16:05:00.000Z",
+      "status": "confirmed",
+      "notes": "medicamentoss",
+      "reason_for_visit": "Consulta pediátrica",
+      "patient_id": "new_id_6",
+      "professional_id": "new_id_2",
+      "city_id": "2",
+      "has_medical_record": true,
+      "created_at": "2025-06-10T22:20:08.338Z",
+      "updated_at": "2025-06-10T22:20:08.338Z"
     }
   ],
   "medical_records": [
     {
       "id": "1749492459324",
       "appointment_id": "63e2",
-      "created_at": "2025-06-09T07:15:00.000Z",
+      "created_at": "2025-06-12T19:51",
       "general_notes": "Chequeo",
       "patient_id": "new_id_8",
       "professional_id": "new_id_3",
       "attachment_image_url": null,
-      "attachment_document_url": null
+      "attachment_document_url": null,
+      "patient": "María Fernández",
+      "professional": "Diana Moreno"
     },
     {
       "id": "1749492489196",
@@ -432,6 +514,18 @@
       "professional_id": "new_id_2",
       "attachment_image_url": null,
       "attachment_document_url": null
+    },
+    {
+      "id": "1749599093757",
+      "appointment_id": "d742",
+      "created_at": "2025-06-12T17:00",
+      "general_notes": "Chequeos",
+      "patient_id": "new_id_7",
+      "professional_id": "new_id_2",
+      "attachment_image_url": null,
+      "attachment_document_url": null,
+      "patient": "Carlos Pérez",
+      "professional": "Jorgee Sánchez"
     }
   ],
   "specialty": [
@@ -822,6 +916,14 @@
       "biography": "Terapeuta dedicada",
       "years_of_experience": "3",
       "created_at": "2025-06-08T20:00:36.187Z"
+    },
+    {
+      "id": "c9af",
+      "user_id": "efc5",
+      "professional_type_id": "1",
+      "biography": "Terapeuta dedicada",
+      "years_of_experience": 2,
+      "created_at": "2025-06-10T21:03:50.813Z"
     }
   ],
   "professional_specialty": [
@@ -899,6 +1001,16 @@
       "id": "ceec",
       "professional_id": "f434",
       "specialty_id": 19
+    },
+    {
+      "id": "183f",
+      "professional_id": "c9af",
+      "specialty_id": "3"
+    },
+    {
+      "id": "7b76",
+      "professional_id": "c9af",
+      "specialty_id": "22"
     }
   ],
   "patient": [
@@ -939,6 +1051,20 @@
       "medical_data": "cdcscsdfc camila",
       "created_at": "2025-06-08T19:50:16.920Z",
       "updated_at": "2025-06-08T19:50:16.920Z"
+    },
+    {
+      "id": "615a",
+      "user_id": "807b",
+      "medical_data": "Hipertension",
+      "created_at": "2025-06-10T19:55:08.108Z",
+      "updated_at": "2025-06-10T19:55:08.108Z"
+    },
+    {
+      "id": "8159",
+      "user_id": "2cc9",
+      "medical_data": "cdcscsdfc camila",
+      "created_at": "2025-06-10T19:58:23.542Z",
+      "updated_at": "2025-06-10T19:58:23.542Z"
     }
   ],
   "role": [
@@ -1000,12 +1126,12 @@
   "city": [
     {
       "id": "1",
-      "name": "Caracas",
+      "name": "Bogota",
       "state_id": 1
     },
     {
       "id": "2",
-      "name": "Maracaibo",
+      "name": "Medellin",
       "state_id": 2
     },
     {
@@ -1020,32 +1146,32 @@
     },
     {
       "id": "5",
-      "name": "Charallave",
+      "name": "Pamplona",
       "state_id": 3
     },
     {
       "id": "6",
-      "name": "Valencia",
+      "name": "Bucaramanga",
       "state_id": 4
     },
     {
       "id": "7",
-      "name": "Puerto Cabello",
+      "name": "Cucuta",
       "state_id": 4
     },
     {
       "id": "8",
-      "name": "Barquisimeto",
+      "name": "Cartagena",
       "state_id": 5
     },
     {
       "id": "9",
-      "name": "Cabudare",
+      "name": "Santa Marta",
       "state_id": 5
     },
     {
       "id": "10",
-      "name": "San Cristóbal",
+      "name": "Pereira",
       "state_id": 6
     },
     {
@@ -1055,7 +1181,7 @@
     },
     {
       "id": "12",
-      "name": "Puerto La Cruz",
+      "name": "Meta",
       "state_id": 7
     },
     {
