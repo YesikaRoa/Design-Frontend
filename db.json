@@ -349,6 +349,22 @@
       "status": "Active",
       "created_at": "2025-06-10T21:58:02.153Z",
       "updated_at": "2025-06-10T21:58:02.153Z"
+    },
+    {
+      "id": "00ed",
+      "first_name": "Camila",
+      "last_name": "Sánchez",
+      "email": "Yeinyperez901e@gmail.com",
+      "password": "$2b$10$CN4SV8MVUjPREM33iybwVu.wgmRNDg5n2GTX00PC6qJVI46LDM86m",
+      "address": "Av. Rotaria, San Cristóbal",
+      "phone": "04261000003",
+      "birth_date": "1995-08-28",
+      "gender": "F",
+      "avatar": "/src/assets/images/avatars/avatar.png",
+      "role_id": 2,
+      "status": "Active",
+      "created_at": "2025-06-11T00:53:57.992Z",
+      "updated_at": "2025-06-11T00:53:57.992Z"
     }
   ],
   "appointments": [
@@ -924,6 +940,14 @@
       "biography": "Terapeuta dedicada",
       "years_of_experience": 2,
       "created_at": "2025-06-10T21:03:50.813Z"
+    },
+    {
+      "id": "b42c",
+      "user_id": "00ed",
+      "professional_type_id": 3,
+      "biography": "Terapeuta dedicada",
+      "years_of_experience": 4,
+      "created_at": "2025-06-11T00:53:57.992Z"
     }
   ],
   "professional_specialty": [
@@ -1011,6 +1035,16 @@
       "id": "7b76",
       "professional_id": "c9af",
       "specialty_id": "22"
+    },
+    {
+      "id": "7bbf",
+      "specialty_id": 4,
+      "professional_id": "b42c"
+    },
+    {
+      "id": "6090",
+      "specialty_id": 26,
+      "professional_id": "b42c"
     }
   ],
   "patient": [

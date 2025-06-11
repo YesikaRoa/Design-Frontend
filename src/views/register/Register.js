@@ -41,8 +41,6 @@ const Register = () => {
     avatar: defaultAvatar,
     role_id: 'Professional',
     status: 'Active',
-    state: '',
-    city: '',
   })
   const [step, setStep] = useState(1)
   const [alert, setAlert] = useState(null)
@@ -51,8 +49,6 @@ const Register = () => {
 
   const [professionalTypes, setProfessionalTypes] = useState([])
   const [specialtiesData, setSpecialtiesData] = useState([])
-  const [states, setStates] = useState([])
-  const [cities, setCities] = useState([])
   useEffect(() => {
     // Cargar tipos de profesional
     fetch('http://localhost:8000/professional_type')
@@ -62,16 +58,6 @@ const Register = () => {
     fetch('http://localhost:8000/specialty')
       .then((res) => res.json())
       .then((data) => setSpecialtiesData(data))
-    // Cargar estados
-    fetch('http://localhost:8000/state')
-      .then((res) => res.json())
-      .then((data) => setStates(data))
-    // Cargar ciudades
-    fetch('http://localhost:8000/city')
-      .then((res) => res.json())
-      .then((data) => {
-        setCities(data)
-      })
   }, [])
 
   // Filtrar especialidades y subespecialidades según selección
@@ -212,7 +198,7 @@ const Register = () => {
               </CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="First Name"
+                placeholder="Primer nombre"
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleInputChange}
@@ -224,7 +210,7 @@ const Register = () => {
               </CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Last Name"
+                placeholder="Apellido"
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleInputChange}
@@ -234,7 +220,7 @@ const Register = () => {
               <CInputGroupText>@</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Email"
+                placeholder="Correo electrónico"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
@@ -252,7 +238,7 @@ const Register = () => {
               <CFormInput
                 className="form-input"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
+                placeholder="Contraseña"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
@@ -264,46 +250,10 @@ const Register = () => {
         return (
           <>
             <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>Estado</CInputGroupText>
-              <CFormSelect
-                className="form-select"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-              >
-                <option value="">Seleccione estado</option>
-                {states.map((state) => (
-                  <option key={state.id} value={state.id}>
-                    {state.name}
-                  </option>
-                ))}
-              </CFormSelect>
-            </CInputGroup>
-            {formData.state && (
-              <CInputGroup className="mb-3 form-step">
-                <CInputGroupText>Ciudad</CInputGroupText>
-                <CFormSelect
-                  className="form-select"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Seleccione ciudad</option>
-                  {cities
-                    .filter((city) => Number(city.state_id) === Number(formData.state))
-                    .map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {city.name}
-                      </option>
-                    ))}
-                </CFormSelect>
-              </CInputGroup>
-            )}
-            <CInputGroup className="mb-3 form-step">
               <CInputGroupText>📍</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Address"
+                placeholder="Dirección"
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
@@ -313,7 +263,7 @@ const Register = () => {
               <CInputGroupText>📞</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Phone"
+                placeholder="Teléfono"
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
@@ -324,7 +274,7 @@ const Register = () => {
               <CFormInput
                 className="form-input"
                 type="date"
-                placeholder="Birth Date"
+                placeholder="Fecha de nacimiento"
                 name="birth_date"
                 value={formData.birth_date}
                 onChange={handleInputChange}
@@ -338,7 +288,7 @@ const Register = () => {
                 value={formData.gender}
                 onChange={handleInputChange}
               >
-                <option value="">Select Gender</option>
+                <option value="">Seleccione género</option>
                 <option value="F">F</option>
                 <option value="M">M</option>
               </CFormSelect>
@@ -352,7 +302,7 @@ const Register = () => {
               <CInputGroupText>📝</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="biography"
+                placeholder="Biografía"
                 name="biography"
                 value={formData.biography}
                 onChange={handleInputChange}
@@ -419,7 +369,7 @@ const Register = () => {
               <CFormInput
                 className="form-input"
                 type="number"
-                placeholder="Years of Experience"
+                placeholder="Años de experiencia"
                 name="years_experience"
                 value={formData.years_experience}
                 onChange={handleInputChange}
@@ -464,13 +414,22 @@ const Register = () => {
                         Previous
                       </CButton>
                     )}
+                    {step === 1 && (
+                      <CButton
+                        color="light"
+                        className="text-primary"
+                        onClick={() => navigate('/login')}
+                      >
+                        Ir a inicio de sesión
+                      </CButton>
+                    )}
                     {step < 3 ? (
                       <CButton color="primary" onClick={handleNext}>
-                        Next
+                        Siguiente
                       </CButton>
                     ) : (
                       <CButton color="success" onClick={handleRegister}>
-                        Register
+                        Regístrate
                       </CButton>
                     )}
                   </div>
