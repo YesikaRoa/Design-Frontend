@@ -158,13 +158,17 @@ const Login = () => {
                     </CAlert>
                   )}
                   <CForm>
-                    <h1>Login</h1>
-                    <p className="text-body-secondary">Sign In to your account</p>
+                    <h1>Inicio de sesión</h1>
+                    <p className="text-body-secondary">Acceda a su cuenta</p>
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
-                      <CFormInput id="username-input" placeholder="Email" autoComplete="email" />
+                      <CFormInput
+                        id="username-input"
+                        placeholder="Correo electrónico"
+                        autoComplete="email"
+                      />
                     </CInputGroup>
                     <CInputGroup className="mb-4">
                       <CInputGroupText
@@ -176,14 +180,14 @@ const Login = () => {
                       <CFormInput
                         id="password-input"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Password"
+                        placeholder="Contraseña"
                         autoComplete="current-password"
                       />
                     </CInputGroup>
                     <CRow>
                       <CCol xs={6}>
                         <CButton color="primary" className="px-4" onClick={handleLogin}>
-                          Login
+                          Inicio de sesión
                         </CButton>
                       </CCol>
                       <CCol xs={6} className="text-right">
@@ -192,7 +196,7 @@ const Login = () => {
                           className="px-0"
                           onClick={() => setModalVisible(true)}
                         >
-                          Forgot password?
+                          ¿Ha olvidado su contraseña?
                         </CButton>
                       </CCol>
                     </CRow>
@@ -202,14 +206,14 @@ const Login = () => {
               <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
                 <CCardBody className="text-center">
                   <div>
-                    <h3>Welcome to MediPanel</h3>
+                    <h3>Bienvenido a MediPanel</h3>
                     <p>
-                      "Every appointment is an opportunity to change a life. This panel will help
-                      you do it with love and excellence."
+                      "Cada cita es una oportunidad para cambiar una vida. Este panel le ayudará a
+                      hacerlo con amor y excelencia".
                     </p>
                     <Link to="/register">
                       <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
+                        Regístrese ahora!
                       </CButton>
                     </Link>
                   </div>
