@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import '../users/styles/UserDetails.css'
 import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router-dom'
 
 import {
   CButton,
@@ -13,30 +14,13 @@ import {
   CRow,
   CFormInput,
   CAlert,
-  CModal,
-  CModalBody,
-  CModalFooter,
-  CModalHeader,
-  CModalTitle,
-  CForm,
-  CInputGroup,
-  CInputGroupText,
 } from '@coreui/react'
-import {
-  cilPencil,
-  cilSave,
-  cilTrash,
-  cilBan,
-  cilCheckCircle,
-  cilLockLocked,
-  cilLockUnlocked,
-} from '@coreui/icons'
+import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
 
 const UserDetails = () => {
-  const location = useLocation()
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -45,148 +29,162 @@ const UserDetails = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [selectedPatientId, setselectedPatientId] = useState(null)
   const { t } = useTranslation()
-
-  const [roles, setRoles] = useState([])
+  const token = localStorage.getItem('authToken')
+  const { id } = useParams()
   const [patient, setPatient] = useState(null)
   const [medicalData, setMedicalData] = useState('')
 
-  useEffect(() => {
-    // ...existing code...
-    // Obtener roles
-    fetch('http://localhost:8000/role')
-      .then((res) => res.json())
-      .then(setRoles)
-  }, [location, navigate])
-
-  const getRoleName = (roleId) => {
-    const role = roles.find((r) => String(r.id) === String(roleId))
-    return role ? role.name : roleId
+  const fetchPatient = async (profId) => {
+    setLoading(true)
+    try {
+      const response = await fetch(`http://localhost:3000/api/patients/${profId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('Error fetching patient')
+      const data = await response.json()
+      setPatient(data)
+      setUser(data) // Actualiza también el estado de user
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
   }
+
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
   }
 
-  const normalizeNameForURL = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-  }
-
   const save = async () => {
     try {
-      const getResponse = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!getResponse.ok) throw new Error('Error al obtener los datos actuales del usuario.')
-      const currentUser = await getResponse.json()
-
-      const updatedFields = {
-        first_name: document.getElementById('firstName').value,
-        last_name: document.getElementById('lastName').value,
-        email: document.getElementById('email').value,
-        address: document.getElementById('address').value,
-        phone: document.getElementById('phone').value,
-      }
-
-      const updatedUser = { ...currentUser, ...updatedFields }
-
-      const putResponse = await fetch(`http://localhost:8000/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
+      // Obtener los datos actuales del usuario
+      const getResponse = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
 
-      if (putResponse.ok) {
-        const result = await putResponse.json()
-        setUser(result)
-        Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
+      if (!getResponse.ok) throw new Error('Error al obtener los datos actuales del usuario.')
+      const currentData = await getResponse.json()
+
+      // Extraer valores del formulario
+      const updatedFields = {
+        first_name: document.getElementById('firstName').value || null,
+        last_name: document.getElementById('lastName').value || null,
+        email: document.getElementById('email').value || null,
+        address: document.getElementById('address').value || null,
+        phone: document.getElementById('phone').value || null,
+        medical_data: medicalData || null,
       }
 
-      // Actualizar medical_data en patient
-      if (patient) {
-        await fetch(`http://localhost:8000/patient/${patient.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...patient,
-            medical_data: medicalData,
-            updated_at: new Date().toISOString(),
-          }),
-        })
+      // Comparar campos actualizados con datos actuales para enviar solo los modificados
+      const changes = {}
+      for (const key in updatedFields) {
+        if (updatedFields[key] && updatedFields[key] !== currentData[key]) {
+          changes[key] = updatedFields[key]
+        }
       }
+
+      // Validar si hay cambios
+      if (Object.keys(changes).length === 0) {
+        Notifications.showAlert(setAlert, 'No se realizaron cambios.', 'info')
+        return
+      }
+
+      // Enviar datos al backend
+      const putResponse = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(changes),
+      })
+
+      if (!putResponse.ok) {
+        const errorData = await putResponse.json()
+
+        // Manejo de errores de validación Zod
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          const messages = errorData.issues
+            .map((issue) =>
+              Array.isArray(issue.path)
+                ? `${issue.path.join('.')} - ${issue.message}`
+                : `${issue.path || 'unknown'} - ${issue.message}`,
+            )
+            .join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'Error al guardar los cambios.',
+            'danger',
+          )
+        }
+        return // Detener el flujo
+      }
+
+      const result = await putResponse.json()
+      setUser(result.user)
+      Notifications.showAlert(setAlert, 'Cambios guardados exitosamente.', 'success')
     } catch (error) {
       console.error('Error saving changes:', error)
-      Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
+      Notifications.showAlert(setAlert, 'Hubo un error al guardar los cambios.', 'danger')
     }
 
     handleFieldsDisabled()
   }
 
   useEffect(() => {
-    setUser(null)
-    setLoading(true)
-
-    if (location.state && location.state.user) {
-      const newUser = location.state.user
-      setUser(newUser)
-      localStorage.setItem('selectedPatient', JSON.stringify(newUser))
-
-      // Obtener datos del paciente
-      fetch(`http://localhost:8000/patient?user_id=${newUser.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.length > 0) {
-            setPatient(data[0])
-            setMedicalData(data[0].medical_data)
-          }
-        })
-
-      const firstName = newUser.first_name.split(' ')[0]
-      const normalizedFirstName = normalizeNameForURL(firstName)
-      navigate(`/patients/${normalizedFirstName}`, { replace: true })
-    } else {
-      const storedUser = localStorage.getItem('selectedPatient')
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser)
-        setUser(parsedUser)
-        // Obtener datos del paciente
-        fetch(`http://localhost:8000/patient?user_id=${parsedUser.id}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data && data.length > 0) {
-              setPatient(data[0])
-              setMedicalData(data[0].medical_data)
-            }
-          })
-      }
-      setLoading(false)
-    }
-  }, [location, navigate])
+    if (id) fetchPatient(id)
+  }, [id])
 
   if (loading) return <p>Cargando usuario...</p>
   if (!user) return <p>No se encontró el usuario.</p>
 
-  const handleToggleStatus = async (userId) => {
+  const handleToggleStatus = async (patientId) => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-      const updatedUser = { ...user, status: updatedStatus }
 
-      const response = await fetch(`http://localhost:8000/users/${userId}`, {
+      const response = await fetch(`http://localhost:3000/api/patients/status/${patientId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newStatus: updatedStatus }),
       })
 
-      if (response.ok) {
-        const result = await response.json()
-        setUser(result)
-        Notifications.showAlert(
-          setAlert,
-          `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
-          'success',
-        )
-      } else {
-        Notifications.showAlert(setAlert, 'Failed to update user status.', 'danger')
+      if (!response.ok) {
+        const errorData = await response.json()
+
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          const messages = errorData.issues
+            .map((issue) =>
+              Array.isArray(issue.path)
+                ? `${issue.path.join('.')} - ${issue.message}`
+                : `${issue.path || 'unknown'} - ${issue.message}`,
+            )
+            .join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'Failed to update user status.',
+            'danger',
+          )
+        }
+        return
       }
+
+      const result = await response.json()
+      setUser({ ...user, status: result.user.status })
+      Notifications.showAlert(
+        setAlert,
+        `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
+        'success',
+      )
     } catch (error) {
       console.error('Error toggling user status:', error)
       Notifications.showAlert(setAlert, 'An error occurred while updating user status.', 'danger')
@@ -195,31 +193,33 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      // 1. Buscar el paciente por user_id
-      const patientRes = await fetch(`http://localhost:8000/patient?user_id=${user.id}`)
-      const patientData = await patientRes.json()
-      if (patientData && patientData.length > 0) {
-        // 2. Eliminar el paciente
-        await fetch(`http://localhost:8000/patient/${patientData[0].id}`, {
-          method: 'DELETE',
-        })
-      }
-
-      // 3. Eliminar el usuario
-      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
+      const response = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`, // Agregar token si es necesario
+          'Content-Type': 'application/json',
+        },
       })
 
       if (response.ok) {
-        Notifications.showAlert(setAlert, 'User has been deleted successfully.', 'success')
+        Notifications.showAlert(setAlert, 'Paciente y usuario eliminados con éxito.', 'success')
         setDeleteModalVisible(false)
         navigate('/patients')
       } else {
-        Notifications.showAlert(setAlert, 'Failed to delete user.', 'danger')
+        const errorData = await response.json()
+        Notifications.showAlert(
+          setAlert,
+          errorData.message || 'No se pudo eliminar el paciente y usuario.',
+          'danger',
+        )
       }
     } catch (error) {
       console.error('Error deleting user:', error)
-      Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'danger')
+      Notifications.showAlert(
+        setAlert,
+        'Ocurrió un error al eliminar el paciente y usuario.',
+        'danger',
+      )
     }
   }
 
@@ -246,7 +246,6 @@ const UserDetails = () => {
             </CCardTitle>
             <CCardText>
               <strong>{t('Email')}:</strong> {user.email} <br />
-              <strong>{t('Role')}:</strong> {getRoleName(user.role_id)} <br />
               <strong>{t('Status')}:</strong> {user.status} <br />
               <strong>{t('Created at')}:</strong> {new Date(user.created_at).toLocaleDateString()}{' '}
               <br />
@@ -328,10 +327,9 @@ const UserDetails = () => {
               type="text"
               id="medicalData"
               floatingLabel={t('Medical Data')}
-              value={medicalData}
+              defaultValue={user.medical_data}
               className="mb-3"
               disabled={fieldsDisabled}
-              onChange={(e) => setMedicalData(e.target.value)}
             />
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />

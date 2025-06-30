@@ -22,6 +22,7 @@ import CIcon from '@coreui/icons-react'
 import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
 import { useTranslation } from 'react-i18next'
+import { format } from 'date-fns'
 
 const EditMedicalHistory = () => {
   const location = useLocation()
@@ -33,42 +34,63 @@ const EditMedicalHistory = () => {
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-
+  const getToken = () => localStorage.getItem('authToken')
   useEffect(() => {
-    setLoading(true)
-    if (location.state?.medicalHistory) {
-      const newMedicalHistory = location.state.medicalHistory
-      setMedicalHistory(newMedicalHistory)
-      seteditedMedicalHistory({
-        ...newMedicalHistory,
-        created_at: newMedicalHistory.created_at
-          ? new Date(newMedicalHistory.created_at).toISOString().slice(0, 16)
-          : '',
-      })
-      localStorage.setItem('selectedMedicalHistory', JSON.stringify(newMedicalHistory))
-    } else {
-      const storedMedicalHistory = localStorage.getItem('selectedMedicalHistory')
-      if (storedMedicalHistory) {
-        const parsed = JSON.parse(storedMedicalHistory)
-        setMedicalHistory(parsed)
-        seteditedMedicalHistory({
-          ...parsed,
-          created_at: parsed.created_at
-            ? new Date(parsed.created_at).toISOString().slice(0, 16)
-            : '',
+    const fetchMedicalHistory = async (id) => {
+      try {
+        const response = await fetch(`http://localhost:3000/api/medical_record/${id}`, {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
         })
+        if (response.ok) {
+          const data = await response.json()
+          setMedicalHistory(data)
+          seteditedMedicalHistory({
+            ...data,
+            created_at: data.created_at ? new Date(data.created_at).toISOString().slice(0, 16) : '',
+          })
+        }
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching medical history:', error)
+        setLoading(false)
       }
     }
-    setLoading(false)
+
+    // Eliminar uso de localStorage, siempre consulta el backend
+    if (location.state?.medicalHistory?.id) {
+      fetchMedicalHistory(location.state.medicalHistory.id)
+    } else {
+      setLoading(false)
+    }
   }, [location])
 
-  const handleFieldsDisabled = () => {
-    setFieldsDisabled(!fieldsDisabled)
+  // Utilidad para detectar cambios
+  const getChangedFields = (original, edited) => {
+    const changed = {}
+    Object.keys(edited).forEach((key) => {
+      if (key === 'created_at') return // No enviar created_at
+      if (key === 'attachment_image') return // No enviar el file directamente
+      if (edited[key] !== original[key]) {
+        changed[key] = edited[key]
+      }
+    })
+    return changed
+  }
+
+  // Utilidad para convertir File a base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
 
   const saveChanges = async () => {
     if (!medicalHistory || !medicalHistory.id) {
-      console.error('The medical history ID is not valid.')
       Notifications.showAlert(
         setAlert,
         'Cannot save because the medical history ID is not valid.',
@@ -76,21 +98,57 @@ const EditMedicalHistory = () => {
       )
       return
     }
+
+    let changedFields = getChangedFields(medicalHistory, editedMedicalHistory)
+
+    // Convertir imagen a base64 si es necesario
+    if (editedMedicalHistory.attachment_image instanceof File) {
+      changedFields.image = await fileToBase64(editedMedicalHistory.attachment_image)
+    }
+
+    // --- CORRECCIÓN FECHA ---
+    // Si el usuario cambió la fecha, renombrar y convertir a Date
+    if (changedFields.created_at) {
+      changedFields.create_at = new Date(changedFields.created_at)
+      delete changedFields.created_at
+    }
+
+    if (Object.keys(changedFields).length === 0) {
+      Notifications.showAlert(setAlert, 'No changes to save.', 'info')
+      return
+    }
+
     try {
-      const response = await fetch(`http://localhost:8000/medical_records/${medicalHistory.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editedMedicalHistory),
-      })
+      const response = await fetch(
+        `http://localhost:3000/api/medical_record/${medicalHistory.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify(changedFields),
+        },
+      )
+
       if (response.ok) {
-        const updatedmedicalHistory = await response.json()
-        setMedicalHistory(updatedmedicalHistory)
+        const result = await response.json()
+        const updated = result.medicalRecord ? result.medicalRecord : result
+        const merged = {
+          ...medicalHistory,
+          ...updated,
+          image: updated.image || medicalHistory.image || '',
+        }
+        setMedicalHistory(merged)
+        seteditedMedicalHistory({
+          ...merged,
+          attachment_image: merged.image || '',
+        })
         Notifications.showAlert(setAlert, 'Changes saved successfully!', 'success')
       } else {
         throw new Error('Error saving changes.')
       }
     } catch (error) {
-      console.error(error)
       Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
     }
     handleFieldsDisabled()
@@ -98,19 +156,24 @@ const EditMedicalHistory = () => {
 
   const deleteMedicalHistory = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/medical_records/${medicalHistory.id}`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(
+        `http://localhost:3000/api/medical_record/${medicalHistory.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
+        },
+      )
       if (response.ok) {
         Notifications.showAlert(setAlert, 'Medical history deleted successfully.', 'success', 5000)
         setTimeout(() => {
           navigate('/medicalHistory') // Redirige después de 5 segundos
-        }, 5000) // Asegúrate de que coincida con la duración de la notificación
+        }, 5000)
       } else {
         throw new Error('Error deleting the medical history.')
       }
     } catch (error) {
-      console.error(error)
       Notifications.showAlert(
         setAlert,
         'There was an error deleting the medical history.',
@@ -118,6 +181,10 @@ const EditMedicalHistory = () => {
       )
     }
     setDeleteModalVisible(false)
+  }
+
+  const handleFieldsDisabled = () => {
+    setFieldsDisabled((prev) => !prev)
   }
 
   if (loading) return <p>Loading medical history...</p>
@@ -137,11 +204,15 @@ const EditMedicalHistory = () => {
         <CCard>
           <CCardBody>
             <CCardTitle className="text-primary">
-              {t('Patient')}: {medicalHistory.patient}
+              {t('Patient')}: {medicalHistory?.patient_full_name || 'N/A'}
             </CCardTitle>
             <CCardText>
-              <strong>{t('Professional')}:</strong> {medicalHistory.professional} <br />
-              <strong>{t('Date')}:</strong> {new Date(medicalHistory.created_at).toLocaleString()}{' '}
+              <strong>{t('Professional')}:</strong>{' '}
+              {medicalHistory?.professional_full_name || 'N/A'} <br />
+              <strong>{t('Date')}:</strong>{' '}
+              {medicalHistory?.created_at
+                ? new Date(medicalHistory.created_at).toLocaleString()
+                : 'N/A'}{' '}
               <br />
             </CCardText>
           </CCardBody>
@@ -163,19 +234,6 @@ const EditMedicalHistory = () => {
         <CCard className="mb-4">
           <CCardBody>
             <CCardTitle>{t('Edit Information')}</CCardTitle>
-
-            <CFormInput
-              type="datetime-local"
-              id="created_at"
-              floatingLabel={t('Created at')}
-              value={editedMedicalHistory.created_at}
-              onChange={(e) =>
-                seteditedMedicalHistory({ ...editedMedicalHistory, created_at: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-
             <CFormTextarea
               id="general_notes"
               floatingLabel={t('General Notes')}
@@ -186,7 +244,6 @@ const EditMedicalHistory = () => {
               className="mb-3"
               disabled={fieldsDisabled}
             />
-
             <CFormInput
               type="file"
               id="attachment_image"
@@ -200,21 +257,24 @@ const EditMedicalHistory = () => {
               className="mb-3"
               disabled={fieldsDisabled}
             />
-
-            <CFormInput
-              type="file"
-              id="attachment_document"
-              label={t('Attachment Document')}
-              onChange={(e) =>
-                seteditedMedicalHistory({
-                  ...editedMedicalHistory,
-                  attachment_document: e.target.files[0],
-                })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-
+            {medicalHistory.image && (
+              <div style={{ marginBottom: '1rem' }}>
+                <strong>{t('Current Image')}:</strong>
+                <div>
+                  <img
+                    src={medicalHistory.image}
+                    alt="Current"
+                    style={{
+                      width: 180,
+                      height: 180,
+                      objectFit: 'cover',
+                      marginTop: 10,
+                      borderRadius: 8,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : saveChanges}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
               {fieldsDisabled ? t('Edit') : t('Save')}

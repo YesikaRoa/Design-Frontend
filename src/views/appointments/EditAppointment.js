@@ -42,28 +42,53 @@ const EditAppointment = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [cities, setCities] = useState([])
   const [citiesLoading, setCitiesLoading] = useState(true)
+  const token = localStorage.getItem('authToken')
 
   useEffect(() => {
     setLoading(true)
-    if (location.state?.appointment) {
+    const storedAppointment = localStorage.getItem('selectedAppointment')
+    let parsed = null
+    if (storedAppointment) {
+      parsed = JSON.parse(storedAppointment)
+      setAppointment(parsed)
+      setEditedAppointment({ ...parsed })
+    } else if (location.state?.appointment) {
       const newAppointment = location.state.appointment
+      parsed = newAppointment
       setAppointment(newAppointment)
       setEditedAppointment({ ...newAppointment })
       localStorage.setItem('selectedAppointment', JSON.stringify(newAppointment))
-    } else {
-      const storedAppointment = localStorage.getItem('selectedAppointment')
-      if (storedAppointment) {
-        const parsed = JSON.parse(storedAppointment)
-        setAppointment(parsed)
-        setEditedAppointment({ ...parsed })
-      }
     }
     setLoading(false)
+
     setCitiesLoading(true)
-    fetch('http://localhost:8000/city')
+    fetch('http://localhost:3000/api/appointments/cities')
       .then((res) => res.json())
-      .then((data) => setCities(data))
-      .catch((err) => setCities([]))
+      .then(async (data) => {
+        let citiesArr = data.cities || []
+        // Si hay una cita cargada y su city_id no está en el array, agregarla usando city_name si existe
+        if (
+          parsed &&
+          parsed.city_id &&
+          !citiesArr.some((c) => String(c.id) === String(parsed.city_id))
+        ) {
+          if (parsed.city_name) {
+            citiesArr = [...citiesArr, { id: parsed.city_id, name: parsed.city_name }]
+          } else {
+            try {
+              const resCity = await fetch(
+                `http://localhost:3000/api/appointments/cities?search=${parsed.city_id}&limit=1`,
+              )
+              const dataCity = await resCity.json()
+              if (dataCity.cities && dataCity.cities.length > 0) {
+                citiesArr = [...citiesArr, dataCity.cities[0]]
+              }
+            } catch {}
+          }
+        }
+        setCities(citiesArr)
+      })
+      .catch(() => setCities([]))
       .finally(() => setCitiesLoading(false))
   }, [location])
 
@@ -81,30 +106,74 @@ const EditAppointment = () => {
       )
       return
     }
+    // Solo enviar los campos permitidos por el schema
+    const allowedFields = [
+      'scheduled_at',
+      'status',
+      'notes',
+      'reason_for_visit',
+      'has_medical_record',
+      'city_id',
+    ]
+    const updates = {}
+    allowedFields.forEach((field) => {
+      let value = editedAppointment[field]
+      if (field === 'city_id' && value !== undefined && value !== null && value !== '') {
+        value = Number(value)
+      }
+      if (value !== undefined && value !== null && value !== '') {
+        updates[field] = value
+      }
+    })
     try {
-      const response = await fetch(`http://localhost:8000/appointments/${appointment.id}`, {
+      const response = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editedAppointment),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(updates),
       })
+
       if (response.ok) {
-        const updatedAppointment = await response.json()
-        setAppointment(updatedAppointment)
-        Notifications.showAlert(setAlert, 'Changes saved successfully!', 'success')
+        // Después de guardar, obtener los datos completos y enriquecidos
+        const updated = await response.json()
+        try {
+          const res = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          if (res.ok) {
+            const fullData = await res.json()
+            setAppointment(fullData)
+            setEditedAppointment({ ...fullData })
+            localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
+          } else {
+            setAppointment(updated.appointment)
+            setEditedAppointment({ ...updated.appointment })
+            localStorage.setItem('selectedAppointment', JSON.stringify(updated.appointment))
+          }
+        } catch {
+          setAppointment(updated.appointment)
+          setEditedAppointment({ ...updated.appointment })
+          localStorage.setItem('selectedAppointment', JSON.stringify(updated.appointment))
+        }
+        Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
       } else {
-        throw new Error('Error saving changes.')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Error al guardar los cambios.')
       }
     } catch (error) {
       console.error(error)
-      Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
+      Notifications.showAlert(setAlert, 'Hubo un error al guardar los cambios.', 'danger')
     }
     handleFieldsDisabled()
   }
 
   const deleteAppointment = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/appointments/${appointment.id}`, {
+      const response = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       })
       if (response.ok) {
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
@@ -138,15 +207,14 @@ const EditAppointment = () => {
         <CCard>
           <CCardBody>
             <CCardTitle className="text-primary">
-              {t('Patient')}: {appointment.patient_id}
+              {t('Patient')}: {appointment.patient_full_name}
             </CCardTitle>
             <CCardText>
-              <strong>{t('Professional')}:</strong> {appointment.professional_id} <br />
+              <strong>{t('Professional')}:</strong> {appointment.professional_full_name} <br />
               <strong>{t('Status')}:</strong> {appointment.status} <br />
               <strong>{t('Date')}:</strong> {new Date(appointment.scheduled_at).toLocaleString()}{' '}
               <br />
-              <strong>{t('City')}:</strong> {appointment.city} <br />
-              <strong>{t('Reason for visit')}:</strong> {appointment.reason_for_visit}
+              <strong>{t('City')}:</strong> {appointment.city_name} <br />
             </CCardText>
           </CCardBody>
         </CCard>
@@ -160,18 +228,51 @@ const EditAppointment = () => {
                 onChange={async (e) => {
                   const updatedStatus = e.target.value
                   try {
-                    const updatedAppointment = { ...appointment, status: updatedStatus }
                     const response = await fetch(
-                      `http://localhost:8000/appointments/${appointment.id}`,
+                      `http://localhost:3000/api/appointments/status/${appointment.id}`,
                       {
                         method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedAppointment),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ status: updatedStatus }),
                       },
                     )
                     if (response.ok) {
-                      const result = await response.json()
-                      setAppointment(result)
+                      const data = await response.json()
+                      // Obtener datos enriquecidos tras el cambio de status
+                      try {
+                        const res = await fetch(
+                          `http://localhost:3000/api/appointments/${appointment.id}`,
+                          {
+                            headers: {
+                              'Content-Type': 'application/json',
+                              Authorization: `Bearer ${token}`,
+                            },
+                          },
+                        )
+                        if (res.ok) {
+                          const fullData = await res.json()
+                          setAppointment(fullData)
+                          setEditedAppointment({ ...fullData })
+                          localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
+                        } else {
+                          setAppointment(data.appointment)
+                          setEditedAppointment({ ...data.appointment })
+                          localStorage.setItem(
+                            'selectedAppointment',
+                            JSON.stringify(data.appointment),
+                          )
+                        }
+                      } catch {
+                        setAppointment(data.appointment)
+                        setEditedAppointment({ ...data.appointment })
+                        localStorage.setItem(
+                          'selectedAppointment',
+                          JSON.stringify(data.appointment),
+                        )
+                      }
                       Notifications.showAlert(
                         setAlert,
                         `Status changed to ${updatedStatus}.`,
@@ -189,6 +290,7 @@ const EditAppointment = () => {
                     )
                   }
                 }}
+                className="mb-3"
               >
                 <option value="pending">{t('Pending')}</option>
                 <option value="confirmed">{t('Confirmed')}</option>
@@ -239,9 +341,65 @@ const EditAppointment = () => {
               id="status"
               floatingLabel={t('Status')}
               value={editedAppointment.status}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, status: e.target.value })
-              }
+              onChange={async (e) => {
+                const newStatus = e.target.value
+                setEditedAppointment({ ...editedAppointment, status: newStatus })
+                if (!fieldsDisabled) return // Solo guardar si está en modo edición
+                try {
+                  const response = await fetch(
+                    `http://localhost:3000/api/appointments/status/${appointment.id}`,
+                    {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ status: newStatus }),
+                    },
+                  )
+                  if (response.ok) {
+                    const data = await response.json()
+                    // Obtener datos enriquecidos tras el cambio de status
+                    try {
+                      const res = await fetch(
+                        `http://localhost:3000/api/appointments/${appointment.id}`,
+                        {
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                        },
+                      )
+                      if (res.ok) {
+                        const fullData = await res.json()
+                        setAppointment(fullData)
+                        setEditedAppointment({ ...fullData })
+                        localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
+                      } else {
+                        setAppointment(data.appointment)
+                        setEditedAppointment({ ...data.appointment })
+                        localStorage.setItem(
+                          'selectedAppointment',
+                          JSON.stringify(data.appointment),
+                        )
+                      }
+                    } catch {
+                      setAppointment(data.appointment)
+                      setEditedAppointment({ ...data.appointment })
+                      localStorage.setItem('selectedAppointment', JSON.stringify(data.appointment))
+                    }
+                    Notifications.showAlert(setAlert, 'Status updated successfully.', 'success')
+                  } else {
+                    throw new Error('Error updating status.')
+                  }
+                } catch (error) {
+                  Notifications.showAlert(
+                    setAlert,
+                    'There was an error updating the status.',
+                    'danger',
+                  )
+                }
+              }}
               className="mb-3"
               disabled={fieldsDisabled}
             >
@@ -259,32 +417,65 @@ const EditAppointment = () => {
                   label: city.name,
                   value: city.id,
                 }))}
-                value={
-                  cities
-                    .map((city) => ({
+                value={(() => {
+                  // Buscar la ciudad seleccionada en el array cities
+                  const found = cities.find(
+                    (city) => String(city.id) === String(editedAppointment.city_id),
+                  )
+                  if (found) {
+                    return { label: found.name, value: found.id }
+                  }
+                  // Si no está en cities pero hay city_id, mostrar solo el id
+                  if (editedAppointment.city_id) {
+                    return {
+                      label: `ID: ${editedAppointment.city_id}`,
+                      value: editedAppointment.city_id,
+                    }
+                  }
+                  return null
+                })()}
+                loadOptions={async (inputValue) => {
+                  if (!inputValue) {
+                    return cities.slice(0, 5).map((city) => ({
                       label: city.name,
                       value: city.id,
                     }))
-                    .find((opt) => String(opt.value) === String(editedAppointment.city_id)) || null
-                }
-                loadOptions={async (inputValue) =>
-                  cities
-                    .filter((city) =>
-                      !inputValue
-                        ? true
-                        : city.name.toLowerCase().startsWith(inputValue.toLowerCase()),
+                  }
+                  try {
+                    const res = await fetch(
+                      `http://localhost:3000/api/appointments/cities?search=${encodeURIComponent(
+                        inputValue,
+                      )}&limit=10`,
                     )
-                    .map((city) => ({
+                    const data = await res.json()
+                    return (data.cities || []).map((city) => ({
                       label: city.name,
                       value: city.id,
                     }))
-                }
-                onChange={(option) =>
-                  setEditedAppointment({
-                    ...editedAppointment,
+                  } catch {
+                    return []
+                  }
+                }}
+                onChange={async (option) => {
+                  setEditedAppointment((prev) => ({
+                    ...prev,
                     city_id: option ? option.value : '',
-                  })
-                }
+                  }))
+                  // Si la ciudad seleccionada no está en cities, la agregamos
+                  if (option && !cities.some((c) => String(c.id) === String(option.value))) {
+                    try {
+                      const res = await fetch(
+                        `http://localhost:3000/api/appointments/cities?search=${encodeURIComponent(
+                          option.label,
+                        )}&limit=1`,
+                      )
+                      const data = await res.json()
+                      if (data.cities && data.cities.length > 0) {
+                        setCities((prev) => [...prev, data.cities[0]])
+                      }
+                    } catch {}
+                  }
+                }}
                 placeholder={citiesLoading ? 'Cargando ciudades...' : 'Buscar ciudad...'}
                 isClearable
                 isDisabled={fieldsDisabled || citiesLoading}

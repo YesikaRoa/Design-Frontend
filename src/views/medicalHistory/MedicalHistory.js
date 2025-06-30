@@ -33,6 +33,9 @@ import { cilPencil, cilInfo, cilTrash, cilPlus } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
+const API_URL = 'http://localhost:3000/api/medical_record'
+const getToken = () => localStorage.getItem('authToken')
+
 const MedicalHistory = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -51,162 +54,105 @@ const MedicalHistory = () => {
   const [selectedMedicalHistory, setselectedMedicalHistory] = useState(null)
   const ModalAddRef = useRef()
 
-  const [userMap, setUserMap] = useState({})
-  const [patientToUserMap, setPatientToUserMap] = useState({})
-  const [professionalToUserMap, setProfessionalToUserMap] = useState({})
+  // Mueve fetchData fuera del useEffect para que esté disponible globalmente
+  const fetchData = async () => {
+    try {
+      // Solo obtenemos los historiales médicos del backend nuevo
+      const medicalRecordsRes = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      })
+      if (!medicalRecordsRes.ok) throw new Error('Failed to fetch data')
+      const medicalRecordsData = await medicalRecordsRes.json()
+      // El backend ya devuelve los nombres completos
+      setMedicalHistory(medicalRecordsData)
+      setFilteredMedicalHistory(medicalRecordsData)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [appointmentsRes, medicalRecordsRes, usersRes, patientsRes, professionalsRes] =
-          await Promise.all([
-            fetch('http://localhost:8000/appointments'),
-            fetch('http://localhost:8000/medical_records'),
-            fetch('http://localhost:8000/users'),
-            fetch('http://localhost:8000/patient'), // Endpoint de pacientes
-            fetch('http://localhost:8000/professionals'), // Endpoint de profesionales
-          ])
-
-        if (
-          !appointmentsRes.ok ||
-          !medicalRecordsRes.ok ||
-          !usersRes.ok ||
-          !patientsRes.ok ||
-          !professionalsRes.ok
-        ) {
-          throw new Error('Failed to fetch data')
-        }
-
-        const appointmentsData = await appointmentsRes.json()
-        const medicalRecordsData = await medicalRecordsRes.json()
-        const usersData = await usersRes.json()
-        const patientsData = await patientsRes.json()
-        const professionalsData = await professionalsRes.json()
-
-        // Crear un mapa de `user_id`
-        const userMapData = usersData.reduce((acc, user) => {
-          acc[user.id] = {
-            name: `${user.first_name} ${user.last_name}`,
-          }
-          return acc
-        }, {})
-
-        // Crear un mapa de `patient_id` y `professional_id` a `user_id`
-        const patientToUserMap = patientsData.reduce((acc, patient) => {
-          acc[patient.id] = patient.user_id
-          return acc
-        }, {})
-
-        const professionalToUserMap = professionalsData.reduce((acc, professional) => {
-          acc[professional.id] = professional.user_id
-          return acc
-        }, {})
-
-        // Enriquecer las citas con nombres de pacientes y profesionales
-        const enrichedAppointments = appointmentsData.map((appt) => ({
-          ...appt,
-          patientName:
-            userMapData[patientToUserMap[appt.patient_id]]?.name || 'Paciente no identificado',
-          professionalName:
-            userMapData[professionalToUserMap[appt.professional_id]]?.name ||
-            'Profesional no identificado',
-        }))
-
-        // Enriquecer los registros médicos con información de usuarios
-        const enrichedMedicalRecords = medicalRecordsData.map((record) => {
-          const professional = userMapData[professionalToUserMap[record.professional_id]] || {
-            name: 'Profesional no identificado',
-          }
-
-          return {
-            ...record,
-            patient:
-              userMapData[patientToUserMap[record.patient_id]]?.name || 'Paciente no identificado',
-            professional: professional.name,
-          }
-        })
-
-        setAppointments(enrichedAppointments)
-        setMedicalHistory(enrichedMedicalRecords) // Actualizar historial médico enriquecido
-        setFilteredMedicalHistory(enrichedMedicalRecords)
-        setUserMap(userMapData)
-        setPatientToUserMap(patientToUserMap)
-        setProfessionalToUserMap(professionalToUserMap) // Filtro inicial
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      }
-    }
-
     fetchData()
   }, [])
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'MedicalHistory') {
-      const selectedAppointment = appointments.find((appt) => appt.id === formData.appointment_id)
+      // Usa directamente el objeto seleccionado
+      const selectedAppointment = formData.appointment_raw
 
-      if (!selectedAppointment) {
-        console.error('No se encontró la cita seleccionada.')
+      if (!selectedAppointment || typeof selectedAppointment !== 'object') {
+        console.error(
+          'No se encontró la cita seleccionada o el objeto es inválido.',
+          selectedAppointment,
+        )
         return
       }
-
+      // Mapeo defensivo de campos
+      const patientId = Number(selectedAppointment.patient_id ?? selectedAppointment.patient?.id)
+      const professionalId = Number(
+        selectedAppointment.professional_id ?? selectedAppointment.professional?.id,
+      )
+      const appointmentId = Number(selectedAppointment.id ?? selectedAppointment.appointment_id)
+      if (!patientId || !professionalId || !appointmentId) {
+        console.error('Faltan campos requeridos en la cita seleccionada:', {
+          patientId,
+          professionalId,
+          appointmentId,
+          selectedAppointment,
+        })
+        return
+      }
+      // Convierte la imagen a base64 si existe y es un File o ya es base64
+      let base64Image = null
+      if (formData.attachment_image instanceof File) {
+        base64Image = await fileToBase64(formData.attachment_image)
+      } else if (
+        typeof formData.attachment_image === 'string' &&
+        formData.attachment_image.startsWith('data:image/')
+      ) {
+        base64Image = formData.attachment_image
+      } else {
+        base64Image = null
+      }
+      // Crea el nuevo historial médico
       const newMedicalHistory = {
-        ...formData,
-        id: String(Date.now()),
-        created_at: formData.created_at,
-        appointment_id: formData.appointment_id,
-        patient_id: selectedAppointment.patient_id, // <-- aquí
-        professional_id: selectedAppointment.professional_id,
+        patient_id: patientId,
+        professional_id: professionalId,
+        appointment_id: appointmentId,
         general_notes: formData.general_notes || '',
-        attachment_image_url:
-          formData.attachment_image instanceof File
-            ? URL.createObjectURL(formData.attachment_image)
-            : null,
-        attachment_document_url:
-          formData.attachment_document instanceof File
-            ? URL.createObjectURL(formData.attachment_document)
-            : null,
+        image: base64Image,
       }
 
       try {
-        const response = await fetch('http://localhost:8000/medical_records', {
+        const response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`,
+          },
           body: JSON.stringify(newMedicalHistory),
         })
-
-        if (!response.ok) {
-          throw new Error('Failed to save medical history.')
-        }
-
-        const savedMedicalHistory = await response.json()
-
-        const enrichedRecord = {
-          ...savedMedicalHistory,
-          patient:
-            userMap[patientToUserMap[savedMedicalHistory.patient_id]]?.name ||
-            'Paciente no identificado',
-          professional:
-            userMap[professionalToUserMap[savedMedicalHistory.professional_id]]?.name ||
-            'Profesional no identificado',
-        }
-
-        setMedicalHistory((prev) => [...prev, enrichedRecord])
-        setFilteredMedicalHistory((prev) => [...prev, enrichedRecord])
-
+        if (!response.ok) throw new Error('Failed to save medical history.')
+        // Notificación de éxito
+        Notifications.showAlert(setAlert, 'Medical history added successfully.', 'success', 5000)
+        // Espera a que el backend procese y luego recarga la lista completa
         ModalAddRef.current.close()
+        await fetchData()
       } catch (error) {
         console.error('Error saving medical history:', error)
       }
     }
   }
-  const appointmentIdOptions = appointments.map((appt) => {
-    const formattedDate = appt.created_at ? formatDate(appt.created_at, 'DATETIME') : 'Sin fecha'
 
-    return {
-      label: `${appt.id} - Patient: ${appt.patientName} - Professional: ${appt.professionalName} - ${appt.reason_for_visit || 'Motivo no especificado'} (${formattedDate})`,
-      value: appt.id,
-    }
-  })
+  // Utilidad para convertir File a base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
 
   const medicalHistorySteps = [
     {
@@ -216,7 +162,6 @@ const MedicalHistory = () => {
           label: 'ID de la Cita',
           type: 'custom',
           placeholder: 'Seleccione la cita',
-          required: true,
           options: [], // Mapeo a customFields
         },
         {
@@ -224,7 +169,6 @@ const MedicalHistory = () => {
           type: 'custom',
           label: 'Fecha de Creación',
           placeholder: 'Seleccione la fecha y hora',
-          required: true,
           custom: 'created_at', // Mapeo a customFields
         },
       ],
@@ -248,28 +192,94 @@ const MedicalHistory = () => {
           placeholder: 'Cargar una imagen',
           accept: 'image/*',
         },
-        {
-          name: 'attachment_document',
-          label: 'Adjuntar Documento',
-          type: 'file',
-          placeholder: 'Cargar un documento',
-          accept: '.pdf, .doc, .docx, .txt',
-        },
       ],
     },
   ]
 
-  // Custom handlers for fields
-  const customFields = {
-    appointment_id: ({ value, onChange, placeholder }) => (
+  // Nueva función para cargar citas desde el backend con token y búsqueda
+  const loadAppointments = async (inputValue = '') => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/appointments?search=${encodeURIComponent(inputValue)}`,
+        {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        },
+      )
+      if (!res.ok) throw new Error('No se pudieron cargar las citas')
+
+      const data = await res.json()
+
+      // El value ahora es el objeto completo de la cita
+      return data.map((appt) => ({
+        label: `${appt.id} - Paciente: ${appt.patient_full_name} - Profesional: ${appt.professional_full_name} (${appt.reason_for_visit || 'Motivo no especificado'})`,
+        value: appt, // value es el objeto completo
+      }))
+    } catch (error) {
+      console.error('Error cargando citas:', error)
+      return []
+    }
+  }
+
+  // Componente seguro para hooks
+  const AppointmentAsyncSelect = ({ value, onChange, placeholder }) => {
+    const [selectValue, setSelectValue] = useState(null)
+
+    useEffect(() => {
+      if (value && typeof value === 'object') {
+        setSelectValue({
+          label: `${value.id} - Paciente: ${value.patient_full_name} - Profesional: ${value.professional_full_name} (${value.reason_for_visit || 'Motivo no especificado'})`,
+          value: value.id,
+          _full: value, // guardamos el objeto completo para el onChange
+        })
+      } else {
+        setSelectValue(null)
+      }
+    }, [value])
+
+    return (
       <AsyncSelect
         cacheOptions
-        loadOptions={loadAppointments}
-        defaultOptions
-        onChange={onChange}
-        placeholder={placeholder || 'Select appointment'}
+        loadOptions={async (inputValue) => {
+          const options = await loadAppointments(inputValue)
+          // value: id, _full: objeto completo
+          return options.map((opt) => ({
+            label: opt.label,
+            value: opt.value.id,
+            _full: opt.value,
+          }))
+        }}
+        defaultOptions={true}
+        value={selectValue}
+        onChange={(option) => {
+          setSelectValue(option)
+          // Pasa el id como appointment_id y el objeto completo como _selectedAppointment
+          onChange(option ? option._full : null)
+        }}
+        placeholder={placeholder || 'Seleccione una cita'}
         isClearable
         styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    )
+  }
+
+  // Custom handlers for fields
+  const customFields = {
+    appointment_id: (props) => (
+      <AppointmentAsyncSelect
+        {...props}
+        value={
+          typeof props.value === 'object' ? props.value.id : props.value // Si ya es el id, úsalo directo
+        }
+        onChange={(option) => {
+          // option es el objeto completo de la cita o null
+          props.onChange(option ? option.id : '')
+          if (props.setFormData) {
+            props.setFormData((prev) => ({
+              ...prev,
+              appointment_raw: option || null,
+            }))
+          }
+        }}
       />
     ),
     created_at: ({ value, onChange, placeholder }) => (
@@ -277,7 +287,7 @@ const MedicalHistory = () => {
         <DateTimePicker
           label="Created At"
           value={value ? new Date(value) : null}
-          onChange={(newValue) => onChange(newValue ? newValue.toISOString() : '')}
+          onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
           format="dd/MM/yyyy HH:mm"
           slotProps={{
             textField: {
@@ -291,30 +301,16 @@ const MedicalHistory = () => {
     ),
   }
 
-  // Load appointments
-  const loadAppointments = async (inputValue) => {
-    // Filtrar las opciones de citas según el valor ingresado
-    const filteredAppointments = appointmentIdOptions.filter((option) =>
-      option.label.toLowerCase().includes(inputValue.toLowerCase()),
-    )
-
-    // Limitar los resultados a un máximo de 5
-    return filteredAppointments.slice(0, 5).map((option) => ({
-      label: option.label, // El texto que se mostrará en el dropdown
-      value: option.value, // El valor asociado (por ejemplo, el ID de la cita)
-    }))
-  }
-
   const addMedicalHistory = () => {
     ModalAddRef.current.open()
   }
 
   const handleDelete = async (medicalHistory) => {
     try {
-      const response = await fetch(`http://localhost:8000/medical_records/${medicalHistory.id}`, {
+      const response = await fetch(`${API_URL}/${medicalHistory.id}`, {
         method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` },
       })
-
       if (response.ok) {
         Notifications.showAlert(setAlert, 'medicalHistory deleted successfully.', 'success', 5000)
         setMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
@@ -332,8 +328,24 @@ const MedicalHistory = () => {
     setInfoVisible(true)
   }
 
-  const handleEdit = (medicalHistory) => {
-    navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory } })
+  const handleEdit = async (medicalHistory) => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/medical_record/${medicalHistory.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory: data } })
+      } else {
+        navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory } })
+      }
+    } catch {
+      navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory } })
+    }
   }
 
   const dataFilter = Object.keys(filters).map((key) => {
@@ -392,14 +404,17 @@ const MedicalHistory = () => {
   const handleFilter = () => {
     const { startDate, endDate, ...otherFilters } = filters
 
+    // Mapeo de claves de filtro a propiedades reales
+    const filterKeyMap = {
+      patient: 'patient_full_name',
+      professional: 'professional_full_name',
+    }
+
     const activeFilters = Object.keys(otherFilters).filter((key) => otherFilters[key].trim() !== '')
 
     const filtered = medicalHistory.filter((medicalHistory) => {
       const medicalHistoryDate = new Date(medicalHistory.created_at)
-
-      // Normalizar las fechas eliminando las horas
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
-
       const normalizedMedicalHistoryDate = normalizeDate(medicalHistoryDate)
       const normalizedStartDate = startDate ? normalizeDate(startDate) : null
       const normalizedEndDate = endDate ? normalizeDate(endDate) : null
@@ -412,7 +427,11 @@ const MedicalHistory = () => {
         : true
 
       const otherConditions = activeFilters.every((key) => {
-        const medicalHistoryValue = medicalHistory[key] ? normalizeText(medicalHistory[key]) : ''
+        // Usar el mapeo si existe, si no, usar la key original
+        const realKey = filterKeyMap[key] || key
+        const medicalHistoryValue = medicalHistory[realKey]
+          ? normalizeText(medicalHistory[realKey])
+          : ''
         const filterValue = normalizeText(otherFilters[key])
         return medicalHistoryValue.startsWith(filterValue)
       })
@@ -473,8 +492,8 @@ const MedicalHistory = () => {
               ) : (
                 FilteredMedicalHistory.map((record, index) => (
                   <CTableRow key={index}>
-                    <CTableDataCell>{record.patient}</CTableDataCell>
-                    <CTableDataCell>{record.professional}</CTableDataCell>
+                    <CTableDataCell>{record.patient_full_name}</CTableDataCell>
+                    <CTableDataCell>{record.professional_full_name}</CTableDataCell>
                     <CTableDataCell>{record.appointment_id}</CTableDataCell>
                     <CTableDataCell>{formatDate(record.created_at, 'DATETIME')}</CTableDataCell>
                     <CTableDataCell>
@@ -527,10 +546,11 @@ const MedicalHistory = () => {
           selectedMedicalHistory ? (
             <div>
               <p>
-                <strong>{t('Patient')}:</strong> {selectedMedicalHistory.patient}
+                <strong>{t('Patient')}:</strong> {selectedMedicalHistory.patient_full_name}
               </p>
               <p>
-                <strong>{t('Professional')}:</strong> {selectedMedicalHistory.professional}
+                <strong>{t('Professional')}:</strong>{' '}
+                {selectedMedicalHistory.professional_full_name}
               </p>
               <p>
                 <strong>{t('Appointment')}:</strong> {selectedMedicalHistory.appointment_id}
@@ -543,32 +563,19 @@ const MedicalHistory = () => {
                 <strong>{t('General notes')}:</strong>{' '}
                 {selectedMedicalHistory.general_notes || 'No notes available'}
               </p>
-              {selectedMedicalHistory.attachment_image_url ? (
+              {selectedMedicalHistory.image ? (
                 <div>
-                  <strong>{t('Attached Image:')}</strong>
-                  <img
-                    src={selectedMedicalHistory.attachment_image_url}
-                    alt="Attached"
-                    style={{ maxWidth: '100%', marginTop: '10px' }}
-                  />
+                  <strong>{t('Attached Image: ')}</strong>
+                  <div>
+                    <img
+                      src={selectedMedicalHistory.image}
+                      alt="Attached"
+                      style={{ maxWidth: '100%', marginTop: '10px' }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <p>{t('No image attached')}.</p>
-              )}
-              {selectedMedicalHistory.attachment_document_url ? (
-                <div>
-                  <strong>{t('Attached Document')}:</strong>
-                  <a
-                    href={selectedMedicalHistory.attachment_document_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ display: 'block', marginTop: '10px' }}
-                  >
-                    View Document
-                  </a>
-                </div>
-              ) : (
-                <p>{t('No document attached')}.</p>
               )}
             </div>
           ) : (

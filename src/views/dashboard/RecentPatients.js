@@ -15,95 +15,44 @@ import './../../scss/style.scss'
 import { useTranslation } from 'react-i18next'
 
 const RecentPatientsTable = () => {
-  const [appointments, setAppointments] = useState([])
-  const [users, setUsers] = useState({})
-  const [cities, setCities] = useState({})
+  const [recentPatients, setRecentPatients] = useState([])
   const { t } = useTranslation()
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRecentPatients = async () => {
       try {
-        // Fetch de citas
-        const appointmentsResponse = await fetch('http://localhost:8000/appointments')
-        const appointmentsData = await appointmentsResponse.json()
+        const response = await fetch('http://localhost:3000/api/dashboard', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Token de autenticación
+          },
+        })
 
-        const today = new Date()
-        today.setHours(23, 59, 59, 999)
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(today.getDate() - 6)
-        sevenDaysAgo.setHours(0, 0, 0, 0)
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data')
+        }
 
-        const recentAppointments = appointmentsData
-          .filter((appointment) => {
-            const appointmentDate = new Date(appointment.scheduled_at)
-            return appointmentDate >= sevenDaysAgo && appointmentDate <= today
-          })
-          .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
-          .slice(0, 10)
-
-        setAppointments(recentAppointments)
-
-        // Fetch de datos relacionados
-        const [usersResponse, patientsResponse, professionalsResponse, citiesResponse] =
-          await Promise.all([
-            fetch('http://localhost:8000/users'),
-            fetch('http://localhost:8000/patient'),
-            fetch('http://localhost:8000/professionals'),
-            fetch('http://localhost:8000/city'),
-          ])
-
-        const [usersData, patientsData, professionalsData, citiesData] = await Promise.all([
-          usersResponse.json(),
-          patientsResponse.json(),
-          professionalsResponse.json(),
-          citiesResponse.json(),
-        ])
-
-        // Mapa de usuarios
-        const usersMap = usersData.reduce((map, user) => {
-          map[user.id] = `${user.first_name} ${user.last_name}`
-          return map
-        }, {})
-
-        // Relacionar `patient_id` y `professional_id` con `user_id`
-        const patientMap = patientsData.reduce((map, patient) => {
-          map[patient.id] = usersMap[patient.user_id] || 'Unknown'
-          return map
-        }, {})
-
-        const professionalMap = professionalsData.reduce((map, professional) => {
-          map[professional.id] = usersMap[professional.user_id] || 'Unknown'
-          return map
-        }, {})
-
-        // Mapa de ciudades
-        const citiesMap = citiesData.reduce((map, city) => {
-          map[city.id] = city.name
-          return map
-        }, {})
-
-        setUsers({ ...patientMap, ...professionalMap })
-        setCities(citiesMap)
+        const data = await response.json()
+        setRecentPatients(data.recentPatients)
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching recent patients:', error)
       }
     }
 
-    fetchData()
+    fetchRecentPatients()
   }, [])
 
   const getStatusBadge = (status) => {
     switch (status) {
       case 'completed':
-        return <CBadge color="success">Completed</CBadge>
+        return <CBadge color="success">{t('Completed')}</CBadge>
       case 'pending':
-        return <CBadge color="warning">Pending</CBadge>
+        return <CBadge color="warning">{t('Pending')}</CBadge>
       case 'confirmed':
-        return <CBadge color="primary">Confirmed</CBadge>
+        return <CBadge color="primary">{t('Confirmed')}</CBadge>
       case 'canceled':
-        return <CBadge color="danger">Canceled</CBadge>
+        return <CBadge color="danger">{t('Canceled')}</CBadge>
       default:
-        return <CBadge color="secondary">Unknown</CBadge>
+        return <CBadge color="secondary">{t('Unknown')}</CBadge>
     }
   }
 
@@ -127,22 +76,22 @@ const RecentPatientsTable = () => {
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {appointments.length === 0 ? (
+            {recentPatients.length === 0 ? (
               <CTableRow>
-                <CTableDataCell colSpan={6} className="text-center">
-                  {t('No appointments available')}
+                <CTableDataCell colSpan={5} className="text-center">
+                  {t('No recent patients available')}
                 </CTableDataCell>
               </CTableRow>
             ) : (
-              appointments.map((appointment) => (
-                <CTableRow key={appointment.id}>
-                  <CTableDataCell>{users[appointment.patient_id] || 'Unknown'}</CTableDataCell>
-                  <CTableDataCell>{users[appointment.professional_id] || 'Unknown'}</CTableDataCell>
-                  <CTableDataCell>{cities[appointment.city_id] || 'Unknown'}</CTableDataCell>
+              recentPatients.map((patient, index) => (
+                <CTableRow key={index}>
+                  <CTableDataCell>{patient.patient || t('Unknown')}</CTableDataCell>
+                  <CTableDataCell>{patient.professional || t('Unknown')}</CTableDataCell>
+                  <CTableDataCell>{patient.city || t('Unknown')}</CTableDataCell>
                   <CTableDataCell>
-                    {new Date(appointment.scheduled_at).toLocaleDateString()}
+                    {new Date(patient.scheduled_at).toLocaleDateString()}
                   </CTableDataCell>
-                  <CTableDataCell>{getStatusBadge(appointment.status)}</CTableDataCell>
+                  <CTableDataCell>{getStatusBadge(patient.status)}</CTableDataCell>
                 </CTableRow>
               ))
             )}

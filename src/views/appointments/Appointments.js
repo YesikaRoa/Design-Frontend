@@ -55,120 +55,180 @@ const Appointments = () => {
   const [professionals, setProfessionals] = useState([]) // [{id, user_id, ...}]
   const [cities, setCities] = useState([])
   const ModalAddRef = useRef()
-
-  // Cargar usuarios una sola vez (ya lo haces en useEffect)
-  const [usersData, setUsersData] = useState([])
-
-  const [selectedProfessional, setSelectedProfessional] = useState(null)
-
-  // Pacientes válidos
-  const loadPatients = async (inputValue) => {
-    const patientUserIds = patients.map((p) => p.user_id)
-    return usersData
-      .filter(
-        (u) =>
-          String(u.role_id) === '3' &&
-          patientUserIds.includes(u.id) &&
-          `${u.first_name} ${u.last_name}`.toLowerCase().startsWith(inputValue.toLowerCase()),
-      )
-      .slice(0, 5)
-      .map((u) => ({
-        label: `${u.first_name} ${u.last_name}`,
-        value: u.id,
-      }))
-  }
-
-  // Profesionales válidos
-  const loadProfessionals = async (inputValue) => {
-    const professionalUserIds = professionals.map((p) => p.user_id)
-    return usersData
-      .filter(
-        (u) =>
-          String(u.role_id) === '2' &&
-          professionalUserIds.includes(u.id) &&
-          `${u.first_name} ${u.last_name}`.toLowerCase().startsWith(inputValue.toLowerCase()),
-      )
-      .slice(0, 5)
-      .map((u) => ({
-        label: `${u.first_name} ${u.last_name}`,
-        value: u.id,
-      }))
-  }
-
-  const loadCities = async (inputValue) => {
-    return cities
-      .filter((city) => city.name.toLowerCase().startsWith(inputValue.toLowerCase()))
-      .slice(0, 5)
-      .map((city) => ({
-        label: city.name,
-        value: city.id,
-      }))
-  }
+  const token = localStorage.getItem('authToken')
 
   const fetchAppointments = async () => {
     try {
-      const [appointmentsRes, usersRes, patientsRes, professionalsRes, citiesRes] =
-        await Promise.all([
-          fetch('http://localhost:8000/appointments'),
-          fetch('http://localhost:8000/users'),
-          fetch('http://localhost:8000/patient'),
-          fetch('http://localhost:8000/professionals'),
-          fetch('http://localhost:8000/city'), // <-- agrega fetch de ciudades aquí
-        ])
-      if (
-        !appointmentsRes.ok ||
-        !usersRes.ok ||
-        !patientsRes.ok ||
-        !professionalsRes.ok ||
-        !citiesRes.ok
-      ) {
-        throw new Error('Failed to fetch data')
-      }
-      const appointmentsData = await appointmentsRes.json()
-      const usersData = await usersRes.json()
-      const patientsData = await patientsRes.json()
-      const professionalsData = await professionalsRes.json()
-      const citiesData = await citiesRes.json() // <-- ciudades aquí
-
-      setPatients(patientsData)
-      setProfessionals(professionalsData)
-      setCities(citiesData) // <-- actualiza el estado
-
-      // Usa citiesData en vez de cities (que puede estar vacío)
-      const enrichedAppointments = appointmentsData.map((appointment) => {
-        const patientObj = patientsData.find((p) => p.id === appointment.patient_id)
-        const professionalObj = professionalsData.find((p) => p.id === appointment.professional_id)
-        const patientUser = patientObj ? usersData.find((u) => u.id === patientObj.user_id) : null
-        const professionalUser = professionalObj
-          ? usersData.find((u) => u.id === professionalObj.user_id)
-          : null
-        const cityObj = citiesData.find((c) => String(c.id) === String(appointment.city_id))
-
-        return {
-          ...appointment,
-          patient: patientUser ? `${patientUser.first_name} ${patientUser.last_name}` : 'Unknown',
-          professional: professionalUser
-            ? `${professionalUser.first_name} ${professionalUser.last_name}`
-            : 'Unknown',
-          city: cityObj ? cityObj.name : 'Unknown',
-        }
+      const response = await fetch('http://localhost:3000/api/appointments', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
       })
-      setAppointments(enrichedAppointments)
-      setFilteredAppointments(enrichedAppointments)
-      setUsersData(usersData)
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Transformar los datos para incluir nombres completos
+        const transformedData = data.map((appointment) => ({
+          ...appointment,
+          patient: `${appointment.patient_first_name} ${appointment.patient_last_name}`,
+          professional: `${appointment.professional_first_name} ${appointment.professional_last_name}`,
+          city: appointment.name, // Renombrar "name" como "city" si deseas usarlo directamente
+        }))
+
+        setAppointments(transformedData)
+        setFilteredAppointments(transformedData)
+      } else {
+        console.error('Error fetching appointments')
+      }
     } catch (error) {
-      // Manejo de error
+      console.error('Error fetching appointments:', error)
     }
   }
+
   useEffect(() => {
     fetchAppointments()
   }, [])
 
-  const professionalSpecialty =
-    selectedProfessional && usersData.length > 0
-      ? usersData.find((user) => user.id.toString() === selectedProfessional.toString())
-          ?.specialty || 'Not specified'
-      : null
+  const loadOptions = async (entity, inputValue) => {
+    try {
+      // Realiza la solicitud al endpoint del backend
+      const response = await fetch(
+        `http://localhost:3000/api/appointments/${entity}?search=${encodeURIComponent(inputValue)}&limit=5`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+
+      // Manejo de errores HTTP
+      if (!response.ok) {
+        console.error(`Error al cargar ${entity}: ${response.statusText}`)
+        return []
+      }
+
+      // Procesa la respuesta en formato JSON
+      const data = await response.json()
+
+      // Mapeo dinámico según la entidad
+      if (entity === 'patients') {
+        return data.patients.map((item) => ({
+          label: `${item.first_name} ${item.last_name}`, // Combina nombres
+          value: item.id, // ID del paciente
+        }))
+      }
+
+      if (entity === 'professionals') {
+        return data.professionals.map((item) => ({
+          label: `${item.first_name} ${item.last_name}`, // Combina nombres
+          value: item.id, // ID del profesional
+        }))
+      }
+
+      if (entity === 'cities') {
+        return data.cities.map((item) => ({
+          label: `${item.name}`, // Nombre de la ciudad
+          value: item.id, // ID de la ciudad
+        }))
+      }
+
+      // Fallback genérico en caso de que la entidad no esté definida
+      console.warn(`Entidad desconocida: ${entity}`)
+      return []
+    } catch (error) {
+      // Captura y manejo de errores en la solicitud o procesamiento
+      console.error(`Error al cargar ${entity}:`, error.message)
+      return []
+    }
+  }
+
+  // Modificar las funciones de carga para no incluir el token
+  const loadPatients = (inputValue) => loadOptions('patients', inputValue)
+  const loadProfessionals = (inputValue) => loadOptions('professionals', inputValue)
+  const loadCities = (inputValue) => loadOptions('cities', inputValue)
+
+  const customFields = {
+    patient: ({ value, onChange, error, helperText, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={(inputValue) => loadPatients(inputValue)} // Sin token
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Buscar paciente...'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    professional: ({ value, onChange, error, helperText, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={(inputValue) => loadProfessionals(inputValue)} // Sin token
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Buscar profesional...'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    city_id: ({ value, onChange, error, helperText, placeholder }) => (
+      <AsyncSelect
+        cacheOptions
+        loadOptions={(inputValue) => loadCities(inputValue)} // Sin token
+        defaultOptions
+        onChange={onChange}
+        placeholder={placeholder || 'Buscar ciudad...'}
+        isClearable
+        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+      />
+    ),
+    scheduled_at: ({ value, onChange, error, helperText, placeholder }) => (
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DateTimePicker
+          label="Scheduled At"
+          value={value ? new Date(value) : null}
+          onChange={(newValue) => {
+            onChange(newValue ? newValue.toISOString() : '')
+          }}
+          format="dd/MM/yyyy HH:mm"
+          slotProps={{
+            textField: {
+              variant: 'standard',
+              fullWidth: true,
+              error: !!error,
+              helperText,
+              placeholder,
+            },
+          }}
+        />
+      </LocalizationProvider>
+    ),
+    has_medical_record: ({ value, onChange, placeholder }) => (
+      <select
+        className="form-select"
+        value={
+          value === true || value === 'true'
+            ? 'true'
+            : value === false || value === 'false'
+              ? 'false'
+              : ''
+        }
+        onChange={(e) => {
+          const val = e.target.value
+          if (val === 'true') onChange('true')
+          else if (val === 'false') onChange('false')
+          else onChange('')
+        }}
+        required
+      >
+        <option value="">{placeholder || 'Do you have a medical history?'}</option>
+        <option value="true">Sí</option>
+        <option value="false">No</option>
+      </select>
+    ),
+  }
 
   const appointmentSteps = [
     {
@@ -256,28 +316,53 @@ const Appointments = () => {
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'appointments') {
-      const patientObj = patients.find((p) => p.user_id === formData.patient)
-      const professionalObj = professionals.find((p) => p.user_id === formData.professional)
+      try {
+        console.log('Formulario recibido:', formData)
 
-      const newAppointment = {
-        scheduled_at: formData.scheduled_at,
-        status: formData.status,
-        notes: formData.notes,
-        reason_for_visit: formData.reason_for_visit,
-        patient_id: patientObj ? patientObj.id : null,
-        professional_id: professionalObj ? professionalObj.id : null,
-        city_id: formData.city_id,
-        has_medical_record: formData.has_medical_record === 'true',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        // Construye el objeto de la nueva cita directamente desde formData
+        const newAppointment = {
+          scheduled_at: formData.scheduled_at,
+          status: formData.status,
+          notes: formData.notes || null,
+          reason_for_visit: formData.reason_for_visit,
+          patient_id: formData.patient, // Usamos directamente el value seleccionado
+          professional_id: formData.professional, // Usamos directamente el value seleccionado
+          city_id: formData.city_id, // Usamos directamente el value seleccionado
+          has_medical_record: formData.has_medical_record === 'true', // Convierte de string a boolean
+        }
+
+        console.log('Datos preparados para el backend:', newAppointment)
+
+        // Valida los datos antes de enviar la solicitud
+        if (
+          !newAppointment.patient_id ||
+          !newAppointment.professional_id ||
+          !newAppointment.city_id
+        ) {
+          throw new Error(
+            'Datos incompletos. Asegúrate de seleccionar un paciente, profesional y ciudad válidos.',
+          )
+        }
+
+        // Envía los datos al backend
+        const response = await fetch('http://localhost:3000/api/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newAppointment),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al crear la cita.')
+        }
+
+        // Actualiza la lista de citas después de la creación
+        await fetchAppointments()
+        Notifications.showAlert(setAlert, 'Appointment created successfully.', 'success')
+      } catch (error) {
+        console.error('Error al crear la cita:', error)
+        Notifications.showAlert(setAlert, 'Appointment not created.', 'danger')
       }
-
-      await fetch('http://localhost:8000/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAppointment),
-      })
-      await fetchAppointments()
     }
   }
 
@@ -287,29 +372,56 @@ const Appointments = () => {
 
   const handleDelete = async (appointment) => {
     try {
-      const response = await fetch(`http://localhost:8000/appointments/${appointment.id}`, {
+      const response = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Incluye el token de autorización
+        },
       })
 
       if (response.ok) {
+        const data = await response.json() // Obtiene la respuesta del backend
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
+
+        // Actualiza los estados de citas
         setAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
         setFilteredAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
       } else {
-        throw new Error('Failed to delete the appointment.')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete the appointment.')
       }
     } catch (error) {
       console.error('Error deleting appointment:', error)
       Notifications.showAlert(setAlert, 'There was an error deleting the appointment.', 'danger')
     }
   }
+
   const handleInfo = (appointment) => {
     setSelectedAppointment(appointment)
     setInfoVisible(true)
   }
 
-  const handleEdit = (appointment) => {
-    navigate(`/appointments/${appointment.id}`, { state: { appointment } })
+  const handleEdit = async (appointment) => {
+    try {
+      const res = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Incluye el token de autorización
+        },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        localStorage.setItem('selectedAppointment', JSON.stringify(data))
+        navigate(`/appointments/${appointment.id}`, { state: { appointment: data } })
+      } else {
+        // Si falla el fetch, navega con los datos originales
+        navigate(`/appointments/${appointment.id}`, { state: { appointment } })
+      }
+    } catch {
+      navigate(`/appointments/${appointment.id}`, { state: { appointment } })
+    }
   }
   const dataFilter = Object.keys(filters).map((key) => {
     let label
@@ -381,14 +493,18 @@ const Appointments = () => {
   const handleFilter = () => {
     const { startDate, endDate, ...otherFilters } = filters
 
+    // Mapeo de claves de filtro a propiedades reales que se muestran en la tabla
+    const filterKeyMap = {
+      patient: 'patient_full_name',
+      professional: 'professional_full_name',
+      city: 'city',
+    }
+
     const activeFilters = Object.keys(otherFilters).filter((key) => otherFilters[key].trim() !== '')
 
     const filtered = appointments.filter((appointment) => {
       const appointmentDate = new Date(appointment.scheduled_at)
-
-      // Normalizar las fechas eliminando las horas
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
-
       const normalizedAppointmentDate = normalizeDate(appointmentDate)
       const normalizedStartDate = startDate ? normalizeDate(startDate) : null
       const normalizedEndDate = endDate ? normalizeDate(endDate) : null
@@ -399,7 +515,8 @@ const Appointments = () => {
       const endCondition = normalizedEndDate ? normalizedAppointmentDate <= normalizedEndDate : true
 
       const otherConditions = activeFilters.every((key) => {
-        const appointmentValue = appointment[key] ? normalizeText(appointment[key]) : ''
+        const realKey = filterKeyMap[key] || key
+        const appointmentValue = appointment[realKey] ? normalizeText(appointment[realKey]) : ''
         const filterValue = normalizeText(otherFilters[key])
         return appointmentValue.startsWith(filterValue)
       })
@@ -434,98 +551,6 @@ const Appointments = () => {
         return 'secondary'
     }
   }
-
-  const customFields = {
-    patient: ({ value, onChange, error, helperText, placeholder }) => (
-      <AsyncSelect
-        cacheOptions
-        loadOptions={loadPatients}
-        defaultOptions
-        onChange={onChange}
-        placeholder={placeholder || 'Buscar paciente...'}
-        isClearable
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
-      />
-    ),
-    professional: ({ value, onChange, error, helperText, placeholder }) => (
-      <AsyncSelect
-        cacheOptions
-        loadOptions={loadProfessionals}
-        defaultOptions
-        onChange={onChange}
-        placeholder={placeholder || 'Buscar profesional...'}
-        isClearable
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
-      />
-    ),
-    city_id: ({ value, onChange, error, helperText, placeholder }) => (
-      <AsyncSelect
-        cacheOptions
-        loadOptions={loadCities}
-        defaultOptions
-        onChange={onChange}
-        placeholder={placeholder || 'Buscar ciudad...'}
-        isClearable
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
-      />
-    ),
-    scheduled_at: ({ value, onChange, error, helperText, placeholder }) => (
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <DateTimePicker
-          label="Scheduled At"
-          value={value ? new Date(value) : null}
-          onChange={(newValue) => {
-            onChange(newValue ? newValue.toISOString() : '')
-          }}
-          format="dd/MM/yyyy HH:mm"
-          slotProps={{
-            textField: {
-              variant: 'standard',
-              fullWidth: true,
-              error: !!error,
-              helperText,
-              placeholder,
-            },
-          }}
-        />
-      </LocalizationProvider>
-    ),
-    has_medical_record: ({ value, onChange, placeholder }) => (
-      <select
-        className="form-select"
-        value={
-          value === true || value === 'true'
-            ? 'true'
-            : value === false || value === 'false'
-              ? 'false'
-              : ''
-        }
-        onChange={(e) => {
-          const val = e.target.value
-          if (val === 'true') onChange('true')
-          else if (val === 'false') onChange('false')
-          else onChange('')
-        }}
-        required
-      >
-        <option value="">{placeholder || 'Do you have a medical history?'}</option>
-        <option value="true">Sí</option>
-        <option value="false">No</option>
-      </select>
-    ),
-  }
-
-  // Supón que tienes estos datos cargados:
-
-  useEffect(() => {
-    // ...otros fetch...
-    const fetchCities = async () => {
-      const res = await fetch('http://localhost:8000/city')
-      const data = await res.json()
-      setCities(data)
-    }
-    fetchCities()
-  }, [])
 
   return (
     <>
@@ -569,8 +594,8 @@ const Appointments = () => {
               ) : (
                 filteredAppointments.map((appointment, index) => (
                   <CTableRow key={index}>
-                    <CTableDataCell>{appointment.patient}</CTableDataCell>
-                    <CTableDataCell>{appointment.professional}</CTableDataCell>
+                    <CTableDataCell>{appointment.patient_full_name}</CTableDataCell>
+                    <CTableDataCell>{appointment.professional_full_name}</CTableDataCell>
                     <CTableDataCell>
                       {formatDate(appointment.scheduled_at, 'DATETIME')}{' '}
                     </CTableDataCell>
@@ -654,7 +679,7 @@ const Appointments = () => {
               </p>
               <p>
                 <strong>{t('Medical history')}:</strong>{' '}
-                {selectedAppointment.has_medical_record ? t('Yes') : t('No')}
+                {selectedAppointment.has_medical_record ? t('Sí') : t('No')}
               </p>
             </div>
           ) : (

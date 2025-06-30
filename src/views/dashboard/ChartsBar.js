@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { getStyle } from '@coreui/utils'
 import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader } from '@coreui/react'
 import './Styles.css/ChartBarExample.css'
@@ -9,108 +8,76 @@ const ChartBarExample = () => {
   const chartRef = useRef(null)
   const { t } = useTranslation()
   const [chartData, setChartData] = useState({
-    pending: [],
-    confirmed: [],
-    completed: [],
-    canceled: [],
+    appointmentsByMonth: [],
     professionals: [],
     professionalCounts: [],
   })
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
       try {
-        // Traer appointments, users y professionals
-        const [appointmentsResponse, usersResponse, professionalsResponse] = await Promise.all([
-          fetch('http://localhost:8000/appointments'),
-          fetch('http://localhost:8000/users'),
-          fetch('http://localhost:8000/professionals'),
-        ])
-        const appointments = await appointmentsResponse.json()
-        const users = await usersResponse.json()
-        const professionals = await professionalsResponse.json()
-
-        // Crear mapa userId -> nombre completo
-        const usersMap = {}
-        users.forEach((user) => {
-          usersMap[user.id] = `${user.first_name} ${user.last_name}`
+        const response = await fetch('http://localhost:3000/api/dashboard', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Incluye el token
+          },
         })
 
-        // Crear mapa professionalId -> userId
-        const professionalToUserMap = {}
-        professionals.forEach((professional) => {
-          professionalToUserMap[professional.id] = professional.user_id
-        })
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data')
+        }
 
-        // Inicializar arrays para conteos mensuales
-        const pending = new Array(12).fill(0)
-        const confirmed = new Array(12).fill(0)
-        const completed = new Array(12).fill(0)
-        const canceled = new Array(12).fill(0)
+        const data = await response.json()
 
-        // Conteo de citas por estado y mes
-        appointments.forEach((appointment) => {
-          let month = null
+        // Procesar appointmentsByMonth
+        const months = Array.from({ length: 12 }, (_, i) => i + 1)
+        const pending = months.map(
+          (month) =>
+            data.appointmentsByMonth.find(
+              (entry) =>
+                entry.month === `2025-${month.toString().padStart(2, '0')}` &&
+                entry.status === 'pending',
+            )?.count || 0,
+        )
+        const confirmed = months.map(
+          (month) =>
+            data.appointmentsByMonth.find(
+              (entry) =>
+                entry.month === `2025-${month.toString().padStart(2, '0')}` &&
+                entry.status === 'confirmed',
+            )?.count || 0,
+        )
+        const completed = months.map(
+          (month) =>
+            data.appointmentsByMonth.find(
+              (entry) =>
+                entry.month === `2025-${month.toString().padStart(2, '0')}` &&
+                entry.status === 'completed',
+            )?.count || 0,
+        )
+        const canceled = months.map(
+          (month) =>
+            data.appointmentsByMonth.find(
+              (entry) =>
+                entry.month === `2025-${month.toString().padStart(2, '0')}` &&
+                entry.status === 'canceled',
+            )?.count || 0,
+        )
 
-          if (
-            appointment.status === 'canceled by patient' ||
-            appointment.status === 'canceled by professional'
-          ) {
-            if (appointment.canceled_at) {
-              month = new Date(appointment.canceled_at).getMonth()
-            } else if (appointment.scheduled_at) {
-              month = new Date(appointment.scheduled_at).getMonth()
-            }
-          } else {
-            if (appointment.scheduled_at) {
-              month = new Date(appointment.scheduled_at).getMonth()
-            }
-          }
-
-          if (month !== null) {
-            if (appointment.status === 'pending') {
-              pending[month]++
-            } else if (appointment.status === 'confirmed') {
-              confirmed[month]++
-            } else if (appointment.status === 'completed') {
-              completed[month]++
-            } else if (appointment.status === 'canceled') {
-              canceled[month]++
-            }
-          }
-        })
-
-        // Contar pacientes atendidos por profesional
-        const professionalCounts = appointments.reduce((acc, appointment) => {
-          const professionalId = appointment.professional_id
-          if (professionalId) {
-            acc[professionalId] = (acc[professionalId] || 0) + 1
-          }
-          return acc
-        }, {})
-
-        // Mapear professionalIds a nombres usando professionalToUserMap y usersMap
-        const professionalsNames = Object.keys(professionalCounts).map((professionalId) => {
-          const userId = professionalToUserMap[professionalId]
-          return usersMap[userId] || 'Unknown'
-        })
-
-        const professionalData = Object.values(professionalCounts)
+        // Procesar topProfessionals
+        const professionals = data.topProfessionals.map((entry) => entry.professional)
+        const professionalCounts = data.topProfessionals.map((entry) => entry.patient_count)
 
         setChartData({
-          pending,
-          confirmed,
-          completed,
-          canceled,
-          professionals: professionalsNames,
-          professionalCounts: professionalData,
+          appointmentsByMonth: { pending, confirmed, completed, canceled },
+          professionals,
+          professionalCounts,
         })
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching dashboard data:', error)
       }
     }
 
-    fetchData()
+    fetchDashboardData()
   }, [])
 
   const data1 = {
@@ -119,22 +86,22 @@ const ChartBarExample = () => {
       {
         label: 'Pending',
         backgroundColor: '#ff9800',
-        data: chartData.pending,
+        data: chartData.appointmentsByMonth.pending,
       },
       {
         label: 'Confirmed',
         backgroundColor: '#4caf50',
-        data: chartData.confirmed,
+        data: chartData.appointmentsByMonth.confirmed,
       },
       {
         label: 'Completed',
         backgroundColor: '#2196f3',
-        data: chartData.completed,
+        data: chartData.appointmentsByMonth.completed,
       },
       {
         label: 'Canceled',
         backgroundColor: '#f44336',
-        data: chartData.canceled,
+        data: chartData.appointmentsByMonth.canceled,
       },
     ],
   }

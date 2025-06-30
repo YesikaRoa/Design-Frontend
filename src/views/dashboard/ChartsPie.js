@@ -22,94 +22,36 @@ const ChartsSection = () => {
   const [specialtyData, setSpecialtyData] = useState([])
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
       try {
-        // Fetch data from all endpoints
-        const [
-          appointmentsResponse,
-          citiesResponse,
-          professionalSpecialtiesResponse,
-          specialtiesResponse,
-        ] = await Promise.all([
-          fetch('http://localhost:8000/appointments'),
-          fetch('http://localhost:8000/city'),
-          fetch('http://localhost:8000/professional_specialty'),
-          fetch('http://localhost:8000/specialty'),
-        ])
+        const response = await fetch('http://localhost:3000/api/dashboard', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Token de autenticación
+          },
+        })
 
-        // Convert responses to JSON
-        const appointments = await appointmentsResponse.json()
-        const cities = await citiesResponse.json()
-        const professionalSpecialties = await professionalSpecialtiesResponse.json()
-        const specialties = await specialtiesResponse.json()
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data')
+        }
 
-        // ------------------------
-        // 1. Map city_id to city name
-        const cityMap = cities.reduce((acc, city) => {
-          acc[city.id] = city.name
-          return acc
-        }, {})
+        const data = await response.json()
 
-        // ------------------------
-        // 2. Process data for "Patients by City"
-        const cityCounts = appointments.reduce((acc, appointment) => {
-          const cityName = cityMap[appointment.city_id] || 'Unknown'
-          acc[cityName] = (acc[cityName] || 0) + 1
-          return acc
-        }, {})
+        // Procesar pacientes por ciudad
+        const cityLabels = data.patientsByCity.map((entry) => entry.city)
+        const cityValues = data.patientsByCity.map((entry) => entry.patient_count)
 
-        const cityLabels = Object.keys(cityCounts)
-        const cityValues = Object.values(cityCounts)
+        // Procesar especialidades más solicitadas
+        const specialtyLabels = data.specialtiesByRequest.map((entry) => entry.specialty)
+        const specialtyValues = data.specialtiesByRequest.map((entry) => entry.patient_count)
 
         setCityData({ labels: cityLabels, data: cityValues })
-
-        // ------------------------
-        // 3. Map professional_id to array of specialty_ids (because can have multiple)
-        const professionalToSpecialtyMap = professionalSpecialties.reduce((acc, item) => {
-          if (!acc[item.professional_id]) acc[item.professional_id] = []
-          acc[item.professional_id].push(item.specialty_id)
-          return acc
-        }, {})
-
-        // ------------------------
-        // 4. Map specialty_id to specialty name
-        const specialtyMap = specialties.reduce((acc, specialty) => {
-          acc[specialty.id] = specialty.name
-          return acc
-        }, {})
-
-        // ------------------------
-        // 5. Agrupar citas por profesional para contar solo 1 por profesional
-        const professionalsWithAppointments = new Set()
-        appointments.forEach((appointment) => {
-          professionalsWithAppointments.add(appointment.professional_id)
-        })
-
-        // ------------------------
-        // 6. Contar especialidades según profesionales con citas
-        const specialtyCounts = {}
-
-        professionalsWithAppointments.forEach((professionalId) => {
-          const specialtyIds = professionalToSpecialtyMap[professionalId] || []
-          specialtyIds.forEach((specialtyId) => {
-            // Considerar solo especialidades del 1 al 15 (no subespecialidades)
-            if (specialtyId >= 1 && specialtyId <= 15) {
-              const specialtyName = specialtyMap[specialtyId] || 'Unknown Specialty'
-              specialtyCounts[specialtyName] = (specialtyCounts[specialtyName] || 0) + 1
-            }
-          })
-        })
-
-        const specialtyLabels = Object.keys(specialtyCounts)
-        const specialtyValues = Object.values(specialtyCounts)
-
         setSpecialtyData({ labels: specialtyLabels, data: specialtyValues })
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching dashboard data:', error)
       }
     }
 
-    fetchData()
+    fetchDashboardData()
   }, [])
 
   const doughnutData1 = {
