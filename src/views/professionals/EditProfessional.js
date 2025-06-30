@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import '../users/styles/UserDetails.css'
 import { useTranslation } from 'react-i18next'
-
+import Select from 'react-select'
 import {
   CButton,
   CCard,
@@ -13,28 +13,12 @@ import {
   CRow,
   CFormInput,
   CAlert,
-  CModal,
-  CModalBody,
-  CModalFooter,
-  CModalHeader,
-  CModalTitle,
-  CForm,
-  CInputGroup,
-  CInputGroupText,
 } from '@coreui/react'
-import {
-  cilPencil,
-  cilSave,
-  cilTrash,
-  cilBan,
-  cilCheckCircle,
-  cilLockLocked,
-  cilLockUnlocked,
-} from '@coreui/icons'
+import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
-
+import { useParams } from 'react-router-dom'
 const UserDetails = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -44,54 +28,96 @@ const UserDetails = () => {
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-  const [selectedProfessionalId, setselectedProfessionalId] = useState(null)
-
-  const [professional, setProfessional] = useState(null)
-  const [specialty, setSpecialty] = useState(null)
-  const [subspecialty, setSubspecialty] = useState(null)
-  const [professionalTypes, setProfessionalTypes] = useState([])
+  const [selectedSpecialties, setSelectedSpecialties] = useState([])
+  const [selectedSubspecialties, setSelectedSubspecialties] = useState([])
+  const [professional, setProfessional] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    address: '',
+    phone: '',
+    biography: '',
+    years_of_experience: 0,
+    specialties: [],
+    subspecialties: [],
+    // otros campos que uses
+  })
   const [specialties, setSpecialties] = useState([])
-  const [roles, setRoles] = useState([])
+  const [subspecialties, setSubspecialties] = useState([])
+  const token = localStorage.getItem('authToken')
+  const { id } = useParams()
 
-  useEffect(() => {
-    fetch('http://localhost:8000/role')
-      .then((res) => res.json())
-      .then(setRoles)
-    fetch('http://localhost:8000/professional_type')
-      .then((res) => res.json())
-      .then(setProfessionalTypes)
-    fetch('http://localhost:8000/specialty')
-      .then((res) => res.json())
-      .then(setSpecialties)
-  }, [])
-
-  useEffect(() => {
-    if (user && user.id) {
-      // Cargar professional
-      fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
-        .then((res) => res.json())
-        .then(async (profArr) => {
-          const prof = profArr[0]
-          setProfessional(prof)
-          if (prof && prof.id) {
-            // Cargar specialties
-            const specRes = await fetch(
-              `http://localhost:8000/professional_specialty?professional_id=${prof.id}`,
-            )
-            const specArr = await specRes.json()
-            let specialtyId = null
-            let subspecialtyId = null
-            specArr.forEach((spec) => {
-              const idNum = Number(spec.specialty_id)
-              if (idNum >= 1 && idNum <= 15) specialtyId = spec.specialty_id
-              if (idNum >= 16 && idNum <= 60) subspecialtyId = spec.specialty_id
-            })
-            setSpecialty(specialtyId)
-            setSubspecialty(subspecialtyId)
-          }
-        })
+  const fetchProfessional = async (profId) => {
+    setLoading(true)
+    try {
+      const response = await fetch(`http://localhost:3000/api/professionals/${profId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('Error fetching professional')
+      const data = await response.json()
+      setProfessional(data)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
-  }, [user])
+  }
+  useEffect(() => {
+    if (id) fetchProfessional(id)
+
+    const fetchSpecialties = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/specialties')
+        const data = await response.json()
+
+        const specialtyList = data
+          .filter((item) => item.type === 'specialty')
+          .map((s) => ({
+            label: s.name,
+            value: s.id,
+          }))
+
+        const subspecialtyList = data
+          .filter((item) => item.type === 'subspecialty')
+          .map((s) => ({
+            label: s.name,
+            value: s.id,
+          }))
+
+        setSpecialties(specialtyList)
+        setSubspecialties(subspecialtyList)
+      } catch (error) {
+        console.error('Error fetching specialties:', error)
+      }
+    }
+
+    fetchSpecialties()
+  }, [id, token]) // <-- importante agregar id y token como dependencias
+
+  // Otro useEffect para cuando specialties y professional estén listos
+  useEffect(() => {
+    if (professional && specialties.length > 0 && subspecialties.length > 0) {
+      if (Array.isArray(professional.specialties)) {
+        const mappedSpecialties = professional.specialties.map((name, index) => {
+          const found = specialties.find((s) => s.label === name)
+          return found
+            ? { label: found.label, value: found.value }
+            : { label: name, value: `custom-${index}-${name}` }
+        })
+        setSelectedSpecialties(mappedSpecialties)
+      }
+
+      if (Array.isArray(professional.subspecialties)) {
+        const mappedSubspecialties = professional.subspecialties.map((name, index) => {
+          const found = subspecialties.find((s) => s.label === name)
+          return found
+            ? { label: found.label, value: found.value }
+            : { label: name, value: `custom-${index}-${name}` }
+        })
+        setSelectedSubspecialties(mappedSubspecialties)
+      }
+    }
+  }, [professional, specialties, subspecialties])
 
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
@@ -106,83 +132,84 @@ const UserDetails = () => {
 
   const save = async () => {
     try {
-      const getResponse = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!getResponse.ok) throw new Error('Error al obtener los datos actuales del usuario.')
-      const currentUser = await getResponse.json()
+      // Combinar specialties y subspecialties
+      const combinedSpecialties = [
+        ...selectedSpecialties.map((s) => s.value),
+        ...selectedSubspecialties.map((s) => s.value),
+      ]
 
-      const updatedFields = {
-        first_name: document.getElementById('firstName').value,
-        last_name: document.getElementById('lastName').value,
-        email: document.getElementById('email').value,
-        address: document.getElementById('address').value,
-        phone: document.getElementById('phone').value,
+      // Datos del profesional y usuario
+      const updatedProfessional = {
+        professional_type_id: professional.professional_type_id || null,
+        biography: professional.biography || null,
+        years_of_experience: professional.years_of_experience || 0,
       }
 
-      const updatedUser = { ...currentUser, ...updatedFields }
+      const updatedUser = {
+        first_name: professional.first_name || '',
+        last_name: professional.last_name || '',
+        email: professional.email || '',
+        address: professional.address || '',
+        phone: professional.phone || '',
+      }
 
-      const putResponse = await fetch(`http://localhost:8000/users/${user.id}`, {
+      // Asignar specialties directamente como arreglo
+      const specialties = combinedSpecialties
+
+      // Hacer la petición al backend
+      const response = await fetch(`http://localhost:3000/api/professionals/${professional.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          professional: updatedProfessional,
+          specialties,
+          ...updatedUser,
+        }),
       })
 
-      if (putResponse.ok) {
-        const result = await putResponse.json()
-        setUser(result)
-      }
+      if (!response.ok) {
+        const errorData = await response.json()
 
-      // Actualizar professional_type
-      const professionalTypeId = document.getElementById('professionalType').value
-      const biography = document.getElementById('biography').value
-      const years_of_experience = document.getElementById('years_of_experience').value
-
-      if (professional && professionalTypeId) {
-        await fetch(`http://localhost:8000/professionals/${professional.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...professional,
-            professional_type_id: professionalTypeId,
-            biography,
-            years_of_experience: years_of_experience ? Number(years_of_experience) : 0,
-          }),
-        })
-      }
-
-      // Actualizar specialty y subspecialty
-      const specialtyId = document.getElementById('specialty').value
-      const subspecialtyId = document.getElementById('subspecialty').value
-
-      // Elimina las especialidades actuales
-      if (professional && professional.id) {
-        await fetch(
-          `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
-          { method: 'DELETE' },
-        )
-        // Crea la nueva especialidad
-        if (specialtyId) {
-          await fetch('http://localhost:8000/professional_specialty', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              professional_id: professional.id,
-              specialty_id: specialtyId,
-            }),
-          })
+        // Manejo de errores de validación Zod
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          const messages = errorData.issues
+            .map((issue) =>
+              Array.isArray(issue.path)
+                ? `${issue.path.join('.')} - ${issue.message}`
+                : `${issue.path || 'unknown'} - ${issue.message}`,
+            )
+            .join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'Error updating professional and user data.',
+            'danger',
+          )
         }
-        // Crea la nueva subespecialidad si existe
-        if (subspecialtyId) {
-          await fetch('http://localhost:8000/professional_specialty', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              professional_id: professional.id,
-              specialty_id: subspecialtyId,
-            }),
-          })
-        }
+        return // Detener el flujo
       }
 
+      const result = await response.json()
+      fetchProfessional(professional.id)
+
+      // Actualizar estado
+      setProfessional(result.professional)
+      setUser(result.user)
+
+      const specialtyIds = (result.specialties || []).map((s) => (typeof s === 'object' ? s.id : s))
+
+      setSelectedSpecialties(
+        specialtyIds.map((id) => {
+          const found = specialties.find((s) => s.value === id)
+          return found
+            ? { label: found.label, value: found.value }
+            : { label: `Unknown-${id}`, value: id }
+        }),
+      )
       Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
       setFieldsDisabled(true)
     } catch (error) {
@@ -218,24 +245,28 @@ const UserDetails = () => {
   const handleToggleStatus = async (userId) => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-      const updatedUser = { ...user, status: updatedStatus }
 
-      const response = await fetch(`http://localhost:8000/users/${userId}`, {
+      const response = await fetch(`http://localhost:3000/api/professionals/status/${userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
+        },
+        body: JSON.stringify({ newStatus: updatedStatus }),
       })
 
+      const result = await response.json()
+
       if (response.ok) {
-        const result = await response.json()
-        setUser(result)
+        setUser(result.user) // Asegúrate de que `result.user` contenga los datos actualizados
         Notifications.showAlert(
           setAlert,
           `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
           'success',
         )
       } else {
-        Notifications.showAlert(setAlert, 'Failed to update user status.', 'danger')
+        const errorMessage = result.message || 'Failed to update user status.'
+        Notifications.showAlert(setAlert, errorMessage, 'danger')
       }
     } catch (error) {
       console.error('Error toggling user status:', error)
@@ -243,52 +274,38 @@ const UserDetails = () => {
     }
   }
 
-  const handleDeleteUser = async () => {
+  const confirmDelete = async () => {
     try {
-      // 1. Buscar professional por user_id
-      const profRes = await fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
-      const profArr = await profRes.json()
-      const professional = profArr[0]
-      if (professional) {
-        // 2. Buscar y eliminar todas las especialidades asociadas
-        const specRes = await fetch(
-          `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
-        )
-        const specialties = await specRes.json()
-        if (Array.isArray(specialties)) {
-          await Promise.all(
-            specialties.map((s) =>
-              fetch(`http://localhost:8000/professional_specialty/${s.id}`, {
-                method: 'DELETE',
-              }),
-            ),
-          )
-        }
-        // 3. Eliminar professional
-        await fetch(`http://localhost:8000/professionals/${professional.id}`, {
-          method: 'DELETE',
-        })
-      }
-      // 4. Eliminar usuario
-      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
+      // Solicitud DELETE al backend
+      const response = await fetch(`http://localhost:3000/api/professionals/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+        },
       })
 
       if (response.ok) {
-        Notifications.showAlert(setAlert, 'User has been deleted successfully.', 'success')
-        setDeleteModalVisible(false)
-        navigate('/professionals')
+        Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
+        navigate('/professionals/')
       } else {
-        Notifications.showAlert(setAlert, 'Failed to delete user.', 'danger')
+        const errorData = await response.json()
+        Notifications.showAlert(
+          setAlert,
+          errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+          'danger',
+        )
       }
     } catch (error) {
-      console.error('Error deleting user:', error)
-      Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'danger')
+      console.error('Error eliminando usuario:', error)
+      Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
+    } finally {
+      setDeleteModalVisible(false)
+      setUserToDelete(null)
     }
   }
 
   const openDeleteModal = (userId) => {
-    setselectedProfessionalId(userId)
     setDeleteModalVisible(true)
   }
 
@@ -306,17 +323,16 @@ const UserDetails = () => {
         <CCard>
           <CCardBody>
             <CCardTitle className="text-primary">
-              {user.first_name} {user.last_name}
+              {professional.first_name} {professional.last_name}
             </CCardTitle>
             <CCardText>
-              <strong>{t('Email')}:</strong> {user.email} <br />
-              <strong>{t('Role')}:</strong>{' '}
-              {roles.find((r) => String(r.id) === String(user.role_id))?.name || user.role_id}{' '}
-              <br />
-              <strong>{t('Status')}:</strong> {user.status} <br />
-              <strong>{t('Created at')}:</strong> {new Date(user.created_at).toLocaleDateString()}{' '}
-              <br />
-              <strong>{t('Last Updated')}:</strong> {new Date(user.updated_at).toLocaleDateString()}
+              <strong>{t('Email')}:</strong> {professional.email} <br />
+              <strong>{t('Professional Type')}:</strong> {professional.professional_type} <br />
+              <strong>{t('Status')}:</strong> {professional.status} <br />
+              <strong>{t('Created at')}:</strong>{' '}
+              {new Date(professional.created_at).toLocaleDateString()} <br />
+              <strong>{t('Last Updated')}:</strong>{' '}
+              {new Date(professional.updated_at).toLocaleDateString()}
             </CCardText>
           </CCardBody>
         </CCard>
@@ -325,7 +341,7 @@ const UserDetails = () => {
             <div className="card-actions-container">
               <span
                 className={`card-actions-link ${user.status === 'Active' ? 'deactivate-user' : 'activate-user'}`}
-                onClick={() => handleToggleStatus(user.id)}
+                onClick={() => handleToggleStatus(professional.id)}
               >
                 <CIcon
                   icon={user.status === 'Active' ? cilBan : cilCheckCircle}
@@ -352,11 +368,14 @@ const UserDetails = () => {
         <CCard>
           <CCardBody>
             <CCardTitle>{t('Edit Professional')}</CCardTitle>
+
+            {/* Información básica */}
             <CFormInput
               type="text"
               id="firstName"
               floatingLabel={t('First name')}
-              defaultValue={user.first_name}
+              value={professional.first_name || ''}
+              onChange={(e) => setProfessional((prev) => ({ ...prev, first_name: e.target.value }))}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -364,7 +383,8 @@ const UserDetails = () => {
               type="text"
               id="lastName"
               floatingLabel={t('Last name')}
-              defaultValue={user.last_name}
+              value={professional.last_name || ''}
+              onChange={(e) => setProfessional((prev) => ({ ...prev, last_name: e.target.value }))}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -372,7 +392,8 @@ const UserDetails = () => {
               type="email"
               id="email"
               floatingLabel={t('Email')}
-              defaultValue={user.email}
+              value={professional.email || ''}
+              onChange={(e) => setProfessional((prev) => ({ ...prev, email: e.target.value }))}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -380,7 +401,8 @@ const UserDetails = () => {
               type="text"
               id="address"
               floatingLabel={t('Address')}
-              defaultValue={user.address}
+              value={professional.address || ''}
+              onChange={(e) => setProfessional((prev) => ({ ...prev, address: e.target.value }))}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -388,139 +410,67 @@ const UserDetails = () => {
               type="text"
               id="phone"
               floatingLabel={t('Phone')}
-              defaultValue={user.phone}
+              value={professional.phone || ''}
+              onChange={(e) => setProfessional((prev) => ({ ...prev, phone: e.target.value }))}
               className="mb-3"
               disabled={fieldsDisabled}
             />
-            {professional && (
-              <>
-                {fieldsDisabled ? (
-                  <>
-                    <CFormInput
-                      type="text"
-                      id="professionalType"
-                      floatingLabel={t('Professional Type')}
-                      value={
-                        professionalTypes.find(
-                          (pt) => String(pt.id) === String(professional.professional_type_id),
-                        )?.name || ''
-                      }
-                      className="mb-3"
-                      disabled
-                    />
-                    <CFormInput
-                      type="text"
-                      id="specialty"
-                      floatingLabel={t('Specialty')}
-                      value={
-                        specialties.find((s) => String(s.id) === String(specialty))?.name || ''
-                      }
-                      className="mb-3"
-                      disabled
-                    />
-                    {subspecialty && (
-                      <CFormInput
-                        type="text"
-                        id="subspecialty"
-                        floatingLabel={t('Subspecialty')}
-                        value={
-                          specialties.find((s) => String(s.id) === String(subspecialty))?.name || ''
-                        }
-                        className="mb-3"
-                        disabled
-                      />
-                    )}
-                    <CFormInput
-                      type="text"
-                      id="biography"
-                      floatingLabel={t('Biography')}
-                      value={professional.biography || ''}
-                      className="mb-3"
-                      disabled
-                    />
-                    <CFormInput
-                      type="number"
-                      id="years_of_experience"
-                      floatingLabel={t('Years of Experience')}
-                      value={professional.years_of_experience || ''}
-                      className="mb-3"
-                      disabled
-                    />
-                  </>
-                ) : (
-                  <>
-                    <select
-                      id="professionalType"
-                      className="form-select mb-3"
-                      defaultValue={professional.professional_type_id}
-                    >
-                      <option value="">Select Professional Type</option>
-                      {professionalTypes.map((pt) => (
-                        <option key={pt.id} value={pt.id}>
-                          {pt.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      id="specialty"
-                      className="form-select mb-3"
-                      defaultValue={specialty || ''}
-                    >
-                      <option value="">Select Specialty</option>
-                      {specialties
-                        .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
-                        .map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                    </select>
-                    <select
-                      id="subspecialty"
-                      className="form-select mb-3"
-                      defaultValue={subspecialty || ''}
-                    >
-                      <option value="">Select Subspecialty</option>
-                      {specialties
-                        .filter((s) => Number(s.id) >= 16 && Number(s.id) <= 60)
-                        .map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                    </select>
-                    <CFormInput
-                      type="text"
-                      id="biography"
-                      floatingLabel={t('Biography')}
-                      defaultValue={professional.biography || ''}
-                      className="mb-3"
-                      disabled={fieldsDisabled}
-                    />
-                    <CFormInput
-                      type="number"
-                      id="years_of_experience"
-                      floatingLabel={t('Years of Experience')}
-                      defaultValue={professional.years_of_experience || ''}
-                      className="mb-3"
-                      disabled={fieldsDisabled}
-                    />
-                    <CFormInput
-                      type="text"
-                      id="created_at"
-                      floatingLabel={t('Created at')}
-                      value={
-                        professional.created_at
-                          ? new Date(professional.created_at).toLocaleString()
-                          : ''
-                      }
-                      className="mb-3"
-                      disabled
-                    />
-                  </>
-                )}
-              </>
-            )}
+            <CFormInput
+              type="text"
+              id="biography"
+              floatingLabel={t('Biography')}
+              value={professional.biography || ''}
+              onChange={(e) => setProfessional((prev) => ({ ...prev, biography: e.target.value }))}
+              className="mb-3"
+              disabled={fieldsDisabled}
+            />
+            <CFormInput
+              type="number"
+              id="years_of_experience"
+              floatingLabel={t('Years of Experience')}
+              value={professional.years_of_experience || 0}
+              onChange={(e) =>
+                setProfessional((prev) => ({
+                  ...prev,
+                  years_of_experience: Number(e.target.value),
+                }))
+              }
+              className="mb-3"
+              disabled={fieldsDisabled}
+            />
+
+            {/* Especialidades */}
+            <label htmlFor="specialty" className="form-label">
+              {t('Specialties')}
+            </label>
+            <Select
+              isMulti
+              name="specialty"
+              options={specialties}
+              value={selectedSpecialties}
+              onChange={setSelectedSpecialties}
+              className="mb-2"
+              classNamePrefix="react-select"
+              placeholder={t('Select specialties')}
+              isDisabled={fieldsDisabled}
+            />
+
+            {/* Subespecialidades */}
+            <label htmlFor="subspecialty" className="form-label">
+              {t('Subspecialties')}
+            </label>
+            <Select
+              isMulti
+              name="subspecialty"
+              options={subspecialties}
+              value={selectedSubspecialties}
+              onChange={setSelectedSubspecialties}
+              className="mb-2"
+              classNamePrefix="react-select"
+              placeholder={t('Select subspecialties')}
+              isDisabled={fieldsDisabled}
+            />
+
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
               <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
               {fieldsDisabled ? t('Edit') : t('Save')}
@@ -532,7 +482,7 @@ const UserDetails = () => {
       <ModalDelete
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
-        onConfirm={handleDeleteUser}
+        onConfirm={confirmDelete}
         title={t('Delete user')}
         message={t('Are you sure you want to delete this user? This action cannot be undone.')}
       />

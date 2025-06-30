@@ -45,7 +45,6 @@ const AppHeader = () => {
       .changeLanguage(newLang)
       .then(() => {
         localStorage.setItem('i18nextLng', newLang) // Actualizar en localStorage
-        console.log(`Idioma cambiado a: ${newLang}`)
       })
       .catch((error) => console.error('Error al cambiar idioma:', error))
   }

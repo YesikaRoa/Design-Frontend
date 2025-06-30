@@ -1,0 +1,30 @@
+.custom-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  max-width: 300px;
+  z-index: 1050;
+  background-color: #fff; /* Fondo blanco para mejor visibilidad */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  border-radius: 8px; /* Bordes redondeados */
+}
+
+.custom-toast .toast-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centra el contenido horizontalmente */
+  gap: 10px; /* Espacio entre el texto y el botón */
+}
+
+.custom-toast .toast-content p {
+  margin: 0; /* Elimina márgenes predeterminados */
+  font-size: 14px; /* Tamaño de texto más pequeño */
+  text-align: center; /* Centra el texto */
+}
+
+.renew-session-button {
+  padding: 5px 10px; /* Tamaño pequeño */
+  font-size: 12px; /* Texto más pequeño */
+  border-radius: 20px; /* Botón con bordes redondeados */
+  text-align: center;
+}

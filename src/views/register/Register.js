@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 
 import Notifications from '../../components/Notifications'
 import './styles/Register.css'
-import bcrypt from 'bcryptjs'
 
 import {
   CButton,
@@ -39,10 +38,8 @@ const Register = () => {
     subspecialty: '',
     years_experience: '',
     avatar: defaultAvatar,
-    role_id: 'Professional',
+    role_id: '',
     status: 'Active',
-    state: '',
-    city: '',
   })
   const [step, setStep] = useState(1)
   const [alert, setAlert] = useState(null)
@@ -50,35 +47,64 @@ const Register = () => {
   const navigate = useNavigate()
 
   const [professionalTypes, setProfessionalTypes] = useState([])
+
   const [specialtiesData, setSpecialtiesData] = useState([])
-  const [states, setStates] = useState([])
-  const [cities, setCities] = useState([])
+
   useEffect(() => {
-    // Cargar tipos de profesional
-    fetch('http://localhost:8000/professional_type')
-      .then((res) => res.json())
-      .then((data) => setProfessionalTypes(data))
-    // Cargar especialidades
-    fetch('http://localhost:8000/specialty')
-      .then((res) => res.json())
-      .then((data) => setSpecialtiesData(data))
-    // Cargar estados
-    fetch('http://localhost:8000/state')
-      .then((res) => res.json())
-      .then((data) => setStates(data))
-    // Cargar ciudades
-    fetch('http://localhost:8000/city')
-      .then((res) => res.json())
-      .then((data) => {
-        setCities(data)
-      })
+    const fetchProfessionalTypes = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/professional-types')
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const data = await response.json()
+
+        setProfessionalTypes(data)
+      } catch (error) {
+        console.error('Error fetching professional types:', error)
+      }
+    }
+
+    const fetchspecialties = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/specialties')
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const data = await response.json()
+
+        setSpecialtiesData(data)
+      } catch (error) {
+        console.error('Error fetching professional types:', error)
+      }
+    }
+    const convertDefaultAvatarToBase64 = async () => {
+      try {
+        const response = await fetch(defaultAvatar)
+        const blob = await response.blob()
+
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData((prevData) => ({
+            ...prevData,
+            avatar: reader.result, // Base64 string
+          }))
+        }
+        reader.readAsDataURL(blob)
+      } catch (error) {
+        console.error('Error converting default avatar to Base64:', error)
+      }
+    }
+
+    convertDefaultAvatarToBase64()
+    fetchProfessionalTypes()
+
+    fetchspecialties()
   }, [])
 
-  // Filtrar especialidades y subespecialidades según selección
-  const specialties = specialtiesData.filter((s) => !s.parent_id)
-  const subspecialties = specialtiesData.filter(
-    (s) => s.parent_id && s.parent_id === Number(formData.specialty),
-  )
+  // Filtrar especialidades y subespecialidades según el tipo devuelto por el backend
+  const specialties = specialtiesData.filter((s) => s.type === 'specialty')
+  const subspecialties = specialtiesData.filter((s) => s.type === 'subspecialty')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -104,87 +130,48 @@ const Register = () => {
   // ...existing code...
   const handleRegister = async () => {
     try {
-      // 1. Verificar si el correo ya existe
-      const emailResponse = await fetch(`http://localhost:8000/users?email=${formData.email}`)
-      const existingUsers = await emailResponse.json()
-      if (existingUsers.length > 0) {
-        Notifications.showAlert(setAlert, 'Email already in use.', 'danger')
+      if (!formData.avatar.startsWith('data:image/')) {
+        Notifications.showAlert(setAlert, 'Invalid avatar format.', 'danger')
         return
       }
 
-      // 2. Encriptar la contraseña
-      const hashedPassword = await bcrypt.hash(formData.password, 10)
-
-      // 3. Crear usuario
-      const now = new Date().toISOString()
-      // ...existing code...
-      const userPayload = {
+      // Consolidar todos los datos en un único payload
+      const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
-        password: hashedPassword,
+        password: formData.password,
         address: formData.address,
         phone: formData.phone,
         birth_date: formData.birth_date,
         gender: formData.gender,
-        avatar: formData.avatar, // solo si tu tabla user tiene avatar
-        role_id: 2, // o el id correspondiente
+        avatar: formData.avatar, // Base64 string
+        role_id: 3, // ID del rol (Asegúrate de usar el correcto para "Profesional")
         status: 'Active',
-        created_at: now,
-        updated_at: now,
-      }
-      // ...existing code...
-      const userRes = await fetch('http://localhost:8000/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userPayload),
-      })
-      if (!userRes.ok) {
-        Notifications.showAlert(setAlert, 'User creation failed.', 'danger')
-        return
-      }
-      const user = await userRes.json()
-
-      // 4. Crear profesional
-      const professionalPayload = {
-        user_id: user.id,
-        professional_type_id: Number(formData.professional_type), // Debe ser el id, ajusta si es necesario
+        professional_type_id: Number(formData.professional_type),
         biography: formData.biography,
         years_of_experience: Number(formData.years_experience),
-        created_at: now,
+        specialty_ids: [Number(formData.specialty), Number(formData.subspecialty)].filter(Boolean),
       }
-      const profRes = await fetch('http://localhost:8000/professionals', {
+
+      const response = await fetch('http://localhost:3000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(professionalPayload),
+        body: JSON.stringify(payload),
       })
-      if (!profRes.ok) {
-        Notifications.showAlert(setAlert, 'Professional creation failed.', 'danger')
-        return
-      }
-      const professional = await profRes.json()
 
-      // 5. Registrar especialidad principal
-      if (formData.specialty) {
-        await fetch('http://localhost:8000/professional_specialty', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            specialty_id: Number(formData.specialty),
-            professional_id: professional.id,
-          }),
-        })
-      }
-      // 6. Registrar subespecialidad si existe
-      if (formData.subspecialty) {
-        await fetch('http://localhost:8000/professional_specialty', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            specialty_id: Number(formData.subspecialty),
-            professional_id: professional.id,
-          }),
-        })
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Error response from backend:', errorData)
+
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          // Muestra los errores específicos de validación en el frontend
+          const messages = errorData.issues.map((issue) => issue.message).join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          Notifications.showAlert(setAlert, errorData.message || 'Registration failed.', 'danger')
+        }
+        return
       }
 
       Notifications.showAlert(setAlert, 'Registration successful!', 'success')
@@ -263,42 +250,6 @@ const Register = () => {
       case 2:
         return (
           <>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>Estado</CInputGroupText>
-              <CFormSelect
-                className="form-select"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-              >
-                <option value="">Seleccione estado</option>
-                {states.map((state) => (
-                  <option key={state.id} value={state.id}>
-                    {state.name}
-                  </option>
-                ))}
-              </CFormSelect>
-            </CInputGroup>
-            {formData.state && (
-              <CInputGroup className="mb-3 form-step">
-                <CInputGroupText>Ciudad</CInputGroupText>
-                <CFormSelect
-                  className="form-select"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Seleccione ciudad</option>
-                  {cities
-                    .filter((city) => Number(city.state_id) === Number(formData.state))
-                    .map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {city.name}
-                      </option>
-                    ))}
-                </CFormSelect>
-              </CInputGroup>
-            )}
             <CInputGroup className="mb-3 form-step">
               <CInputGroupText>📍</CInputGroupText>
               <CFormInput

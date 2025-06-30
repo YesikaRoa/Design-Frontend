@@ -8,10 +8,10 @@ const initialState = {
 
 const changeState = (state = initialState, { type, ...rest }) => {
   switch (type) {
-    case 'set':
-      return { ...state, ...rest }
-    case 'setAvatar': // Nuevo caso para actualizar el avatar
+    case 'setAvatar': // Actualizar solo el avatar
       return { ...state, avatar: rest.avatar }
+    case 'set': // Cambiar otros estados
+      return { ...state, ...rest }
     default:
       return state
   }

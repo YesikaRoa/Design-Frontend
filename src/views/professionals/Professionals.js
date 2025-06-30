@@ -28,6 +28,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPeople, cilPencil, cilInfo, cilTrash, cilUserPlus } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
+import { formatDate } from '../../utils/dateUtils'
 
 export const Professionls = () => {
   const navigate = useNavigate()
@@ -48,139 +49,140 @@ export const Professionls = () => {
   const [professionalTypes, setProfessionalTypes] = useState([])
   const [specialties, setSpecialties] = useState([])
   const { t } = useTranslation()
+  const [formDataState, setFormData] = useState({})
+  const token = localStorage.getItem('authToken')
+
+  const fetchProfessionals = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/professionals', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const normalizedUsers = data.map((user) => ({
+          ...user,
+          id: String(user.professional_id), // Ajusta el campo según corresponda
+        }))
+        setUsers(normalizedUsers)
+        setFilteredUsers(normalizedUsers)
+      } else {
+        console.error('Error fetching professionals')
+      }
+    } catch (error) {
+      console.error('Error fetching professionals:', error)
+    }
+  }
 
   useEffect(() => {
     // Cargar tipos de profesional y especialidades
-    fetch('http://localhost:8000/professional_type')
+    fetch('http://localhost:3000/api/users/professional-types')
       .then((res) => res.json())
       .then(setProfessionalTypes)
-    fetch('http://localhost:8000/specialty')
-      .then((res) => res.json())
-      .then(setSpecialties)
+    const fetchSpecialties = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/users/specialties')
+        const data = await response.json()
+
+        // Filtrar y mapear specialties y subspecialties
+        const specialtyOptions = data
+          .filter((s) => s.type === 'specialty') // Filtrar solo las specialties
+          .map((s) => ({ label: s.name, value: s.id })) // Transformar en opciones
+
+        const subspecialtyOptions = data
+          .filter((s) => s.type === 'subspecialty') // Filtrar solo las subspecialties
+          .map((s) => ({ label: s.name, value: s.id })) // Transformar en opciones
+
+        setSpecialties({ specialties: specialtyOptions, subspecialties: subspecialtyOptions })
+      } catch (error) {
+        console.error('Error fetching specialties:', error)
+      }
+    }
+
+    fetchSpecialties()
+  }, [])
+  useEffect(() => {
+    const convertDefaultAvatarToBase64 = async () => {
+      try {
+        const response = await fetch(defaultAvatar)
+        const blob = await response.blob()
+
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData({
+            avatar: reader.result, // Base64 string
+          })
+        }
+        reader.readAsDataURL(blob)
+      } catch (error) {
+        console.error('Error converting default avatar to Base64:', error)
+      }
+    }
+    convertDefaultAvatarToBase64()
   }, [])
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
-      // Verificar si el email ya existe
       try {
-        const emailCheckResponse = await fetch(
-          `http://localhost:8000/users?email=${formData.email}`,
-        )
-        const existingUsers = await emailCheckResponse.json()
-
-        if (existingUsers.length > 0) {
-          Notifications.showAlert(setAlert, t('The email is already in use'), 'warning')
-          return
-        }
-      } catch (error) {
-        console.error('Error checking email:', error)
-        Notifications.showAlert(setAlert, t('An error occurred while checking the email'), 'error')
-        return
-      }
-
-      const formatDate = (date) => {
-        const [year, month, day] = date.split('-')
-        return `${day}/${month}/${year}`
-      }
-
-      const completeUser = {
-        first_name: formData.first_name || '',
-        last_name: formData.last_name || '',
-        email: formData.email || '',
-        password: 'hashed_password_default',
-        address: formData.address || '',
-        phone: formData.phone || '',
-        birth_date: formData.birth_date
-          ? formatDate(formData.birth_date)
-          : 'No birth date available',
-        gender: formData.gender || '',
-        avatar: formData.avatar || defaultAvatar,
-        role_id: '2',
-        status: formData.status || 'Active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-
-      try {
-        // 1. Crear usuario
-        const userRes = await fetch('http://localhost:8000/users', {
+        const response = await fetch('http://localhost:3000/api/professionals', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(completeUser),
-        })
-        if (!userRes.ok) {
-          const errorText = await userRes.text()
-          throw new Error('Error al crear usuario: ' + errorText)
-        }
-        const savedUser = await userRes.json()
-
-        // 2. Crear professional
-        const professionalRes = await fetch('http://localhost:8000/professionals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
-            user_id: savedUser.id,
-            professional_type_id: formData.professional_type_id,
-            biography: formData.biography || '',
-            years_of_experience: formData.years_of_experience
-              ? Number(formData.years_of_experience)
-              : 0,
-            created_at: new Date().toISOString(),
+            user: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              email: formData.email,
+              password: formData.password,
+              address: formData.address,
+              phone: formData.phone,
+              birth_date: formData.birth_date,
+              gender: formData.gender,
+              role_id: 3,
+              status: formData.status,
+              avatar: formData.avatar || formDataState.avatar || null,
+            },
+            professional: {
+              professional_type_id: formData.professional_type_id,
+              biography: formData.biography,
+              years_of_experience: Number(formData.years_of_experience),
+            },
+            specialties: [formData.specialty_id, formData.subspecialty_id].filter(Boolean),
           }),
         })
-        if (!professionalRes.ok) {
-          const errorText = await professionalRes.text()
-          throw new Error('Error al crear professional: ' + errorText)
-        }
-        const savedProfessional = await professionalRes.json()
 
-        // 3. Crear professional_specialty (especialidad)
-        await fetch('http://localhost:8000/professional_specialty', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            professional_id: savedProfessional.id,
-            specialty_id: formData.specialty_id,
-          }),
-        })
-        // 3b. Si hay subespecialidad, crear también
-        if (formData.subspecialty_id) {
-          await fetch('http://localhost:8000/professional_specialty', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              professional_id: savedProfessional.id,
-              specialty_id: formData.subspecialty_id,
-            }),
-          })
+        if (!response.ok) {
+          const errorData = await response.json()
+
+          if (errorData.issues && Array.isArray(errorData.issues)) {
+            const messages = errorData.issues
+              .map((issue) =>
+                Array.isArray(issue.path)
+                  ? `${issue.path.join('.')} - ${issue.message}`
+                  : `${issue.path || 'unknown'} - ${issue.message}`,
+              )
+              .join('\n')
+            Notifications.showAlert(setAlert, messages, 'danger')
+          } else {
+            Notifications.showAlert(
+              setAlert,
+              errorData.message || 'Error creating professional',
+              'danger',
+            )
+          }
+          return // Detener el flujo
         }
-        // 4. Actualizar estado local
-        setUsers((prev) => [
-          ...prev,
-          {
-            ...savedUser,
-            professional_id: savedProfessional.id,
-            professional_type_id: formData.professional_type_id,
-            specialty_id: formData.specialty_id,
-            subspecialty_id: formData.subspecialty_id || null,
-          },
-        ])
-        setFilteredUsers((prev) => [
-          ...prev,
-          {
-            ...savedUser,
-            professional_id: savedProfessional.id,
-            professional_type_id: formData.professional_type_id,
-            specialty_id: formData.specialty_id,
-            subspecialty_id: formData.subspecialty_id || null,
-          },
-        ])
+
+        const data = await response.json()
         Notifications.showAlert(setAlert, 'Professional created successfully!', 'success')
+        // Actualizar la lista de usuarios
+        await fetchProfessionals()
+        setUsers((prev) => [...prev, data])
       } catch (error) {
-        console.error('Error saving professional:', error)
+        console.error(error)
         Notifications.showAlert(
           setAlert,
-          'An error occurred while saving the professional.',
+          error.message || 'An error occurred while creating the professional.',
           'error',
         )
       }
@@ -230,6 +232,13 @@ export const Professionls = () => {
           placeholder: 'Ingrese su correo electrónico',
           required: true,
         },
+        {
+          name: 'password',
+          label: 'Contraseña',
+          type: 'password',
+          required: true,
+          placeholder: 'Ingrese una contraseña mínima 6 caracteres',
+        },
         { name: 'phone', label: 'Teléfono', placeholder: 'Ingrese su número de teléfono' },
         { name: 'address', label: 'Dirección', placeholder: 'Ingrese su dirección' },
       ],
@@ -248,18 +257,14 @@ export const Professionls = () => {
           label: 'Especialidad',
           type: 'select',
           required: true,
-          options: specialties
-            .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
-            .map((s) => ({ label: s.name, value: s.id })),
+          options: specialties.specialties || [], // Opciones de specialties
         },
         {
           name: 'subspecialty_id',
           label: 'Subespecialidad',
           type: 'select',
           required: false,
-          options: specialties
-            .filter((s) => Number(s.id) >= 16 && Number(s.id) <= 60)
-            .map((s) => ({ label: s.name, value: s.id })),
+          options: specialties.subspecialties || [], // Opciones de subspecialties
         },
         {
           name: 'biography',
@@ -305,59 +310,77 @@ export const Professionls = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
-        // 1. Buscar professional por user_id
-        const profRes = await fetch(
-          `http://localhost:8000/professionals?user_id=${userToDelete.id}`,
-        )
-        const professionals = await profRes.json()
-        for (const professional of professionals) {
-          // 2. Buscar y eliminar todos los professional_specialty relacionados
-          const specRes = await fetch(
-            `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
-          )
-          const specialties = await specRes.json()
-          if (Array.isArray(specialties)) {
-            await Promise.all(
-              specialties.map((s) =>
-                fetch(`http://localhost:8000/professional_specialty/${s.id}`, {
-                  method: 'DELETE',
-                }),
-              ),
-            )
-          }
-          // 3. Eliminar professional
-          await fetch(`http://localhost:8000/professionals/${professional.id}`, {
+        // Solicitud DELETE al backend
+        const response = await fetch(
+          `http://localhost:3000/api/professionals/${userToDelete.professional_id}`,
+          {
             method: 'DELETE',
-          })
-        }
-        // 4. Eliminar usuario
-        const response = await fetch(`http://localhost:8000/users/${userToDelete.id}`, {
-          method: 'DELETE',
-        })
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+            },
+          },
+        )
+
         if (response.ok) {
-          setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-          setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-          Notifications.showAlert(setAlert, 'User deleted', 'success')
+          await fetchProfessionals()
+          Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         } else {
-          Notifications.showAlert(setAlert, 'Failed to delete the user. Please try again.', 'error')
+          const errorData = await response.json()
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+            'danger',
+          )
         }
       } catch (error) {
-        console.error('Error deleting user:', error)
-        Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'error')
+        console.error('Error eliminando usuario:', error)
+        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
       } finally {
         setVisible(false)
         setUserToDelete(null)
       }
     }
   }
-  const handleInfo = (user) => {
-    setselectedProfessional(user)
-    setInfoVisible(true)
+
+  const handleInfo = async (user) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/professionals/${user.professional_id}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        },
+      )
+      const data = await response.json()
+      setselectedProfessional(data) // Asignar la información completa del profesional
+
+      setInfoVisible(true) // Mostrar el modal de información
+    } catch (error) {
+      console.error('Error fetching professional details:', error)
+    }
   }
 
-  const handleEdit = (user) => {
-    localStorage.setItem('selectedProfessional', JSON.stringify(user))
-    navigate(`/professionals/${user.id}`, { state: { user } })
+  const handleEdit = async (user) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/professionals/${user.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+
+      if (!response.ok) {
+        throw new Error('Error fetching professional details')
+      }
+
+      const professionalData = await response.json()
+      // Guardar los datos obtenidos en localStorage
+      localStorage.setItem('selectedProfessional', JSON.stringify(professionalData))
+
+      // Navegar usando los datos obtenidos
+      navigate(`/professionals/${user.id}`)
+    } catch (error) {
+      console.error('Error fetching professional details for edit:', error)
+    }
   }
 
   // Construcción dinámica de los inputs
@@ -428,59 +451,10 @@ export const Professionls = () => {
     setFilters(resetValues)
     setFilteredUsers(users)
   }
-
+  // Llamar a fetchProfessionals al montar el componente
   useEffect(() => {
-    fetch('http://localhost:8000/users')
-      .then((res) => {
-        if (!res.ok) throw new Error('Error al obtener los usuarios.')
-        return res.json()
-      })
-      .then(async (data) => {
-        // Solo usuarios con role_id = 2 (Professional)
-        const professionals = data.filter((user) => String(user.role_id) === '2')
-        // Cargar datos de professional y especialidad
-        const professionalsData = await Promise.all(
-          professionals.map(async (user) => {
-            // Busca professional por user_id
-            const profRes = await fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
-            const profArr = await profRes.json()
-            const professional = profArr[0] || {}
-
-            // Busca todas las especialidades de este professional
-            let specialty_id = null
-            let subspecialty_id = null
-            if (professional.id) {
-              const specRes = await fetch(
-                `http://localhost:8000/professional_specialty?professional_id=${professional.id}`,
-              )
-              const specArr = await specRes.json()
-              // Buscar por rango de IDs
-              specArr.forEach((spec) => {
-                const idNum = Number(spec.specialty_id)
-                if (idNum >= 1 && idNum <= 15) specialty_id = spec.specialty_id
-                if (idNum >= 16 && idNum <= 60) subspecialty_id = spec.specialty_id
-              })
-            }
-            return {
-              ...user,
-              professional_id: professional.id,
-              professional_type_id: professional.professional_type_id,
-              specialty_id,
-              subspecialty_id,
-              biography: professional.biography || '',
-              years_of_experience: professional.years_of_experience || '',
-              created_at: professional.created_at || '',
-            }
-          }),
-        )
-        setUsers(professionalsData)
-        setFilteredUsers(professionalsData)
-      })
-      .catch((error) => {
-        console.error('Error al cargar los usuarios:', error)
-      })
+    fetchProfessionals()
   }, [])
-
   return (
     <>
       <div className="d-flex justify-content-end mb-3">
@@ -583,24 +557,16 @@ export const Professionls = () => {
                 <strong>{t('Email')}:</strong> {selectedProfessional.email}
               </p>
               <p>
-                <strong>{t('Professional Type')}:</strong>{' '}
-                {professionalTypes.find(
-                  (t) => String(t.id) === String(selectedProfessional.professional_type_id),
-                )?.name || 'N/A'}
+                <strong>{t('Professional Type')}: </strong>
+                {selectedProfessional.professional_type}
               </p>
               <p>
-                <strong>{t('Specialty')}:</strong>{' '}
-                {specialties.find((s) => String(s.id) === String(selectedProfessional.specialty_id))
-                  ?.name || 'N/A'}
+                <strong>Specialty:</strong> {selectedProfessional.specialties?.join(', ') || 'N/A'}
               </p>
-              {selectedProfessional.subspecialty_id && (
-                <p>
-                  <strong>{t('Subspecialty')}:</strong>{' '}
-                  {specialties.find(
-                    (s) => String(s.id) === String(selectedProfessional.subspecialty_id),
-                  )?.name || 'N/A'}
-                </p>
-              )}
+              <p>
+                <strong>Subspecialty:</strong>{' '}
+                {selectedProfessional.subspecialties?.join(', ') || 'N/A'}
+              </p>
               <p>
                 <strong>{t('Address')}:</strong>{' '}
                 {selectedProfessional.address || 'No address available'}
@@ -610,7 +576,7 @@ export const Professionls = () => {
               </p>
               <p>
                 <strong>{t('Birth Date')}:</strong>{' '}
-                {selectedProfessional.birth_date || 'No birth date available'}
+                {formatDate(selectedProfessional.birth_date, 'DATE') || 'No birth date available'}
               </p>
               <p>
                 <strong>{t('Gender')}:</strong>{' '}

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react'
-
+import React, { useEffect, useState, useRef } from 'react'
 import {
   CCard,
   CCardBody,
@@ -23,302 +22,333 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilSave, cilPencil, cilExitToApp, cilLockLocked, cilLockUnlocked } from '@coreui/icons'
-import bcrypt from 'bcryptjs'
-import './styles/Profile.css' // Asegúrate de que la ruta sea correcta
-import Notifications from '../../components/Notifications'
-import { useDispatch } from 'react-redux'
 import Select from 'react-select'
 import { useTranslation } from 'react-i18next'
+import './styles/Profile.css'
+import Notifications from '../../components/Notifications'
+import { formatDate } from '../../utils/dateUtils'
+import { useDispatch } from 'react-redux'
 
 const Profile = () => {
-  const dispatch = useDispatch()
-  const { t } = useTranslation()
+  // Estados principales
   const [user, setUser] = useState(null)
-  const [formData, setFormData] = useState({})
-  const [modalVisible, setModalVisible] = useState(false)
+  const [professionalType, setProfessionalType] = useState(null)
+  const [professional, setProfessional] = useState(null)
   const [selectedImage, setSelectedImage] = useState(null)
+  const [alert, setAlert] = useState(null)
+  const { t } = useTranslation()
+  const dispatch = useDispatch()
+  // Formulario de edición
+  const [modalVisible, setModalVisible] = useState(false)
+  const [formData, setFormData] = useState({})
+
+  // Password modal
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
-  const [alert, setAlert] = useState(null)
-  const [professional, setProfessional] = useState(null)
-  const [professionalType, setProfessionalType] = useState(null)
-  const [professionalSpecialties, setProfessionalSpecialties] = useState([])
-  const [specialties, setSpecialties] = useState([])
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  })
 
-  useEffect(() => {
-    if (!user) return
+  // Select specialties & subspecialties
+  const [specialtiesData, setSpecialtiesData] = useState([])
+  const [selectedSpecialties, setSelectedSpecialties] = useState([])
+  const [selectedSubspecialties, setSelectedSubspecialties] = useState([])
 
-    // 1. Obtener el professional relacionado al user actual
-    fetch('http://localhost:8000/professionals')
-      .then((res) => res.json())
-      .then((professionals) => {
-        const prof = professionals.find((p) => String(p.user_id) === String(user.id))
-        setProfessional(prof)
+  // Leer token del localStorage
+  const authToken = localStorage.getItem('authToken')
 
-        // 2. Obtener el tipo de professional
-        if (prof) {
-          fetch('http://localhost:8000/professional_type')
-            .then((res) => res.json())
-            .then((types) => {
-              const type = types.find((t) => String(t.id) === String(prof.professional_type_id))
-              setProfessionalType(type)
-            })
-
-          // 3. Obtener las especialidades asociadas
-          fetch('http://localhost:8000/professional_specialty')
-            .then((res) => res.json())
-            .then((specialties) => {
-              const profSpecialties = specialties.filter(
-                (s) => String(s.professional_id) === String(prof.id),
-              )
-              setProfessionalSpecialties(profSpecialties)
-            })
-          fetch('http://localhost:8000/specialty')
-            .then((res) => res.json())
-            .then((data) => setSpecialties(data))
-            .catch(() => setSpecialties([]))
-        }
-      })
-      .catch((err) => {
-        setProfessional(null)
-        setProfessionalType(null)
-        setProfessionalSpecialties([])
-      })
-  }, [user])
-
-  const getSpecialtyName = (id) => {
-    if (!id) return '-'
-    const found = specialties.find((s) => String(s.id) === String(id))
-    return found ? found.name : '-'
+  const headers = {
+    Authorization: `Bearer ${authToken}`,
+    'Content-Type': 'application/json',
   }
+
+  // Obtener perfil al cargar
+  useEffect(() => {
+    if (!authToken) return
+
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/profile', { headers })
+        if (!res.ok) throw new Error('Error fetching profile')
+        const data = await res.json()
+        setUser(data)
+        setProfessionalType(data.professional_type ? { name: data.professional_type } : null)
+        setProfessional({
+          biography: data.biography,
+          years_of_experience: data.years_of_experience,
+        })
+        setFormData({
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          biography: data.biography,
+          years_experience: data.years_of_experience,
+          specialty: data.specialties || '',
+          subspecialty: data.subspecialties || '',
+        })
+
+        if (Array.isArray(data.specialties)) {
+          setSelectedSpecialties(data.specialties.map((s) => ({ label: s.name, value: s.id }))) // Usa el id
+        }
+        if (Array.isArray(data.subspecialties)) {
+          setSelectedSubspecialties(
+            data.subspecialties.map((s) => ({ label: s.name, value: s.id })),
+          ) // Usa el id
+        }
+      } catch (error) {
+        Notifications.showAlert(setAlert, 'Error loading profile', 'danger')
+      }
+    }
+    fetchProfile()
+  }, [authToken])
+
   const getSpecialtyNames = () => {
-    // IDs del 1 al 15
-    return (
-      professionalSpecialties
-        .filter((ps) => Number(ps.specialty_id) >= 1 && Number(ps.specialty_id) <= 15)
-        .map((ps) => getSpecialtyName(ps.specialty_id))
-        .join(', ') || '-'
-    )
+    return selectedSpecialties.map((s) => s.label).join(', ') || '-'
   }
 
   const getSubspecialtyNames = () => {
-    // IDs del 16 al 60
-    return (
-      professionalSpecialties
-        .filter((ps) => Number(ps.specialty_id) >= 16 && Number(ps.specialty_id) <= 60)
-        .map((ps) => getSpecialtyName(ps.specialty_id))
-        .join(', ') || '-'
-    )
+    return selectedSubspecialties.map((s) => s.label).join(', ') || '-'
   }
 
-  const handleImageUpload = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-      // Simula la ruta de la imagen cargada
-      const newImagePath = `src/assets/images/avatars/${file.name}`
-
-      setSelectedImage(newImagePath) // Guarda la nueva ruta
-
-      // Actualiza la imagen en el servidor inmediatamente
-      const updatedData = { ...formData, avatar: newImagePath }
-      fetch(`http://localhost:8000/users/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedData),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Error al actualizar la imagen en el servidor')
-          }
-          return response.json()
-        })
-        .then((data) => {
-          dispatch({ type: 'setAvatar', avatar: data.avatar })
-          setUser(data) // Actualiza el estado del usuario con los datos del servidor
-        })
-        .catch((error) => console.error('Error al guardar la imagen:', error))
-    }
-  }
+  // Cargar opciones de specialties y subspecialties para los selects
 
   useEffect(() => {
-    const userId = localStorage.getItem('userId') // Obtén el ID del usuario autenticado
-    if (!userId) {
-      console.error('No user ID found in localStorage')
-      return
+    const fetchspecialties = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/auth/specialties', {
+          headers,
+        })
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const data = await response.json()
+        setSpecialtiesData(data)
+      } catch (error) {
+        console.error('Error fetching specialties:', error)
+      }
     }
 
-    // Fetch user data from the API
-    fetch(`http://localhost:8000/users/${userId}`)
-      .then((response) => response.json())
-      .then((data) => {
-        setUser(data)
-        setFormData(data) // Initialize form data with user data
-      })
-      .catch((error) => console.error('Error fetching user data:', error))
-  }, [])
+    fetchspecialties()
+  }, [authToken])
 
-  useEffect(() => {
-    if (selectedImage) {
-      console.log('Imagen seleccionada actualizada:', selectedImage)
-    }
-  }, [selectedImage])
+  // Funciones auxiliares para mostrar nombres
+  const specialtyOptions = specialtiesData
+    .filter((item) => item.type === 'specialty')
+    .map((item) => ({ value: item.id, label: item.name }))
 
+  const subspecialtyOptions = specialtiesData
+    .filter((item) => item.type === 'subspecialty')
+    .map((item) => ({ value: item.id, label: item.name }))
+
+  // Manejador para inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
   }
 
+  // Editar info (abre modal)
+  const handleEditInformation = () => setModalVisible(true)
+
+  // Cambiar password (abre modal)
+  const handleChangePassword = () => setShowChangePasswordModal(true)
+
+  // Guardar cambios perfil
   const handleSaveChanges = async () => {
     try {
-      // 1. Actualiza datos del usuario
-      const updatedUserData = { ...formData, avatar: selectedImage || user.avatar }
-      await fetch(`http://localhost:8000/users/${user.id}`, {
+      // Combinar specialties y subspecialties
+      const combinedSpecialties = [
+        ...selectedSpecialties.map((s) => s.value),
+        ...selectedSubspecialties.map((s) => s.value),
+      ]
+
+      const userData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        birth_date: formData.birth_date,
+        gender: formData.gender,
+        status: formData.status,
+      }
+
+      const professionalData = {
+        biography: formData.biography,
+        years_of_experience: Number(formData.years_experience),
+        specialties: combinedSpecialties,
+      }
+
+      const body = JSON.stringify({ userData, professionalData })
+      console.log('Payload enviado:', body)
+
+      // 1. Actualizar con PUT
+      const res = await fetch('http://localhost:3000/api/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUserData),
+        headers,
+        body,
       })
 
-      // 2. Actualiza datos profesionales
-      if (professional) {
-        const updatedProfessional = {
-          ...professional,
-          biography: formData.biography,
-          years_of_experience: formData.years_experience,
+      if (!res.ok) {
+        const errorData = await res.json()
+        console.error('Error response from backend:', errorData)
+
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          const messages = errorData.issues
+            .map((issue) => `${issue.path.join('.')} - ${issue.message}`)
+            .join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'Error al actualizar algún campo del perfil.',
+            'danger',
+          )
         }
-        await fetch(`http://localhost:8000/professionals/${professional.id}`, {
+        return
+      }
+
+      // 2. Mostrar mensaje de éxito y cerrar modal
+      Notifications.showAlert(setAlert, 'Perfil actualizado con éxito', 'success')
+      setModalVisible(false)
+
+      // 3. Obtener el perfil actualizado con GET
+      const profileRes = await fetch('http://localhost:3000/api/profile', { headers })
+      if (!profileRes.ok) throw new Error('Error fetching profile after update')
+
+      const updatedProfile = await profileRes.json()
+
+      // 4. Actualizar todos los estados con la info completa
+      setUser(updatedProfile)
+      setProfessionalType(
+        updatedProfile.professional_type ? { name: updatedProfile.professional_type } : null,
+      )
+      setProfessional({
+        biography: updatedProfile.biography,
+        years_of_experience: updatedProfile.years_of_experience,
+      })
+      setSelectedSpecialties(
+        Array.isArray(updatedProfile.specialties)
+          ? updatedProfile.specialties.map((s) => ({ label: s.name, value: s.id }))
+          : [],
+      )
+      setSelectedSubspecialties(
+        Array.isArray(updatedProfile.subspecialties)
+          ? updatedProfile.subspecialties.map((s) => ({ label: s.name, value: s.id }))
+          : [],
+      )
+      setFormData({
+        first_name: updatedProfile.first_name,
+        last_name: updatedProfile.last_name,
+        email: updatedProfile.email,
+        phone: updatedProfile.phone,
+        address: updatedProfile.address,
+        biography: updatedProfile.biography,
+        years_experience: updatedProfile.years_of_experience,
+        specialty: updatedProfile.specialties || '',
+        subspecialty: updatedProfile.subspecialties || '',
+      })
+      setSelectedImage(null) // Limpia preview de avatar
+    } catch (error) {
+      Notifications.showAlert(setAlert, 'Error al actualizar perfil', 'danger')
+      console.error(error)
+    }
+  }
+
+  // Manejo subida de imagen (solo preview y guardamos base64 para enviar)
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = async () => {
+      const base64Image = reader.result
+      setSelectedImage(base64Image) // Muestra la imagen en preview localmente (si aplica)
+
+      try {
+        const body = JSON.stringify({ userData: { avatar: base64Image } })
+        const res = await fetch('http://localhost:3000/api/profile', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedProfessional),
+          headers,
+          body,
         })
 
-        // 3. Actualiza specialties y subspecialties
-        // Suponiendo que specialty y subspecialty son strings separados por coma de IDs
-        const specialtiesIds = (formData.specialty || '')
-          .split(',')
-          .map((id) => id.trim())
-          .filter(Boolean)
-        const subspecialtiesIds = (formData.subspecialty || '')
-          .split(',')
-          .map((id) => id.trim())
-          .filter(Boolean)
-        const allSpecialties = [...specialtiesIds, ...subspecialtiesIds]
+        if (!res.ok) {
+          throw new Error('Failed to update avatar')
+        }
 
-        // Elimina las relaciones actuales
-        const currentSpecialties = professionalSpecialties.map((ps) => ps.id)
-        for (const psId of currentSpecialties) {
-          await fetch(`http://localhost:8000/professional_specialty/${psId}`, {
-            method: 'DELETE',
-          })
+        const updatedUser = await res.json()
+
+        dispatch({ type: 'setAvatar', avatar: updatedUser.avatar })
+
+        // Asegúrate de que el avatar existe en la respuesta
+        if (!updatedUser.avatar) {
+          console.error('Avatar no encontrado en la respuesta del backend')
         }
-        // Crea las nuevas relaciones
-        for (const specialty_id of allSpecialties) {
-          await fetch(`http://localhost:8000/professional_specialty`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              professional_id: professional.id,
-              specialty_id: Number(specialty_id),
-            }),
-          })
-        }
+        // Actualiza el Redux solo si la respuesta es exitosa
+
+        Notifications.showAlert(setAlert, 'Avatar actualizado con éxito', 'success')
+      } catch (error) {
+        console.error('Error al actualizar avatar:', error)
+        Notifications.showAlert(setAlert, 'Error al actualizar avatar', 'danger')
       }
-
-      setModalVisible(false)
-      // Opcional: recarga los datos para reflejar los cambios
-      window.location.reload()
-    } catch (error) {
-      console.error('Error al guardar los cambios:', error)
     }
-  }
-  if (!user) {
-    return <div>Loading...</div>
-  }
-  const handleChangePassword = () => {
-    setShowChangePasswordModal(true)
+
+    reader.readAsDataURL(file)
   }
 
+  // Cambiar contraseña
   const handlePasswordChangeSubmit = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Todos los campos son obligatorios.', 'danger')
-    }
-    if (newPassword !== confirmPassword) {
-      return Notifications.showAlert(setAlert, 'Las contraseñas nuevas no coinciden.', 'warning')
-    }
-
     try {
-      const res = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!res.ok) throw new Error('Usuario no encontrado.')
-
-      const dbUser = await res.json()
-
-      // Compara la contraseña ingresada con la almacenada (encriptada)
-      const passwordMatch = await bcrypt.compare(currentPassword, dbUser.password)
-
-      if (!passwordMatch) {
-        return Notifications.showAlert(setAlert, 'La contraseña actual es incorrecta.', 'danger')
-      }
-
-      // Encripta la nueva contraseña antes de actualizarla
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10)
-
-      // Actualiza la contraseña en la base de datos
-      const updateRes = await fetch(`http://localhost:8000/users/${user.id}`, {
+      const body = JSON.stringify({ currentPassword, newPassword, confirmPassword })
+      const res = await fetch('http://localhost:3000/api/profile/password', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...dbUser, password: hashedNewPassword }),
+        headers,
+        body,
       })
 
-      if (!updateRes.ok) throw new Error('Error al actualizar la contraseña.')
+      if (!res.ok) {
+        const errorData = await res.json()
+        console.error('Error response from backend:', errorData)
 
-      Notifications.showAlert(setAlert, 'La contraseña se ha actualizado correctamente.', 'success')
+        let errorMessage = ''
 
-      // Limpia los campos y cierra el modal
+        // Si hay errores de validación Zod (array issues)
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          errorMessage = errorData.issues.map((issue) => issue.message).join('\n')
+        }
+        // Si es error personalizado del backend (campo message)
+        else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+        // Caso fallback
+        else {
+          errorMessage = 'Error desconocido al cambiar contraseña.'
+        }
+
+        Notifications.showAlert(setAlert, errorMessage, 'danger')
+        return
+      }
+
+      Notifications.showAlert(setAlert, 'Contraseña actualizada con éxito', 'success')
+
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-    } catch (err) {
-      console.error(err)
-      Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
+    } catch (error) {
+      console.error('Error inesperado:', error)
+      Notifications.showAlert(setAlert, 'Error al cambiar contraseña', 'danger')
     }
   }
-  const handleEditInformation = () => {
-    setFormData({
-      ...user,
-      biography: professional?.biography || '',
-      years_experience: professional?.years_of_experience || '',
-      specialty: professionalSpecialties
-        .filter((ps) => Number(ps.specialty_id) >= 1 && Number(ps.specialty_id) <= 15)
-        .map((ps) => ps.specialty_id)
-        .join(','),
-      subspecialty: professionalSpecialties
-        .filter((ps) => Number(ps.specialty_id) >= 16 && Number(ps.specialty_id) <= 60)
-        .map((ps) => ps.specialty_id)
-        .join(','),
-    })
-    setModalVisible(true)
-  }
-  // Opciones para specialty y subspecialty
-  const specialtyOptions = specialties
-    .filter((s) => Number(s.id) >= 1 && Number(s.id) <= 15)
-    .map((s) => ({ value: String(s.id), label: s.name }))
 
-  const subspecialtyOptions = specialties
-    .filter((s) => Number(s.id) >= 16 && Number(s.id) <= 60)
-    .map((s) => ({ value: String(s.id), label: s.name }))
+  if (!user) return <div>Cargando...</div>
 
-  // Valores seleccionados para react-select
-  const selectedSpecialties = specialtyOptions.filter((opt) =>
-    (formData.specialty ? formData.specialty.split(',') : []).includes(opt.value),
-  )
-  const selectedSubspecialties = subspecialtyOptions.filter((opt) =>
-    (formData.subspecialty ? formData.subspecialty.split(',') : []).includes(opt.value),
-  )
   return (
     <CCard className="space-component">
       <CCardBody>
@@ -375,7 +405,8 @@ const Profile = () => {
                         <strong>{t('Address')}:</strong> {user.address}
                       </CListGroupItem>
                       <CListGroupItem>
-                        <strong>{t('Birth Date')}:</strong> {user.birth_date}
+                        <strong>{t('Birth Date')}:</strong> <strong>{t('Birth Date')}:</strong>{' '}
+                        {formatDate(user.birth_date, 'DATE')}
                       </CListGroupItem>
                       <CListGroupItem>
                         <strong>{t('Gender')}:</strong> {user.gender}
@@ -434,6 +465,7 @@ const Profile = () => {
             </CRow>
           </CContainer>
 
+          {/* Modal Editar Información */}
           <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
             <CModalHeader>
               <CModalTitle>{t('Edit Information')}</CModalTitle>
@@ -475,44 +507,30 @@ const Profile = () => {
                 onChange={handleInputChange}
               />
               <CFormInput
+                className="mb-2"
                 type="text"
                 name="biography"
                 label={<strong>{t('Biography')}:</strong>}
                 value={formData.biography || ''}
                 onChange={handleInputChange}
               />
-              <label>
-                <strong>{t('Specialty')}:</strong>
-              </label>
               <Select
                 isMulti
                 name="specialty"
                 options={specialtyOptions}
                 value={selectedSpecialties}
-                onChange={(selected) => {
-                  setFormData({
-                    ...formData,
-                    specialty: selected.map((opt) => opt.value).join(','),
-                  })
-                }}
+                onChange={(selected) => setSelectedSpecialties(selected)}
                 className="mb-2"
                 classNamePrefix="react-select"
                 placeholder="Selecciona especialidades"
               />
-              <label>
-                <strong>{t('Subspecialty')}:</strong>
-              </label>
+
               <Select
                 isMulti
                 name="subspecialty"
                 options={subspecialtyOptions}
                 value={selectedSubspecialties}
-                onChange={(selected) => {
-                  setFormData({
-                    ...formData,
-                    subspecialty: selected.map((opt) => opt.value).join(','),
-                  })
-                }}
+                onChange={(selected) => setSelectedSubspecialties(selected)}
                 className="mb-2"
                 classNamePrefix="react-select"
                 placeholder="Selecciona subespecialidades"
@@ -537,6 +555,8 @@ const Profile = () => {
               </CButton>
             </CModalFooter>
           </CModal>
+
+          {/* Modal Cambiar Contraseña */}
           <CModal
             alignment="center"
             visible={showChangePasswordModal}

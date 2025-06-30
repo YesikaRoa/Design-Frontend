@@ -20,68 +20,34 @@ import ModalSendInformation from '../../components/ModalSendInformation'
 import Notifications from '../../components/Notifications'
 import emailjs from 'emailjs-com'
 import './styles/Login.css'
-import bcrypt from 'bcryptjs'
 
 const Login = () => {
   const [modalVisible, setModalVisible] = useState(false)
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
 
-  const generateTemporaryPassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let password = ''
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return password
-  }
-
   const handleSendPassword = async () => {
     const emailInput = document.querySelector('#email-input').value
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(emailInput)) {
-      Notifications.showAlert(setAlert, 'Por favor, ingrese un correo válido.', 'danger')
-      return
-    }
-
     try {
-      const response = await fetch(`http://localhost:8000/users?email=${emailInput}`)
-      const users = await response.json()
-
-      if (users.length === 0) {
-        Notifications.showAlert(setAlert, 'El correo no está registrado.', 'danger')
-        return
-      }
-      if (users.length > 1) {
-        Notifications.showAlert(
-          setAlert,
-          'Hay múltiples cuentas con este correo. Contacte al soporte.',
-          'danger',
-        )
-        return
-      }
-
-      const user = users[0]
-
-      // Generar una contraseña temporal
-      const tempPassword = generateTemporaryPassword()
-      const hashedTempPassword = await bcrypt.hash(tempPassword, 10)
-
-      // Actualizar la contraseña en la base de datos
-      await fetch(`http://localhost:8000/users/${user.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password: hashedTempPassword }),
+      const response = await fetch('http://localhost:3000/api/auth/send-temporary-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailInput }),
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Error desconocido')
+      }
+
+      const { user, tempPassword } = await response.json()
 
       // Enviar correo con Email.js
       const templateParams = {
         to_email: user.email,
         to_name: `${user.first_name} ${user.last_name}`,
-        password: tempPassword, // Contraseña temporal
+        password: tempPassword,
         from_name: 'MediPanel',
       }
 
@@ -94,48 +60,46 @@ const Login = () => {
       )
       setModalVisible(false)
     } catch (error) {
-      console.error('Error al enviar el correo:', error)
-      Notifications.showAlert(setAlert, 'Hubo un error al enviar el correo.', 'danger')
+      Notifications.showAlert(
+        setAlert,
+        error.message || 'Hubo un error al enviar el correo.',
+        'danger',
+      )
     }
   }
 
   const handleLogin = async () => {
-    const usernameInput = document.querySelector('#username-input')
-    const passwordInput = document.querySelector('#password-input')
-    const username = usernameInput.value
-    const password = passwordInput.value
+    const email = document.querySelector('#username-input').value
+    const password = document.querySelector('#password-input').value
 
-    if (!username || !password) {
+    if (!email || !password) {
       Notifications.showAlert(setAlert, 'Por favor, complete todos los campos.', 'danger')
       return
     }
 
     try {
-      // Obtener datos del usuario desde db.json
-      const response = await fetch(`http://localhost:8000/users?email=${username}`)
-      const users = await response.json()
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-      if (users.length === 0) {
-        Notifications.showAlert(setAlert, 'No tienes una cuenta registrada.', 'danger')
-        usernameInput.value = '' // Limpiar campo email
-        passwordInput.value = '' // Limpiar campo password
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.issues && Array.isArray(data.issues)) {
+          // Mostrar errores específicos de validación
+          const messages = data.issues.map((issue) => issue.message).join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          // Mostrar mensaje general
+          Notifications.showAlert(setAlert, data.message || 'Error al iniciar sesión.', 'danger')
+        }
         return
       }
 
-      const user = users[0]
-
-      // Comparar el password ingresado con el password hasheado almacenado
-      const isPasswordValid = await bcrypt.compare(password, user.password)
-
-      if (!isPasswordValid) {
-        Notifications.showAlert(setAlert, 'Contraseña incorrecta.', 'danger')
-        passwordInput.value = '' // Limpiar campo password
-        return
-      }
-
-      // Si las credenciales son correctas, redirigir al dashboard
-      localStorage.setItem('authToken', 'your-auth-token') // Guarda un token de autenticación
-      localStorage.setItem('userId', user.id)
+      // Guardar token y redirigir al dashboard
+      localStorage.setItem('authToken', data.token)
       window.location.href = '/#/dashboard'
       window.location.reload()
     } catch (error) {

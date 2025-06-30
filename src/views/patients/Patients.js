@@ -5,7 +5,7 @@ import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import defaultAvatar from '../../assets/images/avatars/avatar.png'
 import Notifications from '../../components/Notifications'
-import { useCallback } from 'react'
+import { formatDate } from '../../utils/dateUtils'
 
 import '../users/styles/users.css'
 import '../users/styles/filter.css'
@@ -48,76 +48,95 @@ export const Patients = () => {
   const ModalAddRef = useRef()
   const [alert, setAlert] = useState(null)
   const [userToDelete, setUserToDelete] = useState(null)
+  const token = localStorage.getItem('authToken')
+  const [formDataState, setFormData] = useState({})
 
+  useEffect(() => {
+    const convertDefaultAvatarToBase64 = async () => {
+      try {
+        const response = await fetch(defaultAvatar)
+        const blob = await response.blob()
+
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData({
+            avatar: reader.result, // Base64 string
+          })
+        }
+        reader.readAsDataURL(blob)
+      } catch (error) {
+        console.error('Error converting default avatar to Base64:', error)
+      }
+    }
+    convertDefaultAvatarToBase64()
+  }, [])
   // Cambia handleFinish para guardar en ambos endpoints
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
-      // Verificar si el email ya existe
       try {
-        const emailCheckResponse = await fetch(
-          `http://localhost:8000/users?email=${formData.email}`,
+        // Crear el objeto para enviar al backend
+        const payload = {
+          user: {
+            first_name: formData.first_name || '',
+            last_name: formData.last_name || '',
+            email: formData.email || '',
+            password: formData.password,
+            address: formData.address || '',
+            phone: formData.phone || '',
+            birth_date: formData.birth_date ? formatDate(formData.birth_date) : null,
+            gender: formData.gender || null,
+            avatar: formData.avatar || formDataState.avatar || null,
+            role_id: 2, // Paciente por defecto
+            status: formData.status || 'Active',
+          },
+          medical_data: formData.medical_data || '', // Datos médicos obligatorios
+        }
+
+        // Hacer la solicitud al backend
+        const response = await fetch('http://localhost:3000/api/patients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Asegúrate de pasar el token
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+
+          if (errorData.issues && Array.isArray(errorData.issues)) {
+            // Formatear los errores de Zod
+            const messages = errorData.issues
+              .map((issue) =>
+                Array.isArray(issue.path)
+                  ? `${issue.path.join('.')} - ${issue.message}`
+                  : `${issue.path || 'unknown'} - ${issue.message}`,
+              )
+              .join('\n')
+
+            // Mostrar alertas con los errores
+            Notifications.showAlert(setAlert, messages, 'danger')
+          } else {
+            Notifications.showAlert(
+              setAlert,
+              errorData.message || 'An error occurred during validation',
+              'danger',
+            )
+          }
+          return // Detener el flujo si hay errores
+        }
+
+        const data = await response.json()
+        Notifications.showAlert(setAlert, 'Patient created successfully!', 'success')
+        await fetchPatients()
+      } catch (error) {
+        console.error(error)
+        Notifications.showAlert(
+          setAlert,
+          'An unexpected error occurred while creating the patient.',
+          'error',
         )
-        const existingUsers = await emailCheckResponse.json()
-        if (existingUsers.length > 0) {
-          Notifications.showAlert(setAlert, 'The email is already in use.', 'warning')
-          return
-        }
-      } catch (error) {
-        Notifications.showAlert(setAlert, 'An error occurred while checking the email.', 'error')
-        return
-      }
-
-      const formatDate = (date) => {
-        const [year, month, day] = date.split('-')
-        return `${day}/${month}/${year}`
-      }
-
-      // 1. Crear usuario
-      const completeUser = {
-        first_name: formData.first_name || '',
-        last_name: formData.last_name || '',
-        email: formData.email || '',
-        password: 'hashed_password_default',
-        address: formData.address || '',
-        phone: formData.phone || '',
-        birth_date: formData.birth_date
-          ? formatDate(formData.birth_date)
-          : 'No birth date available',
-        gender: formData.gender || '',
-        avatar: formData.avatar || defaultAvatar,
-        role_id: '3', // Paciente por defecto
-        status: formData.status || 'Active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-
-      try {
-        const response = await fetch('http://localhost:8000/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(completeUser),
-        })
-
-        const savedUser = await response.json()
-
-        // 2. Crear paciente
-        const patientData = {
-          user_id: savedUser.id,
-          medical_data: formData.medical_data || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }
-
-        await fetch('http://localhost:8000/patient', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patientData),
-        })
-
-        setUsers((prev) => [...prev, { ...savedUser, medical_data: formData.medical_data }])
-        setFilteredUsers((prev) => [...prev, { ...savedUser, medical_data: formData.medical_data }])
-      } catch (error) {
-        Notifications.showAlert(setAlert, 'An error occurred while saving the user.', 'error')
       }
     }
   }
@@ -190,6 +209,13 @@ export const Patients = () => {
           ],
         },
         {
+          name: 'password',
+          label: 'Contraseña',
+          type: 'password',
+          required: true,
+          placeholder: 'Ingrese una contraseña mínima 6 caracteres',
+        },
+        {
           name: 'medical_data',
           label: 'Datos Médicos',
           type: 'textarea',
@@ -216,31 +242,29 @@ export const Patients = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
-        // 1. Buscar el paciente por user_id
-        const patientRes = await fetch(`http://localhost:8000/patient?user_id=${userToDelete.id}`)
-        const patientData = await patientRes.json()
-        if (patientData && patientData.length > 0) {
-          // 2. Eliminar el paciente
-          await fetch(`http://localhost:8000/patient/${patientData[0].id}`, {
-            method: 'DELETE',
-          })
-        }
-
-        // 3. Eliminar el usuario
-        const response = await fetch(`http://localhost:8000/users/${userToDelete.id}`, {
+        // Solicitud DELETE al backend
+        const response = await fetch(`http://localhost:3000/api/patients/${userToDelete.id}`, {
           method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+          },
         })
 
         if (response.ok) {
-          setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-          setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-          Notifications.showAlert(setAlert, 'User deleted', 'success')
+          await fetchPatients()
+          Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         } else {
-          Notifications.showAlert(setAlert, 'Failed to delete the user. Please try again.', 'error')
+          const errorData = await response.json()
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+            'danger',
+          )
         }
       } catch (error) {
-        console.error('Error deleting user:', error)
-        Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'error')
+        console.error('Error eliminando usuario:', error)
+        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'danger')
       } finally {
         setVisible(false)
         setUserToDelete(null)
@@ -248,21 +272,58 @@ export const Patients = () => {
     }
   }
   const handleInfo = async (user) => {
-    // Obtener medical_data actualizado del endpoint patient
     try {
-      const res = await fetch(`http://localhost:8000/patient?user_id=${user.id}`)
+      // Establecer un estado de carga (opcional)
+      setInfoVisible(false)
+      setselectedPatient(null)
+
+      // Realizar la solicitud al backend
+      const res = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Asegúrate de definir el token si es necesario
+        },
+      })
+
+      if (!res.ok) {
+        // Manejar respuestas no exitosas del backend
+        throw new Error(`Error fetching patient data: ${res.status}`)
+      }
+
+      // Procesar los datos de la respuesta
       const data = await res.json()
-      const medical_data = data && data.length > 0 ? data[0].medical_data : ''
-      setselectedPatient({ ...user, medical_data })
+      setselectedPatient(data)
     } catch (error) {
+      console.error('Error fetching patient info:', error)
+      // Establecer un valor predeterminado si ocurre un error
       setselectedPatient({ ...user, medical_data: '' })
+    } finally {
+      // Asegurarse de que la información esté visible independientemente del resultado
+      setInfoVisible(true)
     }
-    setInfoVisible(true)
   }
 
-  const handleEdit = (user) => {
-    localStorage.setItem('selectedPatient', JSON.stringify(user))
-    navigate(`/patients/${user.id}`, { state: { user } })
+  const handleEdit = async (user) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+
+      if (!response.ok) {
+        throw new Error('Error fetching professional details')
+      }
+
+      const professionalData = await response.json()
+      // Guardar los datos obtenidos en localStorage
+      localStorage.setItem('selectedPatient', JSON.stringify(professionalData))
+
+      // Navegar usando los datos obtenidos
+      navigate(`/patients/${user.id}`)
+    } catch (error) {
+      console.error('Error fetching professional details for edit:', error)
+    }
   }
 
   // Construcción dinámica de los inputs
@@ -333,17 +394,31 @@ export const Patients = () => {
     setFilters(resetValues)
     setFilteredUsers(users)
   }
-  useEffect(() => {
-    fetch('http://localhost:8000/users?role_id=3')
-      .then((res) => res.json())
-      .then((data) => {
+  const fetchPatients = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/patients', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
         const normalizedUsers = data.map((user) => ({
           ...user,
-          id: String(user.id), // asegura que todos los IDs sean string
+          id: String(user.id), // Ajusta el campo según corresponda
         }))
         setUsers(normalizedUsers)
         setFilteredUsers(normalizedUsers)
-      })
+      } else {
+        console.error('Error fetching professionals')
+      }
+    } catch (error) {
+      console.error('Error fetching professionals:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchPatients()
   }, [])
 
   return (
@@ -455,7 +530,7 @@ export const Patients = () => {
               </p>
               <p>
                 <strong>{t('Birth Date')}:</strong>{' '}
-                {selectedPatient.birth_date || 'No birth date available'}
+                {formatDate(selectedPatient.birth_date, 'DATE') || 'No birth date available'}
               </p>
               <p>
                 <strong>{t('Gender')}:</strong> {selectedPatient.gender === 'F' ? 'Female' : 'Male'}

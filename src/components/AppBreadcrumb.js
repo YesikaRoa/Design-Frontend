@@ -77,7 +77,6 @@ const AppBreadcrumb = () => {
         const patient = JSON.parse(storedPatient)
         firstName = patient?.first_name?.split(' ')[0] || `Patient ${userId}`
       } catch (e) {
-        console.error('Error parsing selectedPatient from localStorage:', e)
         firstName = `Patient ${userId}`
       }
     } else {
@@ -89,7 +88,7 @@ const AppBreadcrumb = () => {
 
   if (isEditProfessionalPage) {
     const userId = pathname.split('/')[2]
-    console.log(localStorage.getItem('selectedProfessional'))
+
     const storedProfessional = localStorage.getItem('selectedProfessional') // Cambiado a 'selectedProfessional'
     let firstName = null
 

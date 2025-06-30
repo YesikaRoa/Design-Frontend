@@ -26,11 +26,20 @@ const ModalAdd = forwardRef(
         setErrors({}) // Reinicia los errores al abrir la modal
         setVisible(true)
       },
+      close: () => setVisible(false), // <-- Añadido para exponer el método close
     }))
 
     const validateField = (field, value) => {
-      if (field.required && !value.trim()) {
-        return `${field.label} is required`
+      if (field.required) {
+        if (typeof value === 'string') {
+          if (!value.trim()) {
+            return `${field.label} is required`
+          }
+        } else {
+          if (value === null || value === undefined || value === '') {
+            return `${field.label} is required`
+          }
+        }
       }
       if (field.type === 'email') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -50,7 +59,7 @@ const ModalAdd = forwardRef(
           return 'Phone must contain exactly 11 digits'
         }
       }
-      if (field.name === 'address' && !value.trim()) {
+      if (field.name === 'address' && (!value || !value.trim())) {
         return 'Address is required'
       }
       if (field.validate) {
@@ -58,6 +67,7 @@ const ModalAdd = forwardRef(
       }
       return ''
     }
+
     const handleChange = (e) => {
       const { name, value } = e.target
       setFormData((prev) => ({ ...prev, [name]: value }))
@@ -128,6 +138,7 @@ const ModalAdd = forwardRef(
                   setErrors((prev) => ({ ...prev, [field.name]: error }))
                   if (field.onChange) field.onChange({ target: { value } })
                 },
+                setFormData,
                 error: errors[field.name],
                 helperText: errors[field.name],
                 placeholder: field.placeholder,
@@ -159,6 +170,37 @@ const ModalAdd = forwardRef(
                   </MenuItem>
                 ))}
               </TextField>
+            ) : field.type === 'file' ? (
+              <TextField
+                label={field.label}
+                variant="standard"
+                type="file"
+                name={field.name}
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    [field.name]: e.target.files && e.target.files[0] ? e.target.files[0] : null,
+                  }))
+                  // Validación en tiempo real
+                  const error = validateField(
+                    field,
+                    e.target.files && e.target.files[0] ? e.target.files[0] : '',
+                  )
+                  setErrors((prev) => ({ ...prev, [field.name]: error }))
+                  if (field.onChange) field.onChange(e)
+                }}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  placeholder: field.placeholder || '',
+                  accept: field.accept || undefined,
+                }}
+                error={!!errors[field.name]}
+                helperText={errors[field.name]}
+              />
             ) : (
               <TextField
                 label={field.label}

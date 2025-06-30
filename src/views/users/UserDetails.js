@@ -53,9 +53,10 @@ const UserDetails = () => {
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false })
 
   const [roles, setRoles] = useState([])
+  const token = localStorage.getItem('authToken')
 
   useEffect(() => {
-    fetch('http://localhost:8000/role')
+    fetch('http://localhost:3000/api/users/roles')
       .then((res) => res.json())
       .then(setRoles)
   }, [])
@@ -69,40 +70,60 @@ const UserDetails = () => {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '')
   }
-
   const save = async () => {
     try {
-      const getResponse = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!getResponse.ok) throw new Error('Error al obtener los datos actuales del usuario.')
-      const currentUser = await getResponse.json()
-
+      // Obtener datos actualizados del formulario
       const updatedFields = {
-        first_name: document.getElementById('firstName').value,
-        last_name: document.getElementById('lastName').value,
-        email: document.getElementById('email').value,
-        address: document.getElementById('address').value,
-        phone: document.getElementById('phone').value,
+        first_name: document.getElementById('firstName').value.trim(),
+        last_name: document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
       }
 
-      const updatedUser = { ...currentUser, ...updatedFields }
-
-      const putResponse = await fetch(`http://localhost:8000/users/${user.id}`, {
+      // Enviar solicitud PUT al backend
+      const response = await fetch(`http://localhost:3000/api/users/${user.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Añade token si es necesario
+        },
+        body: JSON.stringify(updatedFields),
       })
 
-      if (putResponse.ok) {
-        const result = await putResponse.json()
-        setUser(result)
-        Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
-      }
-    } catch (error) {
-      console.error('Error saving changes:', error)
-      Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
-    }
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Error response from backend:', errorData)
 
-    handleFieldsDisabled()
+        if (errorData.issues && Array.isArray(errorData.issues)) {
+          // Muestra los errores específicos de validación en el frontend
+          const messages = errorData.issues.map((issue) => issue.message).join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          Notifications.showAlert(
+            setAlert,
+            errorData.message || 'Error al actualizar el usuario.',
+            'danger',
+          )
+        }
+        return
+      }
+
+      const result = await response.json()
+
+      // Actualizar usuario en el frontend
+      setUser(result.user)
+      Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
+    } catch (error) {
+      console.error('Error al guardar cambios:', error)
+      Notifications.showAlert(
+        setAlert,
+        error.message || 'Ocurrió un error al guardar los cambios.',
+        'danger',
+      )
+    } finally {
+      handleFieldsDisabled() // Asegúrate de deshabilitar los campos después de la operación
+    }
   }
 
   useEffect(() => {
@@ -139,29 +160,33 @@ const UserDetails = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:8000/users/${user.id}`)
-      if (!res.ok) throw new Error('Usuario no encontrado.')
-
-      const dbUser = await res.json()
-
-      // Compara la contraseña ingresada con la almacenada (encriptada)
-      const passwordMatch = await bcrypt.compare(currentPassword, dbUser.password)
-
-      if (!passwordMatch) {
-        return Notifications.showAlert(setAlert, 'La contraseña actual es incorrecta.', 'danger')
-      }
-
-      // Encripta la nueva contraseña antes de actualizarla
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10)
-
-      // Actualiza la contraseña en la base de datos
-      const updateRes = await fetch(`http://localhost:8000/users/${user.id}`, {
+      const response = await fetch(`http://localhost:3000/api/users/password/${user.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...dbUser, password: hashedNewPassword }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Agrega el token si es necesario
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
       })
 
-      if (!updateRes.ok) throw new Error('Error al actualizar la contraseña.')
+      // Lee el cuerpo de la respuesta una sola vez
+      const result = await response.json()
+
+      if (!response.ok) {
+        if (result.issues && Array.isArray(result.issues)) {
+          // Errores específicos de validación de Zod
+          const messages = result.issues.map((issue) => issue.message).join('\n')
+          Notifications.showAlert(setAlert, messages, 'danger')
+        } else {
+          // Otros errores generales
+          Notifications.showAlert(
+            setAlert,
+            result.message || 'Error al cambiar la contraseña.',
+            'danger',
+          )
+        }
+        return
+      }
 
       Notifications.showAlert(setAlert, 'La contraseña se ha actualizado correctamente.', 'success')
 
@@ -170,7 +195,7 @@ const UserDetails = () => {
       setCurrentPassword('')
       setNewPassword('')
     } catch (err) {
-      console.error(err)
+      console.error('Error al cambiar la contraseña:', err)
       Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
     }
   }
@@ -178,24 +203,28 @@ const UserDetails = () => {
   const handleToggleStatus = async (userId) => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-      const updatedUser = { ...user, status: updatedStatus }
 
-      const response = await fetch(`http://localhost:8000/users/${userId}`, {
+      const response = await fetch(`http://localhost:3000/api/users/status/${userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedUser),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
+        },
+        body: JSON.stringify({ newStatus: updatedStatus }),
       })
 
+      const result = await response.json()
+
       if (response.ok) {
-        const result = await response.json()
-        setUser(result)
+        setUser(result.user) // Asegúrate de que `result.user` contenga los datos actualizados
         Notifications.showAlert(
           setAlert,
           `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
           'success',
         )
       } else {
-        Notifications.showAlert(setAlert, 'Failed to update user status.', 'danger')
+        const errorMessage = result.message || 'Failed to update user status.'
+        Notifications.showAlert(setAlert, errorMessage, 'danger')
       }
     } catch (error) {
       console.error('Error toggling user status:', error)
@@ -205,60 +234,36 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      // 1. Eliminar usuario
-      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
+      const response = await fetch(`http://localhost:3000/api/users/${user.id}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`, // Si usas autenticación
+        },
       })
 
-      // 2. Eliminar en cascada según el rol
-      if (user.role_id === '2') {
-        // Eliminar professional y sus especialidades
-        const profRes = await fetch(`http://localhost:8000/professionals?user_id=${user.id}`)
-        const professionals = await profRes.json()
-        for (const prof of professionals) {
-          // Eliminar TODOS los professional_specialty relacionados a este professional
-          const specRes = await fetch(
-            `http://localhost:8000/professional_specialty?professional_id=${prof.id}`,
-          )
-          const specialties = await specRes.json()
-          // ...existing code...
-          if (Array.isArray(specialties)) {
-            await Promise.all(
-              specialties.map((s) =>
-                fetch(`http://localhost:8000/professional_specialty/${s.id}`, {
-                  method: 'DELETE',
-                }),
-              ),
-            )
-          }
-          // ...existing code...
-          // Eliminar professional
-          await fetch(`http://localhost:8000/professionals/${prof.id}`, { method: 'DELETE' })
-        }
-      } else if (user.role_id === '3') {
-        // Eliminar TODOS los patient relacionados
-        const patRes = await fetch(`http://localhost:8000/patient?user_id=${user.id}`)
-        const patients = await patRes.json()
-        if (Array.isArray(patients)) {
-          for (const p of patients) {
-            await fetch(`http://localhost:8000/patient/${p.id}`, { method: 'DELETE' })
-          }
-        }
-        // NO elimines professional_specialty aquí, no corresponde a un patient
-      }
+      const result = await response.json()
 
       if (response.ok) {
-        Notifications.showAlert(setAlert, 'User has been deleted successfully.', 'success')
+        Notifications.showAlert(setAlert, result.message || 'User deleted successfully.', 'success')
         setDeleteModalVisible(false)
-        navigate('/users')
+        navigate('/users') // Navega de regreso a la lista de usuarios
       } else {
-        Notifications.showAlert(setAlert, 'Failed to delete user.', 'danger')
+        Notifications.showAlert(
+          setAlert,
+          result.message || 'Failed to delete user. Please try again.',
+          'danger',
+        )
       }
     } catch (error) {
       console.error('Error deleting user:', error)
-      Notifications.showAlert(setAlert, 'An error occurred while deleting the user.', 'danger')
+      Notifications.showAlert(
+        setAlert,
+        'An unexpected error occurred while trying to delete the user.',
+        'danger',
+      )
     }
   }
+
   const openDeleteModal = (userId) => {
     setSelectedUserId(userId)
     setDeleteModalVisible(true)
