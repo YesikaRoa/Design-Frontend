@@ -59,6 +59,11 @@ export const Professionls = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       })
 
+      if (response.status === 403 || response.status === 401) {
+        navigate('/404')
+        return
+      }
+
       if (response.ok) {
         const data = await response.json()
         const normalizedUsers = data.map((user) => ({
@@ -69,9 +74,11 @@ export const Professionls = () => {
         setFilteredUsers(normalizedUsers)
       } else {
         console.error('Error fetching professionals')
+        navigate('/404')
       }
     } catch (error) {
       console.error('Error fetching professionals:', error)
+      navigate('/404')
     }
   }
 
@@ -451,6 +458,7 @@ export const Professionls = () => {
     setFilters(resetValues)
     setFilteredUsers(users)
   }
+
   // Llamar a fetchProfessionals al montar el componente
   useEffect(() => {
     fetchProfessionals()

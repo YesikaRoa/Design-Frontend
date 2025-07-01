@@ -125,7 +125,6 @@ const MedicalHistory = () => {
         general_notes: formData.general_notes || '',
         image: base64Image,
       }
-
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
@@ -486,6 +485,18 @@ const MedicalHistory = () => {
   const handleDownloadPDF = async () => {
     if (!selectedPatient) return
     try {
+      const hasHistory = medicalHistory.some(
+        (record) => record.patient_full_name === selectedPatient.label,
+      )
+      if (!hasHistory) {
+        Notifications.showAlert(
+          setAlert,
+          'El paciente no tiene registro en historial médico.',
+          'warning',
+          5000,
+        )
+        return
+      }
       const res = await fetch(`http://localhost:3000/api/pdf?patient_id=${selectedPatient.value}`, {
         method: 'GET',
         headers: {

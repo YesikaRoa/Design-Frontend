@@ -35,10 +35,13 @@ import ModalDelete from '../../components/ModalDelete'
 import bcrypt from 'bcryptjs'
 import { useTranslation } from 'react-i18next'
 
+import { useParams } from 'react-router-dom'
+
 const UserDetails = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const params = useParams()
 
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -62,13 +65,6 @@ const UserDetails = () => {
   }, [])
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
-  }
-
-  const normalizeNameForURL = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
   }
   const save = async () => {
     try {
@@ -126,26 +122,71 @@ const UserDetails = () => {
     }
   }
 
+  // Nuevo useEffect para proteger la ruta y obtener el usuario por ID
   useEffect(() => {
     setUser(null)
     setLoading(true)
 
-    if (location.state && location.state.user) {
-      const newUser = location.state.user
-      setUser(newUser)
-      localStorage.setItem('selectedUser', JSON.stringify(newUser))
-
-      const firstName = newUser.first_name.split(' ')[0]
-      const normalizedFirstName = normalizeNameForURL(firstName)
-      navigate(`/users/${normalizedFirstName}`, { replace: true })
+    // Obtener el ID de la URL (React Router v6+)
+    let userId = null
+    if (params && params['*']) {
+      // Si usas rutas catch-all
+      userId = params['*']
+    } else if (params && params.id) {
+      userId = params.id
     } else {
-      const storedUser = localStorage.getItem('selectedUser')
-      if (storedUser) {
-        setUser(JSON.parse(storedUser))
+      // Extraer el ID del hash si es necesario
+      const hash = window.location.hash
+      const match = hash.match(/\/users\/(\d+)/)
+      if (match) {
+        userId = match[1]
       }
-      setLoading(false)
     }
-  }, [location, navigate])
+
+    if (!userId && location.state && location.state.user) {
+      userId = location.state.user.id
+    }
+
+    if (!userId) {
+      setLoading(false)
+      setUser(null)
+      return
+    }
+
+    // Corregir si userId viene como 'users/69' o similar
+    if (typeof userId === 'string' && userId.startsWith('users/')) {
+      userId = userId.replace('users/', '')
+    }
+
+    fetch(`http://localhost:3000/api/users/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => {
+        if (res.status === 403 || res.status === 401) {
+          navigate('/404')
+          return null
+        }
+        if (!res.ok) {
+          navigate('/404')
+          return null
+        }
+        return res.json()
+      })
+      .then((data) => {
+        if (!data) return
+        setUser(data.user ? data.user : data)
+      })
+      .catch(() => {
+        navigate('/404')
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [location, navigate, token, params])
 
   if (loading) return <p>Cargando usuario...</p>
   if (!user) return <p>No se encontró el usuario.</p>

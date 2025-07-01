@@ -1,6 +1,5 @@
 import React from 'react'
 import CIcon from '@coreui/icons-react'
-
 import {
   cilSpeedometer,
   cilPeople,
@@ -9,7 +8,27 @@ import {
   cilUser,
   cilNotes,
 } from '@coreui/icons'
-import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
+import { CNavItem } from '@coreui/react'
+
+// Función para obtener el role desde el localStorage
+function getRoleFromToken() {
+  const token = localStorage.getItem('authToken')
+  if (!token) return null
+  try {
+    // Si el token es JWT, decodifica el payload
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.role
+  } catch {
+    // Si el token es un JSON plano
+    try {
+      return JSON.parse(token).role
+    } catch {
+      return null
+    }
+  }
+}
+
+const role = getRoleFromToken()
 
 const _nav = [
   {
@@ -18,18 +37,22 @@ const _nav = [
     to: '/dashboard',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
   },
-  {
-    component: CNavItem,
-    name: 'Usuarios',
-    to: '/users',
-    icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
-  },
-  {
-    component: CNavItem,
-    name: 'Profesionales',
-    to: '/professionals',
-    icon: <CIcon icon={cilEducation} customClassName="nav-icon" />,
-  },
+  ...(role === 1
+    ? [
+        {
+          component: CNavItem,
+          name: 'Usuarios',
+          to: '/users',
+          icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
+        },
+        {
+          component: CNavItem,
+          name: 'Profesionales',
+          to: '/professionals',
+          icon: <CIcon icon={cilEducation} customClassName="nav-icon" />,
+        },
+      ]
+    : []),
   {
     component: CNavItem,
     name: 'Pacientes',

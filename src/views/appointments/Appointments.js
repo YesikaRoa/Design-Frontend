@@ -51,9 +51,6 @@ const Appointments = () => {
   const [visible, setVisible] = useState(false)
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState(null)
-  const [patients, setPatients] = useState([]) // [{id, user_id, ...}]
-  const [professionals, setProfessionals] = useState([]) // [{id, user_id, ...}]
-  const [cities, setCities] = useState([])
   const ModalAddRef = useRef()
   const token = localStorage.getItem('authToken')
 
@@ -100,6 +97,7 @@ const Appointments = () => {
         {
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Incluye el token de autorización
           },
         },
       )
@@ -317,8 +315,6 @@ const Appointments = () => {
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'appointments') {
       try {
-        console.log('Formulario recibido:', formData)
-
         // Construye el objeto de la nueva cita directamente desde formData
         const newAppointment = {
           scheduled_at: formData.scheduled_at,
@@ -330,8 +326,6 @@ const Appointments = () => {
           city_id: formData.city_id, // Usamos directamente el value seleccionado
           has_medical_record: formData.has_medical_record === 'true', // Convierte de string a boolean
         }
-
-        console.log('Datos preparados para el backend:', newAppointment)
 
         // Valida los datos antes de enviar la solicitud
         if (

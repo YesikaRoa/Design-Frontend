@@ -14,7 +14,7 @@ const ModalDownloadPDF = ({
     <CModal visible={visible} onClose={onClose} backdrop="static">
       <CModalHeader closeButton>Descargar Historial Médico en PDF</CModalHeader>
       <CModalBody>
-        <label>Seleccione un paciente:</label>
+        <label>Seleccione un paciente que este registrado en citas:</label>
         <AsyncSelect
           cacheOptions
           loadOptions={loadPatients}

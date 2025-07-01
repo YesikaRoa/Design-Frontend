@@ -447,8 +447,15 @@ export const Users = () => {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 403 || res.status === 401) {
+          navigate('/404')
+          return null
+        }
+        return res.json()
+      })
       .then((data) => {
+        if (!data) return
         const normalizedUsers = data.map((user) => ({
           ...user,
           id: String(user.id), // asegura que todos los IDs sean string
@@ -456,7 +463,10 @@ export const Users = () => {
         setUsers(normalizedUsers)
         setFilteredUsers(normalizedUsers)
       })
-  }, [])
+      .catch(() => {
+        navigate('/404')
+      })
+  }, [navigate, token])
 
   return (
     <>

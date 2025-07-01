@@ -167,25 +167,56 @@ const Profile = () => {
         ...selectedSubspecialties.map((s) => s.value),
       ]
 
-      const userData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        birth_date: formData.birth_date,
-        gender: formData.gender,
-        status: formData.status,
+      // Solo enviar campos modificados respecto al usuario original
+      const userData = {}
+      if (formData.first_name !== user.first_name) userData.first_name = formData.first_name
+      if (formData.last_name !== user.last_name) userData.last_name = formData.last_name
+      if (formData.email !== user.email) userData.email = formData.email
+      if (formData.phone !== user.phone) userData.phone = formData.phone
+      if (formData.address !== user.address) userData.address = formData.address
+      if (formData.birth_date !== user.birth_date) userData.birth_date = formData.birth_date
+      if (formData.gender !== user.gender) userData.gender = formData.gender
+      if (formData.status !== user.status) userData.status = formData.status
+
+      // Solo enviar campos modificados y no nulos para professionalData
+      const professionalData = {}
+      if (
+        formData.biography !== undefined &&
+        formData.biography !== null &&
+        formData.biography !== professional?.biography &&
+        formData.biography !== ''
+      ) {
+        professionalData.biography = formData.biography
+      }
+      if (
+        formData.years_experience !== undefined &&
+        formData.years_experience !== null &&
+        Number(formData.years_experience) !== Number(professional?.years_of_experience)
+      ) {
+        professionalData.years_of_experience = Number(formData.years_experience)
+      }
+      if (
+        Array.isArray(combinedSpecialties) &&
+        JSON.stringify(combinedSpecialties) !==
+          JSON.stringify([
+            ...(Array.isArray(user.specialties) ? user.specialties.map((s) => s.id) : []),
+            ...(Array.isArray(user.subspecialties) ? user.subspecialties.map((s) => s.id) : []),
+          ])
+      ) {
+        professionalData.specialties = combinedSpecialties
       }
 
-      const professionalData = {
-        biography: formData.biography,
-        years_of_experience: Number(formData.years_experience),
-        specialties: combinedSpecialties,
+      // No enviar objetos vacíos
+      const payload = {}
+      if (Object.keys(userData).length > 0) payload.userData = userData
+      if (Object.keys(professionalData).length > 0) payload.professionalData = professionalData
+
+      if (Object.keys(payload).length === 0) {
+        Notifications.showAlert(setAlert, 'No hay cambios para guardar', 'info')
+        return
       }
 
-      const body = JSON.stringify({ userData, professionalData })
-      console.log('Payload enviado:', body)
+      const body = JSON.stringify(payload)
 
       // 1. Actualizar con PUT
       const res = await fetch('http://localhost:3000/api/profile', {
@@ -426,11 +457,11 @@ const Profile = () => {
                       </CListGroupItem>
                       <CListGroupItem>
                         <strong>{t('Biography')}:</strong>{' '}
-                        {professional ? professional.biography : '-'}
+                        {professional?.biography ? professional.biography : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
                         <strong>{t('Years of experience')}:</strong>{' '}
-                        {professional ? professional.years_of_experience : '-'}
+                        {professional?.years_of_experience ? professional.years_of_experience : '-'}
                       </CListGroupItem>
                       <CListGroupItem>
                         <strong>{t('Specialties')}:</strong> {getSpecialtyNames()}
@@ -475,35 +506,35 @@ const Profile = () => {
                 type="text"
                 name="first_name"
                 label={<strong>{t('First name')}:</strong>}
-                value={formData.first_name || ''}
+                value={formData.first_name ?? ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="last_name"
                 label={<strong>{t('Last name')}:</strong>}
-                value={formData.last_name || ''}
+                value={formData.last_name ?? ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="email"
                 name="email"
                 label={<strong>{t('Email')}:</strong>}
-                value={formData.email || ''}
+                value={formData.email ?? ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="phone"
                 label={<strong>{t('Phone')}:</strong>}
-                value={formData.phone || ''}
+                value={formData.phone ?? ''}
                 onChange={handleInputChange}
               />
               <CFormInput
                 type="text"
                 name="address"
                 label={<strong>{t('Address')}:</strong>}
-                value={formData.address || ''}
+                value={formData.address ?? ''}
                 onChange={handleInputChange}
               />
               <CFormInput
@@ -511,7 +542,11 @@ const Profile = () => {
                 type="text"
                 name="biography"
                 label={<strong>{t('Biography')}:</strong>}
-                value={formData.biography || ''}
+                value={
+                  formData.biography === null || formData.biography === undefined
+                    ? ''
+                    : formData.biography
+                }
                 onChange={handleInputChange}
               />
               <Select
@@ -540,7 +575,13 @@ const Profile = () => {
                 type="number"
                 name="years_experience"
                 label={<strong>{t('Years of Experience')}:</strong>}
-                value={formData.years_experience || ''}
+                value={
+                  formData.years_experience != null &&
+                  formData.years_experience !== '' &&
+                  !Number.isNaN(Number(formData.years_experience))
+                    ? String(formData.years_experience)
+                    : ''
+                }
                 onChange={handleInputChange}
               />
             </CModalBody>

@@ -53,11 +53,16 @@ const UserDetails = () => {
       const response = await fetch(`http://localhost:3000/api/professionals/${profId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
+      if (response.status === 403 || response.status === 401) {
+        navigate('/404')
+        return
+      }
       if (!response.ok) throw new Error('Error fetching professional')
       const data = await response.json()
       setProfessional(data)
     } catch (error) {
       console.error(error)
+      navigate('/404')
     } finally {
       setLoading(false)
     }
@@ -285,6 +290,11 @@ const UserDetails = () => {
         },
       })
 
+      if (response.status === 403 || response.status === 401) {
+        navigate('/404')
+        return
+      }
+
       if (response.ok) {
         Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         navigate('/professionals/')
@@ -299,6 +309,7 @@ const UserDetails = () => {
     } catch (error) {
       console.error('Error eliminando usuario:', error)
       Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
+      navigate('/404')
     } finally {
       setDeleteModalVisible(false)
       setUserToDelete(null)

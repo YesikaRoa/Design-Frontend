@@ -80,10 +80,9 @@ export const Patients = () => {
             first_name: formData.first_name || '',
             last_name: formData.last_name || '',
             email: formData.email || '',
-            password: formData.password,
             address: formData.address || '',
             phone: formData.phone || '',
-            birth_date: formData.birth_date ? formatDate(formData.birth_date) : null,
+            birth_date: formData.birth_date ? formData.birth_date : null, // Enviar la fecha tal cual
             gender: formData.gender || null,
             avatar: formData.avatar || formDataState.avatar || null,
             role_id: 2, // Paciente por defecto
@@ -207,13 +206,6 @@ export const Patients = () => {
             { label: 'Activo', value: 'Active' },
             { label: 'Inactivo', value: 'Inactive' },
           ],
-        },
-        {
-          name: 'password',
-          label: 'Contraseña',
-          type: 'password',
-          required: true,
-          placeholder: 'Ingrese una contraseña mínima 6 caracteres',
         },
         {
           name: 'medical_data',
