@@ -8,6 +8,7 @@ import AsyncSelect from 'react-select/async'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
+import ModalDownloadPDF from '../../components/ModalDownloadPDF'
 
 import '../appointments/styles/appointments.css'
 import '../users/styles/filter.css'
@@ -52,6 +53,8 @@ const MedicalHistory = () => {
   const [visible, setVisible] = useState(false)
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedMedicalHistory, setselectedMedicalHistory] = useState(null)
+  const [downloadModalVisible, setDownloadModalVisible] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState(null)
   const ModalAddRef = useRef()
 
   // Mueve fetchData fuera del useEffect para que esté disponible globalmente
@@ -451,11 +454,68 @@ const MedicalHistory = () => {
     setFilteredMedicalHistory(medicalHistory)
   }
 
+  // AsyncSelect para pacientes asociados al profesional logueado, usando nueva URL del backend
+  const loadPatients = async (inputValue = '') => {
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/pdf/my-patients?search=${encodeURIComponent(inputValue)}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } },
+      )
+      if (!res.ok) throw new Error('No se pudieron cargar los pacientes')
+      const data = await res.json()
+      // data debe ser un array de pacientes con id y nombre completo
+      const filtered = data
+        .filter((patient) =>
+          inputValue
+            ? (patient.full_name || '').toLowerCase().includes(inputValue.toLowerCase())
+            : true,
+        )
+        .slice(0, 5)
+        .map((patient) => ({
+          label: patient.full_name,
+          value: patient.id,
+          fullName: patient.full_name,
+        }))
+      return filtered
+    } catch (error) {
+      console.error('Error cargando pacientes:', error)
+      return []
+    }
+  }
+
+  const handleDownloadPDF = async () => {
+    if (!selectedPatient) return
+    try {
+      const res = await fetch(`http://localhost:3000/api/pdf?patient_id=${selectedPatient.value}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      })
+      if (!res.ok) throw new Error('No se pudo descargar el PDF')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `historial_medico_${selectedPatient.value}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+      setDownloadModalVisible(false)
+    } catch (error) {
+      Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 5000)
+    }
+  }
+
   return (
     <>
       <div className="d-flex justify-content-end mb-3">
         <CButton color="primary" onClick={() => addMedicalHistory()}>
           <CIcon icon={cilPlus} className="me-2" /> Add Medical History
+        </CButton>
+        <CButton color="secondary" className="ms-2" onClick={() => setDownloadModalVisible(true)}>
+          Descargar PDF
         </CButton>
       </div>
 
@@ -591,6 +651,15 @@ const MedicalHistory = () => {
         onFinish={handleFinish}
         purpose="MedicalHistory"
         customFields={customFields}
+      />
+
+      <ModalDownloadPDF
+        visible={downloadModalVisible}
+        onClose={() => setDownloadModalVisible(false)}
+        selectedPatient={selectedPatient}
+        setSelectedPatient={setSelectedPatient}
+        loadPatients={loadPatients}
+        onDownload={handleDownloadPDF}
       />
     </>
   )
