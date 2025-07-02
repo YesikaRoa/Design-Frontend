@@ -53,7 +53,9 @@ const Register = () => {
   useEffect(() => {
     const fetchProfessionalTypes = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/professional-types')
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/auth/professional-types',
+        )
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -67,7 +69,9 @@ const Register = () => {
 
     const fetchspecialties = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/specialties')
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/auth/specialties',
+        )
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -154,11 +158,14 @@ const Register = () => {
         specialty_ids: [Number(formData.specialty), Number(formData.subspecialty)].filter(Boolean),
       }
 
-      const response = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const response = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/auth/register',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        },
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -413,6 +420,15 @@ const Register = () => {
                     {step > 1 && (
                       <CButton color="secondary" onClick={handlePrevious}>
                         Previous
+                      </CButton>
+                    )}
+                    {step === 1 && (
+                      <CButton
+                        color="light"
+                        className="text-primary"
+                        onClick={() => navigate('/login')}
+                      >
+                        Ir a inicio de sesión
                       </CButton>
                     )}
                     {step < 3 ? (

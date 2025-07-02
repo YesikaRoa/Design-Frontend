@@ -37,9 +37,12 @@ const UserDetails = () => {
   const fetchPatient = async (profId) => {
     setLoading(true)
     try {
-      const response = await fetch(`http://localhost:3000/api/patients/${profId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/${profId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
       if (!response.ok) throw new Error('Error fetching patient')
       const data = await response.json()
       setPatient(data)
@@ -58,12 +61,15 @@ const UserDetails = () => {
   const save = async () => {
     try {
       // Obtener los datos actuales del usuario
-      const getResponse = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const getResponse = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      })
+      )
 
       if (!getResponse.ok) throw new Error('Error al obtener los datos actuales del usuario.')
       const currentData = await getResponse.json()
@@ -93,14 +99,17 @@ const UserDetails = () => {
       }
 
       // Enviar datos al backend
-      const putResponse = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const putResponse = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(changes),
         },
-        body: JSON.stringify(changes),
-      })
+      )
 
       if (!putResponse.ok) {
         const errorData = await putResponse.json()
@@ -147,14 +156,17 @@ const UserDetails = () => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
 
-      const response = await fetch(`http://localhost:3000/api/patients/status/${patientId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/status/${patientId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ newStatus: updatedStatus }),
         },
-        body: JSON.stringify({ newStatus: updatedStatus }),
-      })
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -193,13 +205,16 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`, // Agregar token si es necesario
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`, // Agregar token si es necesario
+            'Content-Type': 'application/json',
+          },
         },
-      })
+      )
 
       if (response.ok) {
         Notifications.showAlert(setAlert, 'Paciente y usuario eliminados con éxito.', 'success')

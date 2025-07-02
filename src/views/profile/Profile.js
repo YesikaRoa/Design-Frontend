@@ -72,7 +72,10 @@ const Profile = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/profile', { headers })
+        const res = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/profile',
+          { headers },
+        )
         if (!res.ok) throw new Error('Error fetching profile')
         const data = await res.json()
         setUser(data)
@@ -121,9 +124,12 @@ const Profile = () => {
   useEffect(() => {
     const fetchspecialties = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/specialties', {
-          headers,
-        })
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/auth/specialties',
+          {
+            headers,
+          },
+        )
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -219,11 +225,14 @@ const Profile = () => {
       const body = JSON.stringify(payload)
 
       // 1. Actualizar con PUT
-      const res = await fetch('http://localhost:3000/api/profile', {
-        method: 'PUT',
-        headers,
-        body,
-      })
+      const res = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/profile',
+        {
+          method: 'PUT',
+          headers,
+          body,
+        },
+      )
 
       if (!res.ok) {
         const errorData = await res.json()
@@ -249,7 +258,10 @@ const Profile = () => {
       setModalVisible(false)
 
       // 3. Obtener el perfil actualizado con GET
-      const profileRes = await fetch('http://localhost:3000/api/profile', { headers })
+      const profileRes = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/profile',
+        { headers },
+      )
       if (!profileRes.ok) throw new Error('Error fetching profile after update')
 
       const updatedProfile = await profileRes.json()
@@ -303,11 +315,14 @@ const Profile = () => {
 
       try {
         const body = JSON.stringify({ userData: { avatar: base64Image } })
-        const res = await fetch('http://localhost:3000/api/profile', {
-          method: 'PUT',
-          headers,
-          body,
-        })
+        const res = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/profile',
+          {
+            method: 'PUT',
+            headers,
+            body,
+          },
+        )
 
         if (!res.ok) {
           throw new Error('Failed to update avatar')
@@ -337,11 +352,14 @@ const Profile = () => {
   const handlePasswordChangeSubmit = async () => {
     try {
       const body = JSON.stringify({ currentPassword, newPassword, confirmPassword })
-      const res = await fetch('http://localhost:3000/api/profile/password', {
-        method: 'PUT',
-        headers,
-        body,
-      })
+      const res = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/profile/password',
+        {
+          method: 'PUT',
+          headers,
+          body,
+        },
+      )
 
       if (!res.ok) {
         const errorData = await res.json()

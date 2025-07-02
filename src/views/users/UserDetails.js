@@ -59,7 +59,7 @@ const UserDetails = () => {
   const token = localStorage.getItem('authToken')
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/users/roles')
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/roles')
       .then((res) => res.json())
       .then(setRoles)
   }, [])
@@ -78,14 +78,17 @@ const UserDetails = () => {
       }
 
       // Enviar solicitud PUT al backend
-      const response = await fetch(`http://localhost:3000/api/users/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Añade token si es necesario
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/users/${user.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Añade token si es necesario
+          },
+          body: JSON.stringify(updatedFields),
         },
-        body: JSON.stringify(updatedFields),
-      })
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -158,7 +161,7 @@ const UserDetails = () => {
       userId = userId.replace('users/', '')
     }
 
-    fetch(`http://localhost:3000/api/users/${userId}`, {
+    fetch(`https://aplication-backend-production-872f.up.railway.app/api/users/${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -201,14 +204,17 @@ const UserDetails = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/users/password/${user.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Agrega el token si es necesario
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/users/password/${user.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Agrega el token si es necesario
+          },
+          body: JSON.stringify({ currentPassword, newPassword }),
         },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      })
+      )
 
       // Lee el cuerpo de la respuesta una sola vez
       const result = await response.json()
@@ -245,14 +251,17 @@ const UserDetails = () => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
 
-      const response = await fetch(`http://localhost:3000/api/users/status/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/users/status/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
+          },
+          body: JSON.stringify({ newStatus: updatedStatus }),
         },
-        body: JSON.stringify({ newStatus: updatedStatus }),
-      })
+      )
 
       const result = await response.json()
 
@@ -275,12 +284,15 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/users/${user.id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`, // Si usas autenticación
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/users/${user.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`, // Si usas autenticación
+          },
         },
-      })
+      )
 
       const result = await response.json()
 

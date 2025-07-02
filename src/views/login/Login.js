@@ -30,11 +30,14 @@ const Login = () => {
     const emailInput = document.querySelector('#email-input').value
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/send-temporary-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailInput }),
-      })
+      const response = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/auth/send-temporary-password',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput }),
+        },
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -78,11 +81,14 @@ const Login = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
+      const response = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        },
+      )
 
       const data = await response.json()
 

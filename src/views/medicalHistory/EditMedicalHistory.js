@@ -38,11 +38,14 @@ const EditMedicalHistory = () => {
   useEffect(() => {
     const fetchMedicalHistory = async (id) => {
       try {
-        const response = await fetch(`http://localhost:3000/api/medical_record/${id}`, {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
+        const response = await fetch(
+          `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
           },
-        })
+        )
         if (response.ok) {
           const data = await response.json()
           setMedicalHistory(data)
@@ -120,7 +123,7 @@ const EditMedicalHistory = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/medical_record/${medicalHistory.id}`,
+        `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${medicalHistory.id}`,
         {
           method: 'PUT',
           headers: {
@@ -157,7 +160,7 @@ const EditMedicalHistory = () => {
   const deleteMedicalHistory = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/medical_record/${medicalHistory.id}`,
+        `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${medicalHistory.id}`,
         {
           method: 'DELETE',
           headers: {

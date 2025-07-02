@@ -54,10 +54,13 @@ export const Professionls = () => {
 
   const fetchProfessionals = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/professionals', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/professionals',
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        },
+      )
 
       if (response.status === 403 || response.status === 401) {
         navigate('/404')
@@ -84,12 +87,14 @@ export const Professionls = () => {
 
   useEffect(() => {
     // Cargar tipos de profesional y especialidades
-    fetch('http://localhost:3000/api/users/professional-types')
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/professional-types')
       .then((res) => res.json())
       .then(setProfessionalTypes)
     const fetchSpecialties = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/users/specialties')
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/users/specialties',
+        )
         const data = await response.json()
 
         // Filtrar y mapear specialties y subspecialties
@@ -132,31 +137,34 @@ export const Professionls = () => {
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
       try {
-        const response = await fetch('http://localhost:3000/api/professionals', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            user: {
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-              email: formData.email,
-              password: formData.password,
-              address: formData.address,
-              phone: formData.phone,
-              birth_date: formData.birth_date,
-              gender: formData.gender,
-              role_id: 3,
-              status: formData.status,
-              avatar: formData.avatar || formDataState.avatar || null,
-            },
-            professional: {
-              professional_type_id: formData.professional_type_id,
-              biography: formData.biography,
-              years_of_experience: Number(formData.years_of_experience),
-            },
-            specialties: [formData.specialty_id, formData.subspecialty_id].filter(Boolean),
-          }),
-        })
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/professionals',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              user: {
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                email: formData.email,
+                password: formData.password,
+                address: formData.address,
+                phone: formData.phone,
+                birth_date: formData.birth_date,
+                gender: formData.gender,
+                role_id: 3,
+                status: formData.status,
+                avatar: formData.avatar || formDataState.avatar || null,
+              },
+              professional: {
+                professional_type_id: formData.professional_type_id,
+                biography: formData.biography,
+                years_of_experience: Number(formData.years_of_experience),
+              },
+              specialties: [formData.specialty_id, formData.subspecialty_id].filter(Boolean),
+            }),
+          },
+        )
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -319,7 +327,7 @@ export const Professionls = () => {
       try {
         // Solicitud DELETE al backend
         const response = await fetch(
-          `http://localhost:3000/api/professionals/${userToDelete.professional_id}`,
+          `https://aplication-backend-production-872f.up.railway.app/api/professionals/${userToDelete.professional_id}`,
           {
             method: 'DELETE',
             headers: {
@@ -353,7 +361,7 @@ export const Professionls = () => {
   const handleInfo = async (user) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/professionals/${user.professional_id}`,
+        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${user.professional_id}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -370,10 +378,13 @@ export const Professionls = () => {
 
   const handleEdit = async (user) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/professionals/${user.id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${user.id}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        },
+      )
 
       if (!response.ok) {
         throw new Error('Error fetching professional details')

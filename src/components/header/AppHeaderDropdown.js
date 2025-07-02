@@ -29,7 +29,7 @@ const AppHeaderDropdown = () => {
   useEffect(() => {
     const token = localStorage.getItem('authToken')
     if (token) {
-      fetch('http://localhost:3000/api/profile', {
+      fetch('https://aplication-backend-production-872f.up.railway.app/api/profile', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -53,10 +53,13 @@ const AppHeaderDropdown = () => {
     if (!token) return
 
     try {
-      const res = await fetch('http://localhost:3000/api/auth/renew-token', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/auth/renew-token',
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
 
       if (!res.ok) throw new Error('Failed to renew token')
 

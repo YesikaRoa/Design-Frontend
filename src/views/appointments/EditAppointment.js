@@ -62,7 +62,7 @@ const EditAppointment = () => {
     setLoading(false)
 
     setCitiesLoading(true)
-    fetch('http://localhost:3000/api/appointments/cities')
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/appointments/cities')
       .then((res) => res.json())
       .then(async (data) => {
         let citiesArr = data.cities || []
@@ -77,7 +77,7 @@ const EditAppointment = () => {
           } else {
             try {
               const resCity = await fetch(
-                `http://localhost:3000/api/appointments/cities?search=${parsed.city_id}&limit=1`,
+                `https://aplication-backend-production-872f.up.railway.app/api/appointments/cities?search=${parsed.city_id}&limit=1`,
               )
               const dataCity = await resCity.json()
               if (dataCity.cities && dataCity.cities.length > 0) {
@@ -126,22 +126,28 @@ const EditAppointment = () => {
       }
     })
     try {
-      const response = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(updates),
-      })
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(updates),
+        },
+      )
 
       if (response.ok) {
         // Después de guardar, obtener los datos completos y enriquecidos
         const updated = await response.json()
         try {
-          const res = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
+          const res = await fetch(
+            `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
             },
-          })
+          )
           if (res.ok) {
             const fullData = await res.json()
             setAppointment(fullData)
@@ -171,10 +177,13 @@ const EditAppointment = () => {
 
   const deleteAppointment = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        },
+      )
       if (response.ok) {
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
         setTimeout(() => {
@@ -229,7 +238,7 @@ const EditAppointment = () => {
                   const updatedStatus = e.target.value
                   try {
                     const response = await fetch(
-                      `http://localhost:3000/api/appointments/status/${appointment.id}`,
+                      `https://aplication-backend-production-872f.up.railway.app/api/appointments/status/${appointment.id}`,
                       {
                         method: 'PUT',
                         headers: {
@@ -244,7 +253,7 @@ const EditAppointment = () => {
                       // Obtener datos enriquecidos tras el cambio de status
                       try {
                         const res = await fetch(
-                          `http://localhost:3000/api/appointments/${appointment.id}`,
+                          `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
                           {
                             headers: {
                               'Content-Type': 'application/json',
@@ -347,7 +356,7 @@ const EditAppointment = () => {
                 if (!fieldsDisabled) return // Solo guardar si está en modo edición
                 try {
                   const response = await fetch(
-                    `http://localhost:3000/api/appointments/status/${appointment.id}`,
+                    `https://aplication-backend-production-872f.up.railway.app/api/appointments/status/${appointment.id}`,
                     {
                       method: 'PUT',
                       headers: {
@@ -362,7 +371,7 @@ const EditAppointment = () => {
                     // Obtener datos enriquecidos tras el cambio de status
                     try {
                       const res = await fetch(
-                        `http://localhost:3000/api/appointments/${appointment.id}`,
+                        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
                         {
                           headers: {
                             'Content-Type': 'application/json',
@@ -443,7 +452,7 @@ const EditAppointment = () => {
                   }
                   try {
                     const res = await fetch(
-                      `http://localhost:3000/api/appointments/cities?search=${encodeURIComponent(
+                      `https://aplication-backend-production-872f.up.railway.app/api/appointments/cities?search=${encodeURIComponent(
                         inputValue,
                       )}&limit=10`,
                     )
@@ -465,7 +474,7 @@ const EditAppointment = () => {
                   if (option && !cities.some((c) => String(c.id) === String(option.value))) {
                     try {
                       const res = await fetch(
-                        `http://localhost:3000/api/appointments/cities?search=${encodeURIComponent(
+                        `https://aplication-backend-production-872f.up.railway.app/api/appointments/cities?search=${encodeURIComponent(
                           option.label,
                         )}&limit=1`,
                       )
