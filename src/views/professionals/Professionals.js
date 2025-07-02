@@ -3,7 +3,7 @@ import UserFilter from '../../components/Filter'
 import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
-import defaultAvatar from '../../assets/images/avatars/avatar.png'
+
 import Notifications from '../../components/Notifications'
 import { useTranslation } from 'react-i18next'
 
@@ -51,6 +51,7 @@ export const Professionls = () => {
   const { t } = useTranslation()
   const [formDataState, setFormData] = useState({})
   const token = localStorage.getItem('authToken')
+  const defaultAvatar = '/avatar.png'
 
   const fetchProfessionals = async () => {
     try {

@@ -3,7 +3,6 @@ import UserFilter from '../../components/Filter'
 import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
-import defaultAvatar from '../../assets/images/avatars/avatar.png'
 import Notifications from '../../components/Notifications'
 import { formatDate } from '../../utils/dateUtils'
 import { useTranslation } from 'react-i18next'
@@ -34,6 +33,7 @@ export const Users = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const token = localStorage.getItem('authToken')
+  const defaultAvatar = '/avatar.png'
 
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])

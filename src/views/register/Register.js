@@ -20,10 +20,11 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilLockUnlocked, cilUser } from '@coreui/icons'
-import defaultAvatar from '../../assets/images/avatars/avatar.png'
+
 import { validateEmail, isStepValid } from './Validationes'
 
 const Register = () => {
+  const defaultAvatar = '/avatar.png'
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
