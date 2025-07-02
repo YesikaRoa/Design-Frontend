@@ -34,7 +34,7 @@ import { cilPencil, cilInfo, cilTrash, cilPlus } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
-const API_URL = 'http://localhost:3000/api/medical_record'
+const API_URL = 'https://aplication-backend-production-872f.up.railway.app/api/medical_record'
 const getToken = () => localStorage.getItem('authToken')
 
 const MedicalHistory = () => {
@@ -202,7 +202,7 @@ const MedicalHistory = () => {
   const loadAppointments = async (inputValue = '') => {
     try {
       const res = await fetch(
-        `http://localhost:3000/api/appointments?search=${encodeURIComponent(inputValue)}`,
+        `https://aplication-backend-production-872f.up.railway.app/api/appointments?search=${encodeURIComponent(inputValue)}`,
         {
           headers: { Authorization: `Bearer ${getToken()}` },
         },
@@ -332,13 +332,16 @@ const MedicalHistory = () => {
 
   const handleEdit = async (medicalHistory) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/medical_record/${medicalHistory.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${getToken()}`,
+      const res = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${medicalHistory.id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${getToken()}`,
+          },
         },
-      })
+      )
       if (res.ok) {
         const data = await res.json()
         navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory: data } })
@@ -457,7 +460,7 @@ const MedicalHistory = () => {
   const loadPatients = async (inputValue = '') => {
     try {
       const res = await fetch(
-        `http://localhost:3000/api/pdf/my-patients?search=${encodeURIComponent(inputValue)}`,
+        `https://aplication-backend-production-872f.up.railway.app/api/pdf/my-patients?search=${encodeURIComponent(inputValue)}`,
         { headers: { Authorization: `Bearer ${getToken()}` } },
       )
       if (!res.ok) throw new Error('No se pudieron cargar los pacientes')
@@ -497,12 +500,15 @@ const MedicalHistory = () => {
         )
         return
       }
-      const res = await fetch(`http://localhost:3000/api/pdf?patient_id=${selectedPatient.value}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
+      const res = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/pdf?patient_id=${selectedPatient.value}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
         },
-      })
+      )
       if (!res.ok) throw new Error('No se pudo descargar el PDF')
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)

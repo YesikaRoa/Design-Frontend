@@ -56,13 +56,16 @@ const Appointments = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/appointments', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/appointments',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         },
-      })
+      )
 
       if (response.ok) {
         const data = await response.json()
@@ -93,7 +96,7 @@ const Appointments = () => {
     try {
       // Realiza la solicitud al endpoint del backend
       const response = await fetch(
-        `http://localhost:3000/api/appointments/${entity}?search=${encodeURIComponent(inputValue)}&limit=5`,
+        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${entity}?search=${encodeURIComponent(inputValue)}&limit=5`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -339,11 +342,14 @@ const Appointments = () => {
         }
 
         // Envía los datos al backend
-        const response = await fetch('http://localhost:3000/api/appointments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newAppointment),
-        })
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/appointments',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newAppointment),
+          },
+        )
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -366,13 +372,16 @@ const Appointments = () => {
 
   const handleDelete = async (appointment) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Incluye el token de autorización
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Incluye el token de autorización
+          },
         },
-      })
+      )
 
       if (response.ok) {
         const data = await response.json() // Obtiene la respuesta del backend
@@ -398,13 +407,16 @@ const Appointments = () => {
 
   const handleEdit = async (appointment) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/appointments/${appointment.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Incluye el token de autorización
+      const res = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Incluye el token de autorización
+          },
         },
-      })
+      )
       if (res.ok) {
         const data = await res.json()
         localStorage.setItem('selectedAppointment', JSON.stringify(data))

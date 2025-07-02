@@ -57,13 +57,13 @@ export const Users = () => {
   const [formDataState, setFormData] = useState({})
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/users/roles')
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/roles')
       .then((res) => res.json())
       .then(setRoles)
-    fetch('http://localhost:3000/api/users/professional-types')
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/professional-types')
       .then((res) => res.json())
       .then(setProfessionalTypes)
-    fetch('http://localhost:3000/api/users/specialties')
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/specialties')
       .then((res) => res.json())
       .then(setSpecialties)
   }, [])
@@ -127,11 +127,14 @@ export const Users = () => {
             ],
           }
         }
-        const response = await fetch('http://localhost:3000/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(completeUser),
-        })
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/users',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(completeUser),
+          },
+        )
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -325,13 +328,16 @@ export const Users = () => {
     if (userToDelete) {
       try {
         // Solicitud DELETE al backend
-        const response = await fetch(`http://localhost:3000/api/users/${userToDelete.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+        const response = await fetch(
+          `https://aplication-backend-production-872f.up.railway.app/api/users/${userToDelete.id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+            },
           },
-        })
+        )
 
         if (response.ok) {
           // Actualizar las listas en el frontend después de eliminar
@@ -443,7 +449,7 @@ export const Users = () => {
     setFilteredUsers(users)
   }
   useEffect(() => {
-    fetch('http://localhost:3000/api/users', {
+    fetch('https://aplication-backend-production-872f.up.railway.app/api/users', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     })

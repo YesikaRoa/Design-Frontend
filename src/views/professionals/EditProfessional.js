@@ -50,9 +50,12 @@ const UserDetails = () => {
   const fetchProfessional = async (profId) => {
     setLoading(true)
     try {
-      const response = await fetch(`http://localhost:3000/api/professionals/${profId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${profId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
       if (response.status === 403 || response.status === 401) {
         navigate('/404')
         return
@@ -72,7 +75,9 @@ const UserDetails = () => {
 
     const fetchSpecialties = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/specialties')
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/auth/specialties',
+        )
         const data = await response.json()
 
         const specialtyList = data
@@ -162,18 +167,21 @@ const UserDetails = () => {
       const specialties = combinedSpecialties
 
       // Hacer la petición al backend
-      const response = await fetch(`http://localhost:3000/api/professionals/${professional.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${professional.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            professional: updatedProfessional,
+            specialties,
+            ...updatedUser,
+          }),
         },
-        body: JSON.stringify({
-          professional: updatedProfessional,
-          specialties,
-          ...updatedUser,
-        }),
-      })
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -251,14 +259,17 @@ const UserDetails = () => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
 
-      const response = await fetch(`http://localhost:3000/api/professionals/status/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/professionals/status/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
+          },
+          body: JSON.stringify({ newStatus: updatedStatus }),
         },
-        body: JSON.stringify({ newStatus: updatedStatus }),
-      })
+      )
 
       const result = await response.json()
 
@@ -282,13 +293,16 @@ const UserDetails = () => {
   const confirmDelete = async () => {
     try {
       // Solicitud DELETE al backend
-      const response = await fetch(`http://localhost:3000/api/professionals/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+          },
         },
-      })
+      )
 
       if (response.status === 403 || response.status === 401) {
         navigate('/404')

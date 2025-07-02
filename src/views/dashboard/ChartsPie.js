@@ -24,11 +24,14 @@ const ChartsSection = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/dashboard', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Token de autenticación
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/dashboard',
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Token de autenticación
+            },
           },
-        })
+        )
 
         if (!response.ok) {
           throw new Error('Failed to fetch dashboard data')

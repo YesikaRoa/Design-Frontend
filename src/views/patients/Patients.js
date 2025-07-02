@@ -92,14 +92,17 @@ export const Patients = () => {
         }
 
         // Hacer la solicitud al backend
-        const response = await fetch('http://localhost:3000/api/patients', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Asegúrate de pasar el token
+        const response = await fetch(
+          'https://aplication-backend-production-872f.up.railway.app/api/patients',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`, // Asegúrate de pasar el token
+            },
+            body: JSON.stringify(payload),
           },
-          body: JSON.stringify(payload),
-        })
+        )
 
         if (!response.ok) {
           const errorData = await response.json()
@@ -235,13 +238,16 @@ export const Patients = () => {
     if (userToDelete) {
       try {
         // Solicitud DELETE al backend
-        const response = await fetch(`http://localhost:3000/api/patients/${userToDelete.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+        const response = await fetch(
+          `https://aplication-backend-production-872f.up.railway.app/api/patients/${userToDelete.id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
+            },
           },
-        })
+        )
 
         if (response.ok) {
           await fetchPatients()
@@ -270,13 +276,16 @@ export const Patients = () => {
       setselectedPatient(null)
 
       // Realizar la solicitud al backend
-      const res = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Asegúrate de definir el token si es necesario
+      const res = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Asegúrate de definir el token si es necesario
+          },
         },
-      })
+      )
 
       if (!res.ok) {
         // Manejar respuestas no exitosas del backend
@@ -298,10 +307,13 @@ export const Patients = () => {
 
   const handleEdit = async (user) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/patients/${user.id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        },
+      )
 
       if (!response.ok) {
         throw new Error('Error fetching professional details')
@@ -388,10 +400,13 @@ export const Patients = () => {
   }
   const fetchPatients = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/patients', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      })
+      const response = await fetch(
+        'https://aplication-backend-production-872f.up.railway.app/api/patients',
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        },
+      )
 
       if (response.ok) {
         const data = await response.json()
