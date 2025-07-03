@@ -660,10 +660,10 @@ const Appointments = () => {
           selectedAppointment ? (
             <div>
               <p>
-                <strong>{t('Patient')}:</strong> {selectedAppointment.patient}
+                <strong>{t('Patient')}:</strong> {selectedAppointment.patient_full_name}
               </p>
               <p>
-                <strong>{t('Professional')}:</strong> {selectedAppointment.professional}
+                <strong>{t('Professional')}:</strong> {selectedAppointment.professional_full_name}
               </p>
               <p>
                 <strong>{t('Scheduled At')}:</strong>{' '}

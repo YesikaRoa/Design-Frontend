@@ -1,4 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react'
+// Decodificador JWT simple (no seguro para producción, pero suficiente para frontend)
+function parseJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch (e) {
+    return {}
+  }
+}
 import {
   CCard,
   CCardBody,
@@ -60,6 +68,8 @@ const Profile = () => {
 
   // Leer token del localStorage
   const authToken = localStorage.getItem('authToken')
+  // Decodificar el token para obtener el rol
+  const tokenPayload = authToken ? parseJwt(authToken) : {}
 
   const headers = {
     Authorization: `Bearer ${authToken}`,
@@ -184,38 +194,46 @@ const Profile = () => {
       if (formData.gender !== user.gender) userData.gender = formData.gender
       if (formData.status !== user.status) userData.status = formData.status
 
-      // Solo enviar campos modificados y no nulos para professionalData
-      const professionalData = {}
-      if (
-        formData.biography !== undefined &&
-        formData.biography !== null &&
-        formData.biography !== professional?.biography &&
-        formData.biography !== ''
-      ) {
-        professionalData.biography = formData.biography
-      }
-      if (
-        formData.years_experience !== undefined &&
-        formData.years_experience !== null &&
-        Number(formData.years_experience) !== Number(professional?.years_of_experience)
-      ) {
-        professionalData.years_of_experience = Number(formData.years_experience)
-      }
-      if (
-        Array.isArray(combinedSpecialties) &&
-        JSON.stringify(combinedSpecialties) !==
-          JSON.stringify([
-            ...(Array.isArray(user.specialties) ? user.specialties.map((s) => s.id) : []),
-            ...(Array.isArray(user.subspecialties) ? user.subspecialties.map((s) => s.id) : []),
-          ])
-      ) {
-        professionalData.specialties = combinedSpecialties
+      // Detectar si es admin (role === 1) usando el token decodificado
+      const isAdmin = tokenPayload.role === 1
+
+      // Solo construir professionalData si NO es admin y hay datos profesionales
+      let professionalData = null
+      if (!isAdmin && professional) {
+        professionalData = {}
+        if (
+          formData.biography !== undefined &&
+          formData.biography !== null &&
+          formData.biography !== professional?.biography &&
+          formData.biography !== ''
+        ) {
+          professionalData.biography = formData.biography
+        }
+        if (
+          formData.years_experience !== undefined &&
+          formData.years_experience !== null &&
+          Number(formData.years_experience) !== Number(professional?.years_of_experience)
+        ) {
+          professionalData.years_of_experience = Number(formData.years_experience)
+        }
+        if (
+          Array.isArray(combinedSpecialties) &&
+          JSON.stringify(combinedSpecialties) !==
+            JSON.stringify([
+              ...(Array.isArray(user.specialties) ? user.specialties.map((s) => s.id) : []),
+              ...(Array.isArray(user.subspecialties) ? user.subspecialties.map((s) => s.id) : []),
+            ])
+        ) {
+          professionalData.specialties = combinedSpecialties
+        }
+        // Si no hay cambios en professionalData, dejarlo como null
+        if (Object.keys(professionalData).length === 0) professionalData = null
       }
 
       // No enviar objetos vacíos
       const payload = {}
       if (Object.keys(userData).length > 0) payload.userData = userData
-      if (Object.keys(professionalData).length > 0) payload.professionalData = professionalData
+      if (professionalData) payload.professionalData = professionalData
 
       if (Object.keys(payload).length === 0) {
         Notifications.showAlert(setAlert, 'No hay cambios para guardar', 'info')
@@ -271,10 +289,14 @@ const Profile = () => {
       setProfessionalType(
         updatedProfile.professional_type ? { name: updatedProfile.professional_type } : null,
       )
-      setProfessional({
-        biography: updatedProfile.biography,
-        years_of_experience: updatedProfile.years_of_experience,
-      })
+      setProfessional(
+        updatedProfile.biography || updatedProfile.years_of_experience
+          ? {
+              biography: updatedProfile.biography,
+              years_of_experience: updatedProfile.years_of_experience,
+            }
+          : null,
+      )
       setSelectedSpecialties(
         Array.isArray(updatedProfile.specialties)
           ? updatedProfile.specialties.map((s) => ({ label: s.name, value: s.id }))
@@ -555,53 +577,56 @@ const Profile = () => {
                 value={formData.address ?? ''}
                 onChange={handleInputChange}
               />
-              <CFormInput
-                className="mb-2"
-                type="text"
-                name="biography"
-                label={<strong>{t('Biography')}:</strong>}
-                value={
-                  formData.biography === null || formData.biography === undefined
-                    ? ''
-                    : formData.biography
-                }
-                onChange={handleInputChange}
-              />
-              <Select
-                isMulti
-                name="specialty"
-                options={specialtyOptions}
-                value={selectedSpecialties}
-                onChange={(selected) => setSelectedSpecialties(selected)}
-                className="mb-2"
-                classNamePrefix="react-select"
-                placeholder="Selecciona especialidades"
-              />
-
-              <Select
-                isMulti
-                name="subspecialty"
-                options={subspecialtyOptions}
-                value={selectedSubspecialties}
-                onChange={(selected) => setSelectedSubspecialties(selected)}
-                className="mb-2"
-                classNamePrefix="react-select"
-                placeholder="Selecciona subespecialidades"
-              />
-
-              <CFormInput
-                type="number"
-                name="years_experience"
-                label={<strong>{t('Years of Experience')}:</strong>}
-                value={
-                  formData.years_experience != null &&
-                  formData.years_experience !== '' &&
-                  !Number.isNaN(Number(formData.years_experience))
-                    ? String(formData.years_experience)
-                    : ''
-                }
-                onChange={handleInputChange}
-              />
+              {/* Mostrar campos profesionales solo si NO es admin */}
+              {tokenPayload.role !== 1 && (
+                <>
+                  <CFormInput
+                    className="mb-2"
+                    type="text"
+                    name="biography"
+                    label={<strong>{t('Biography')}:</strong>}
+                    value={
+                      formData.biography === null || formData.biography === undefined
+                        ? ''
+                        : formData.biography
+                    }
+                    onChange={handleInputChange}
+                  />
+                  <Select
+                    isMulti
+                    name="specialty"
+                    options={specialtyOptions}
+                    value={selectedSpecialties}
+                    onChange={(selected) => setSelectedSpecialties(selected)}
+                    className="mb-2"
+                    classNamePrefix="react-select"
+                    placeholder="Selecciona especialidades"
+                  />
+                  <Select
+                    isMulti
+                    name="subspecialty"
+                    options={subspecialtyOptions}
+                    value={selectedSubspecialties}
+                    onChange={(selected) => setSelectedSubspecialties(selected)}
+                    className="mb-2"
+                    classNamePrefix="react-select"
+                    placeholder="Selecciona subespecialidades"
+                  />
+                  <CFormInput
+                    type="number"
+                    name="years_experience"
+                    label={<strong>{t('Years of Experience')}:</strong>}
+                    value={
+                      formData.years_experience != null &&
+                      formData.years_experience !== '' &&
+                      !Number.isNaN(Number(formData.years_experience))
+                        ? String(formData.years_experience)
+                        : ''
+                    }
+                    onChange={handleInputChange}
+                  />
+                </>
+              )}
             </CModalBody>
             <CModalFooter>
               <CButton color="secondary" onClick={() => setModalVisible(false)}>

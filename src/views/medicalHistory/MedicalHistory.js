@@ -31,8 +31,17 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilInfo, cilTrash, cilPlus } from '@coreui/icons'
+
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+// Decodificador JWT simple para obtener el rol
+function parseJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch (e) {
+    return {}
+  }
+}
 
 const API_URL = 'https://aplication-backend-production-872f.up.railway.app/api/medical_record'
 const getToken = () => localStorage.getItem('authToken')
@@ -42,7 +51,6 @@ const MedicalHistory = () => {
   const { t } = useTranslation()
   const [alert, setAlert] = useState(null)
   const [medicalHistory, setMedicalHistory] = useState([])
-  const [appointments, setAppointments] = useState([])
   const [FilteredMedicalHistory, setFilteredMedicalHistory] = useState([])
   const [filters, setFilters] = useState({
     patient: '',
@@ -56,6 +64,9 @@ const MedicalHistory = () => {
   const [downloadModalVisible, setDownloadModalVisible] = useState(false)
   const [selectedPatient, setSelectedPatient] = useState(null)
   const ModalAddRef = useRef()
+  // Obtener el rol del token
+  const authToken = getToken()
+  const tokenPayload = authToken ? parseJwt(authToken) : {}
 
   // Mueve fetchData fuera del useEffect para que esté disponible globalmente
   const fetchData = async () => {
@@ -531,9 +542,12 @@ const MedicalHistory = () => {
         <CButton color="primary" onClick={() => addMedicalHistory()}>
           <CIcon icon={cilPlus} className="me-2" /> Add Medical History
         </CButton>
-        <CButton color="secondary" className="ms-2" onClick={() => setDownloadModalVisible(true)}>
-          Descargar PDF
-        </CButton>
+        {/* Mostrar botón de descargar solo si el rol NO es 1 (no admin) */}
+        {tokenPayload.role !== 1 && (
+          <CButton color="secondary" className="ms-2" onClick={() => setDownloadModalVisible(true)}>
+            Descargar PDF
+          </CButton>
+        )}
       </div>
 
       <CCard className="mb-4">

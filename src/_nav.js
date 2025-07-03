@@ -41,13 +41,13 @@ const _nav = [
     ? [
         {
           component: CNavItem,
-          name: 'Usuarios',
+          name: 'Users',
           to: '/users',
           icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
         },
         {
           component: CNavItem,
-          name: 'Profesionales',
+          name: 'Professionals',
           to: '/professionals',
           icon: <CIcon icon={cilEducation} customClassName="nav-icon" />,
         },
@@ -55,19 +55,19 @@ const _nav = [
     : []),
   {
     component: CNavItem,
-    name: 'Pacientes',
+    name: 'Patients',
     to: '/patients',
     icon: <CIcon icon={cilUser} className="nav-icon" />,
   },
   {
     component: CNavItem,
-    name: 'Citas',
+    name: 'Appointments',
     to: '/appointments',
     icon: <CIcon icon={cilClipboard} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
-    name: 'Historial Médico',
+    name: 'Medical History',
     to: '/medicalHistory',
     icon: <CIcon icon={cilNotes} className="nav-icon" />,
   },
