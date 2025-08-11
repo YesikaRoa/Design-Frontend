@@ -31,7 +31,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/auth/send-temporary-password',
+        'https://aplication-backend-production-5657.up.railway.app/api/auth/send-temporary-password',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -82,7 +82,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/auth/login',
+        'https://aplication-backend-production-5657.up.railway.app/api/auth/login',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
