@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import useApi from '../../hooks/useApi'
 import {
   CButton,
   CCard,
@@ -22,29 +23,36 @@ import emailjs from 'emailjs-com'
 import './styles/Login.css'
 
 const Login = () => {
+  const { request, loading } = useApi()
   const [modalVisible, setModalVisible] = useState(false)
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
 
+  // Estados controlados para inputs
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [recoveryEmail, setRecoveryEmail] = useState('')
+
   const handleSendPassword = async () => {
-    const emailInput = document.querySelector('#email-input').value
+    if (!recoveryEmail) {
+      Notifications.showAlert(setAlert, 'Por favor, ingrese su correo.', 'danger')
+      return
+    }
 
     try {
-      const response = await fetch(
-        'https://aplication-backend-production-5657.up.railway.app/api/auth/send-temporary-password',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: emailInput }),
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Error desconocido')
+      const response = await request('POST', '/auth/send-temporary-password', {
+        email: recoveryEmail,
+      })
+      if (!response.success) {
+        Notifications.showAlert(
+          setAlert,
+          response.message || 'Hubo un error al enviar el correo.',
+          'danger',
+        )
+        return
       }
 
-      const { user, tempPassword } = await response.json()
+      const { user, tempPassword } = response.data
 
       // Enviar correo con Email.js
       const templateParams = {
@@ -72,40 +80,28 @@ const Login = () => {
   }
 
   const handleLogin = async () => {
-    const email = document.querySelector('#username-input').value
-    const password = document.querySelector('#password-input').value
-
     if (!email || !password) {
       Notifications.showAlert(setAlert, 'Por favor, complete todos los campos.', 'danger')
       return
     }
 
     try {
-      const response = await fetch(
-        'https://aplication-backend-production-5657.up.railway.app/api/auth/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        },
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (data.issues && Array.isArray(data.issues)) {
-          // Mostrar errores específicos de validación
-          const messages = data.issues.map((issue) => issue.message).join('\n')
+      const response = await request('POST', '/auth/login', { email, password })
+      if (!response.success) {
+        if (response.data?.issues?.length) {
+          const messages = response.data.issues.map((issue) => issue.message).join('\n')
           Notifications.showAlert(setAlert, messages, 'danger')
         } else {
-          // Mostrar mensaje general
-          Notifications.showAlert(setAlert, data.message || 'Error al iniciar sesión.', 'danger')
+          Notifications.showAlert(
+            setAlert,
+            response.message || 'Error al iniciar sesión.',
+            'danger',
+          )
         }
         return
       }
 
-      // Guardar token y redirigir al dashboard
-      localStorage.setItem('authToken', data.token)
+      localStorage.setItem('authToken', response.data.token)
       window.location.href = '/#/dashboard'
       window.location.reload()
     } catch (error) {
@@ -115,12 +111,12 @@ const Login = () => {
   }
 
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center login-background ">
+    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center login-background">
       <CContainer>
         <CRow className="justify-content-center">
           <CCol md={8}>
             <CCardGroup className="some-class">
-              <CCard className="p-4 ">
+              <CCard className="p-4">
                 <CCardBody>
                   {alert && (
                     <CAlert color={alert.type} className="text-center alert-fixed">
@@ -134,7 +130,13 @@ const Login = () => {
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
-                      <CFormInput id="username-input" placeholder="Email" autoComplete="email" />
+                      <CFormInput
+                        id="username-input"
+                        placeholder="Email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
                     </CInputGroup>
                     <CInputGroup className="mb-4">
                       <CInputGroupText
@@ -148,11 +150,18 @@ const Login = () => {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Password"
                         autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                       />
                     </CInputGroup>
                     <CRow>
                       <CCol xs={6}>
-                        <CButton color="primary" className="px-4" onClick={handleLogin}>
+                        <CButton
+                          color="primary"
+                          className="px-4"
+                          onClick={handleLogin}
+                          disabled={loading}
+                        >
                           Login
                         </CButton>
                       </CCol>
@@ -189,6 +198,7 @@ const Login = () => {
           </CCol>
         </CRow>
       </CContainer>
+
       <ModalSendInformation
         visible={modalVisible}
         setVisible={setModalVisible}
@@ -197,9 +207,11 @@ const Login = () => {
         onSend={handleSendPassword}
       >
         <CFormInput
-          id="email-input" // Este es el campo donde se ingresa el correo
+          id="email-input"
           type="email"
           placeholder="Correo electrónico"
+          value={recoveryEmail}
+          onChange={(e) => setRecoveryEmail(e.target.value)}
           required
         />
       </ModalSendInformation>
