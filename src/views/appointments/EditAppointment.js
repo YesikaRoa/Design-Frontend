@@ -28,6 +28,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
+import useApi from '../../hooks/useApi'
 
 const EditAppointment = () => {
   const location = useLocation()
@@ -43,6 +44,7 @@ const EditAppointment = () => {
   const [cities, setCities] = useState([])
   const [citiesLoading, setCitiesLoading] = useState(true)
   const token = localStorage.getItem('authToken')
+  const { request, loading: apiLoading } = useApi()
 
   useEffect(() => {
     setLoading(true)
@@ -62,11 +64,9 @@ const EditAppointment = () => {
     setLoading(false)
 
     setCitiesLoading(true)
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/appointments/cities')
-      .then((res) => res.json())
-      .then(async (data) => {
-        let citiesArr = data.cities || []
-        // Si hay una cita cargada y su city_id no está en el array, agregarla usando city_name si existe
+    request('get', '/appointments/cities')
+      .then(async (res) => {
+        let citiesArr = res.data && res.data.cities ? res.data.cities : []
         if (
           parsed &&
           parsed.city_id &&
@@ -76,12 +76,12 @@ const EditAppointment = () => {
             citiesArr = [...citiesArr, { id: parsed.city_id, name: parsed.city_name }]
           } else {
             try {
-              const resCity = await fetch(
-                `https://aplication-backend-production-872f.up.railway.app/api/appointments/cities?search=${parsed.city_id}&limit=1`,
+              const resCity = await request(
+                'get',
+                `/appointments/cities?search=${parsed.city_id}&limit=1`,
               )
-              const dataCity = await resCity.json()
-              if (dataCity.cities && dataCity.cities.length > 0) {
-                citiesArr = [...citiesArr, dataCity.cities[0]]
+              if (resCity.data && resCity.data.cities && resCity.data.cities.length > 0) {
+                citiesArr = [...citiesArr, resCity.data.cities[0]]
               }
             } catch {}
           }
@@ -126,47 +126,31 @@ const EditAppointment = () => {
       }
     })
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(updates),
-        },
-      )
-
-      if (response.ok) {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('put', `/appointments/${appointment.id}`, updates, headers)
+      if (res.success) {
         // Después de guardar, obtener los datos completos y enriquecidos
-        const updated = await response.json()
+        let fullData = null
         try {
-          const res = await fetch(
-            `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-            },
-          )
-          if (res.ok) {
-            const fullData = await res.json()
-            setAppointment(fullData)
-            setEditedAppointment({ ...fullData })
-            localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
-          } else {
-            setAppointment(updated.appointment)
-            setEditedAppointment({ ...updated.appointment })
-            localStorage.setItem('selectedAppointment', JSON.stringify(updated.appointment))
+          const resFull = await request('get', `/appointments/${appointment.id}`, null, headers)
+          if (resFull.success && resFull.data) {
+            fullData = resFull.data
+          } else if (res.data && res.data.appointment) {
+            fullData = res.data.appointment
           }
         } catch {
-          setAppointment(updated.appointment)
-          setEditedAppointment({ ...updated.appointment })
-          localStorage.setItem('selectedAppointment', JSON.stringify(updated.appointment))
+          if (res.data && res.data.appointment) {
+            fullData = res.data.appointment
+          }
+        }
+        if (fullData) {
+          setAppointment(fullData)
+          setEditedAppointment({ ...fullData })
+          localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
         }
         Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
       } else {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Error al guardar los cambios.')
+        throw new Error(res.message || 'Error al guardar los cambios.')
       }
     } catch (error) {
       console.error(error)
@@ -177,20 +161,15 @@ const EditAppointment = () => {
 
   const deleteAppointment = async () => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        },
-      )
-      if (response.ok) {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
+      if (res.success) {
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
         setTimeout(() => {
-          navigate('/appointments') // Redirige después de 5 segundos
-        }, 5000) // Asegúrate de que coincida con la duración de la notificación
+          navigate('/appointments')
+        }, 5000)
       } else {
-        throw new Error('Error deleting the appointment.')
+        throw new Error(res.message || 'Error deleting the appointment.')
       }
     } catch (error) {
       console.error(error)
@@ -236,51 +215,37 @@ const EditAppointment = () => {
                 value={appointment.status}
                 onChange={async (e) => {
                   const updatedStatus = e.target.value
+                  const headers = token ? { Authorization: `Bearer ${token}` } : {}
                   try {
-                    const response = await fetch(
-                      `https://aplication-backend-production-872f.up.railway.app/api/appointments/status/${appointment.id}`,
-                      {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({ status: updatedStatus }),
-                      },
+                    const resStatus = await request(
+                      'put',
+                      `/appointments/status/${appointment.id}`,
+                      { status: updatedStatus },
+                      headers,
                     )
-                    if (response.ok) {
-                      const data = await response.json()
-                      // Obtener datos enriquecidos tras el cambio de status
+                    if (resStatus.success) {
+                      let fullData = null
                       try {
-                        const res = await fetch(
-                          `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-                          {
-                            headers: {
-                              'Content-Type': 'application/json',
-                              Authorization: `Bearer ${token}`,
-                            },
-                          },
+                        const resFull = await request(
+                          'get',
+                          `/appointments/${appointment.id}`,
+                          null,
+                          headers,
                         )
-                        if (res.ok) {
-                          const fullData = await res.json()
-                          setAppointment(fullData)
-                          setEditedAppointment({ ...fullData })
-                          localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
-                        } else {
-                          setAppointment(data.appointment)
-                          setEditedAppointment({ ...data.appointment })
-                          localStorage.setItem(
-                            'selectedAppointment',
-                            JSON.stringify(data.appointment),
-                          )
+                        if (resFull.success && resFull.data) {
+                          fullData = resFull.data
+                        } else if (resStatus.data && resStatus.data.appointment) {
+                          fullData = resStatus.data.appointment
                         }
                       } catch {
-                        setAppointment(data.appointment)
-                        setEditedAppointment({ ...data.appointment })
-                        localStorage.setItem(
-                          'selectedAppointment',
-                          JSON.stringify(data.appointment),
-                        )
+                        if (resStatus.data && resStatus.data.appointment) {
+                          fullData = resStatus.data.appointment
+                        }
+                      }
+                      if (fullData) {
+                        setAppointment(fullData)
+                        setEditedAppointment({ ...fullData })
+                        localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
                       }
                       Notifications.showAlert(
                         setAlert,
@@ -355,47 +320,36 @@ const EditAppointment = () => {
                 setEditedAppointment({ ...editedAppointment, status: newStatus })
                 if (!fieldsDisabled) return // Solo guardar si está en modo edición
                 try {
-                  const response = await fetch(
-                    `https://aplication-backend-production-872f.up.railway.app/api/appointments/status/${appointment.id}`,
-                    {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({ status: newStatus }),
-                    },
+                  const headers = token ? { Authorization: `Bearer ${token}` } : {}
+                  const resStatus = await request(
+                    'put',
+                    `/appointments/status/${appointment.id}`,
+                    { status: newStatus },
+                    headers,
                   )
-                  if (response.ok) {
-                    const data = await response.json()
-                    // Obtener datos enriquecidos tras el cambio de status
+                  if (resStatus.success) {
+                    let fullData = null
                     try {
-                      const res = await fetch(
-                        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-                        {
-                          headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
-                          },
-                        },
+                      const resFull = await request(
+                        'get',
+                        `/appointments/${appointment.id}`,
+                        null,
+                        headers,
                       )
-                      if (res.ok) {
-                        const fullData = await res.json()
-                        setAppointment(fullData)
-                        setEditedAppointment({ ...fullData })
-                        localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
-                      } else {
-                        setAppointment(data.appointment)
-                        setEditedAppointment({ ...data.appointment })
-                        localStorage.setItem(
-                          'selectedAppointment',
-                          JSON.stringify(data.appointment),
-                        )
+                      if (resFull.success && resFull.data) {
+                        fullData = resFull.data
+                      } else if (resStatus.data && resStatus.data.appointment) {
+                        fullData = resStatus.data.appointment
                       }
                     } catch {
-                      setAppointment(data.appointment)
-                      setEditedAppointment({ ...data.appointment })
-                      localStorage.setItem('selectedAppointment', JSON.stringify(data.appointment))
+                      if (resStatus.data && resStatus.data.appointment) {
+                        fullData = resStatus.data.appointment
+                      }
+                    }
+                    if (fullData) {
+                      setAppointment(fullData)
+                      setEditedAppointment({ ...fullData })
+                      localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
                     }
                     Notifications.showAlert(setAlert, 'Status updated successfully.', 'success')
                   } else {
@@ -451,16 +405,17 @@ const EditAppointment = () => {
                     }))
                   }
                   try {
-                    const res = await fetch(
-                      `https://aplication-backend-production-872f.up.railway.app/api/appointments/cities?search=${encodeURIComponent(
-                        inputValue,
-                      )}&limit=10`,
+                    const res = await request(
+                      'get',
+                      `/appointments/cities?search=${encodeURIComponent(inputValue)}&limit=10`,
                     )
-                    const data = await res.json()
-                    return (data.cities || []).map((city) => ({
-                      label: city.name,
-                      value: city.id,
-                    }))
+                    if (res.success && res.data && res.data.cities) {
+                      return res.data.cities.map((city) => ({
+                        label: city.name,
+                        value: city.id,
+                      }))
+                    }
+                    return []
                   } catch {
                     return []
                   }
@@ -473,14 +428,17 @@ const EditAppointment = () => {
                   // Si la ciudad seleccionada no está en cities, la agregamos
                   if (option && !cities.some((c) => String(c.id) === String(option.value))) {
                     try {
-                      const res = await fetch(
-                        `https://aplication-backend-production-872f.up.railway.app/api/appointments/cities?search=${encodeURIComponent(
-                          option.label,
-                        )}&limit=1`,
+                      const res = await request(
+                        'get',
+                        `/appointments/cities?search=${encodeURIComponent(option.label)}&limit=1`,
                       )
-                      const data = await res.json()
-                      if (data.cities && data.cities.length > 0) {
-                        setCities((prev) => [...prev, data.cities[0]])
+                      if (
+                        res.success &&
+                        res.data &&
+                        res.data.cities &&
+                        res.data.cities.length > 0
+                      ) {
+                        setCities((prev) => [...prev, res.data.cities[0]])
                       }
                     } catch {}
                   }

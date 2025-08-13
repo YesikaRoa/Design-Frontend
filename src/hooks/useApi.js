@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import axios from 'axios'
-
+//url local: http://localhost:3000/api
+//url producción: https://aplication-backend-production-5657.up.railway.app/api
 const useApi = (baseURL = 'https://aplication-backend-production-5657.up.railway.app/api') => {
   const [loading, setLoading] = useState(false)
 
-  const request = async (method, url, body = null) => {
+  const request = async (method, url, body = null, headers = {}) => {
     setLoading(true)
     try {
-      const res = await axios({ method, url: `${baseURL}${url}`, data: body })
+      const res = await axios({ method, url: `${baseURL}${url}`, data: body, headers })
+
       return { success: true, message: res.data.message || 'Operación exitosa', data: res.data }
     } catch (error) {
       return { success: false, message: error.response?.data?.message || 'Error en la operación' }

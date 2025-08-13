@@ -4,6 +4,7 @@ import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader } from '@coreui/react'
 import './Styles.css/ChartsSection.css'
 import { useTranslation } from 'react-i18next'
+import useApi from '../../hooks/useApi'
 
 const generateColors = (count) => {
   const colors = []
@@ -21,39 +22,27 @@ const ChartsSection = () => {
   const [cityData, setCityData] = useState([])
   const [specialtyData, setSpecialtyData] = useState([])
 
+  const { request } = useApi()
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/dashboard',
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Token de autenticación
-            },
-          },
-        )
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data')
-        }
-
-        const data = await response.json()
-
+        const token = localStorage.getItem('authToken')
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await request('get', '/dashboard', null, headers)
+        if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+        const data = res.data
         // Procesar pacientes por ciudad
         const cityLabels = data.patientsByCity.map((entry) => entry.city)
         const cityValues = data.patientsByCity.map((entry) => entry.patient_count)
-
         // Procesar especialidades más solicitadas
         const specialtyLabels = data.specialtiesByRequest.map((entry) => entry.specialty)
         const specialtyValues = data.specialtiesByRequest.map((entry) => entry.patient_count)
-
         setCityData({ labels: cityLabels, data: cityValues })
         setSpecialtyData({ labels: specialtyLabels, data: specialtyValues })
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       }
     }
-
     fetchDashboardData()
   }, [])
 

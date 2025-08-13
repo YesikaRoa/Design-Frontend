@@ -13,34 +13,26 @@ import {
 } from '@coreui/react'
 import './../../scss/style.scss'
 import { useTranslation } from 'react-i18next'
+import useApi from '../../hooks/useApi'
 
 const RecentPatientsTable = () => {
   const [recentPatients, setRecentPatients] = useState([])
   const { t } = useTranslation()
+  const { request, loading } = useApi()
 
   useEffect(() => {
     const fetchRecentPatients = async () => {
-      try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/dashboard',
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Token de autenticación
-            },
-          },
-        )
+      const token = localStorage.getItem('authToken')
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data')
-        }
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('get', '/dashboard', null, headers)
 
-        const data = await response.json()
-        setRecentPatients(data.recentPatients)
-      } catch (error) {
-        console.error('Error fetching recent patients:', error)
+      if (res.success && res.data && res.data.recentPatients) {
+        setRecentPatients(res.data.recentPatients)
+      } else {
+        console.error('Error fetching recent patients:', res.message)
       }
     }
-
     fetchRecentPatients()
   }, [])
 

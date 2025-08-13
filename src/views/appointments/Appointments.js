@@ -14,6 +14,7 @@ import './styles/appointments.css'
 import '../users/styles/filter.css'
 import '../users/styles/users.css'
 import { formatDate } from '../../utils/dateUtils'
+import useApi from '../../hooks/useApi'
 
 import {
   CTable,
@@ -53,35 +54,24 @@ const Appointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const ModalAddRef = useRef()
   const token = localStorage.getItem('authToken')
+  const { request, loading } = useApi()
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/appointments',
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('get', '/appointments', null, headers)
+      if (res.success && Array.isArray(res.data)) {
         // Transformar los datos para incluir nombres completos
-        const transformedData = data.map((appointment) => ({
+        const transformedData = res.data.map((appointment) => ({
           ...appointment,
           patient: `${appointment.patient_first_name} ${appointment.patient_last_name}`,
           professional: `${appointment.professional_first_name} ${appointment.professional_last_name}`,
           city: appointment.name, // Renombrar "name" como "city" si deseas usarlo directamente
         }))
-
         setAppointments(transformedData)
         setFilteredAppointments(transformedData)
       } else {
-        console.error('Error fetching appointments')
+        console.error('Error fetching appointments', res.message)
       }
     } catch (error) {
       console.error('Error fetching appointments:', error)
@@ -94,53 +84,40 @@ const Appointments = () => {
 
   const loadOptions = async (entity, inputValue) => {
     try {
-      // Realiza la solicitud al endpoint del backend
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${entity}?search=${encodeURIComponent(inputValue)}&limit=5`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Incluye el token de autorización
-          },
-        },
+      const token = localStorage.getItem('authToken')
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request(
+        'get',
+        `/appointments/${entity}?search=${encodeURIComponent(inputValue)}&limit=5`,
+        null,
+        headers,
       )
-
-      // Manejo de errores HTTP
-      if (!response.ok) {
-        console.error(`Error al cargar ${entity}: ${response.statusText}`)
+      if (!res.success || !res.data) {
+        console.error(`Error al cargar ${entity}: ${res.message}`)
         return []
       }
-
-      // Procesa la respuesta en formato JSON
-      const data = await response.json()
-
-      // Mapeo dinámico según la entidad
+      const data = res.data
       if (entity === 'patients') {
         return data.patients.map((item) => ({
-          label: `${item.first_name} ${item.last_name}`, // Combina nombres
-          value: item.id, // ID del paciente
+          label: `${item.first_name} ${item.last_name}`,
+          value: item.id,
         }))
       }
-
       if (entity === 'professionals') {
         return data.professionals.map((item) => ({
-          label: `${item.first_name} ${item.last_name}`, // Combina nombres
-          value: item.id, // ID del profesional
+          label: `${item.first_name} ${item.last_name}`,
+          value: item.id,
         }))
       }
-
       if (entity === 'cities') {
         return data.cities.map((item) => ({
-          label: `${item.name}`, // Nombre de la ciudad
-          value: item.id, // ID de la ciudad
+          label: `${item.name}`,
+          value: item.id,
         }))
       }
-
-      // Fallback genérico en caso de que la entidad no esté definida
       console.warn(`Entidad desconocida: ${entity}`)
       return []
     } catch (error) {
-      // Captura y manejo de errores en la solicitud o procesamiento
       console.error(`Error al cargar ${entity}:`, error.message)
       return []
     }
@@ -342,21 +319,12 @@ const Appointments = () => {
         }
 
         // Envía los datos al backend
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/appointments',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newAppointment),
-          },
-        )
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || 'Error al crear la cita.')
+        const res = await request('post', '/appointments', newAppointment, {
+          'Content-Type': 'application/json',
+        })
+        if (!res.success) {
+          throw new Error(res.message || 'Error al crear la cita.')
         }
-
-        // Actualiza la lista de citas después de la creación
         await fetchAppointments()
         Notifications.showAlert(setAlert, 'Appointment created successfully.', 'success')
       } catch (error) {
@@ -372,27 +340,14 @@ const Appointments = () => {
 
   const handleDelete = async (appointment) => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Incluye el token de autorización
-          },
-        },
-      )
-
-      if (response.ok) {
-        const data = await response.json() // Obtiene la respuesta del backend
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
+      if (res.success) {
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
-
-        // Actualiza los estados de citas
         setAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
         setFilteredAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to delete the appointment.')
+        throw new Error(res.message || 'Failed to delete the appointment.')
       }
     } catch (error) {
       console.error('Error deleting appointment:', error)
@@ -407,22 +362,12 @@ const Appointments = () => {
 
   const handleEdit = async (appointment) => {
     try {
-      const res = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/appointments/${appointment.id}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Incluye el token de autorización
-          },
-        },
-      )
-      if (res.ok) {
-        const data = await res.json()
-        localStorage.setItem('selectedAppointment', JSON.stringify(data))
-        navigate(`/appointments/${appointment.id}`, { state: { appointment: data } })
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('get', `/appointments/${appointment.id}`, null, headers)
+      if (res.success && res.data) {
+        localStorage.setItem('selectedAppointment', JSON.stringify(res.data))
+        navigate(`/appointments/${appointment.id}`, { state: { appointment: res.data } })
       } else {
-        // Si falla el fetch, navega con los datos originales
         navigate(`/appointments/${appointment.id}`, { state: { appointment } })
       }
     } catch {

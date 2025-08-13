@@ -36,6 +36,7 @@ import './styles/Profile.css'
 import Notifications from '../../components/Notifications'
 import { formatDate } from '../../utils/dateUtils'
 import { useDispatch } from 'react-redux'
+import useApi from '../../hooks/useApi'
 
 const Profile = () => {
   // Estados principales
@@ -75,6 +76,7 @@ const Profile = () => {
     Authorization: `Bearer ${authToken}`,
     'Content-Type': 'application/json',
   }
+  const { request, loading: apiLoading } = useApi()
 
   // Obtener perfil al cargar
   useEffect(() => {
@@ -82,12 +84,9 @@ const Profile = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/profile',
-          { headers },
-        )
-        if (!res.ok) throw new Error('Error fetching profile')
-        const data = await res.json()
+        const res = await request('get', '/profile', null, headers)
+        if (!res.success || !res.data) throw new Error('Error fetching profile')
+        const data = res.data
         setUser(data)
         setProfessionalType(data.professional_type ? { name: data.professional_type } : null)
         setProfessional({
@@ -105,14 +104,13 @@ const Profile = () => {
           specialty: data.specialties || '',
           subspecialty: data.subspecialties || '',
         })
-
         if (Array.isArray(data.specialties)) {
-          setSelectedSpecialties(data.specialties.map((s) => ({ label: s.name, value: s.id }))) // Usa el id
+          setSelectedSpecialties(data.specialties.map((s) => ({ label: s.name, value: s.id })))
         }
         if (Array.isArray(data.subspecialties)) {
           setSelectedSubspecialties(
             data.subspecialties.map((s) => ({ label: s.name, value: s.id })),
-          ) // Usa el id
+          )
         }
       } catch (error) {
         Notifications.showAlert(setAlert, 'Error loading profile', 'danger')
@@ -134,22 +132,13 @@ const Profile = () => {
   useEffect(() => {
     const fetchspecialties = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/auth/specialties',
-          {
-            headers,
-          },
-        )
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const data = await response.json()
-        setSpecialtiesData(data)
+        const res = await request('get', '/auth/specialties', null, headers)
+        if (!res.success || !res.data) throw new Error('Error fetching specialties')
+        setSpecialtiesData(res.data)
       } catch (error) {
         console.error('Error fetching specialties:', error)
       }
     }
-
     fetchspecialties()
   }, [authToken])
 
@@ -240,49 +229,27 @@ const Profile = () => {
         return
       }
 
-      const body = JSON.stringify(payload)
-
       // 1. Actualizar con PUT
-      const res = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/profile',
-        {
-          method: 'PUT',
-          headers,
-          body,
-        },
-      )
-
-      if (!res.ok) {
-        const errorData = await res.json()
-        console.error('Error response from backend:', errorData)
-
-        if (errorData.issues && Array.isArray(errorData.issues)) {
-          const messages = errorData.issues
-            .map((issue) => `${issue.path.join('.')} - ${issue.message}`)
-            .join('\n')
-          Notifications.showAlert(setAlert, messages, 'danger')
-        } else {
-          Notifications.showAlert(
-            setAlert,
-            errorData.message || 'Error al actualizar algún campo del perfil.',
-            'danger',
-          )
-        }
+      const res = await request('put', '/profile', payload, headers)
+      if (!res.success) {
+        const errorMessage = res.message || 'Error al actualizar algún campo del perfil.'
+        Notifications.showAlert(setAlert, errorMessage, 'danger')
+        console.error('Error updating profile:', res.data) // Opcional: loguea los datos del error si existen
         return
       }
-
-      // 2. Mostrar mensaje de éxito y cerrar modal
       Notifications.showAlert(setAlert, 'Perfil actualizado con éxito', 'success')
       setModalVisible(false)
-
-      // 3. Obtener el perfil actualizado con GET
-      const profileRes = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/profile',
-        { headers },
-      )
-      if (!profileRes.ok) throw new Error('Error fetching profile after update')
-
-      const updatedProfile = await profileRes.json()
+      const profileRes = await request('get', '/profile', null, headers)
+      if (!profileRes.success || !profileRes.data) {
+        Notifications.showAlert(
+          setAlert,
+          'Perfil actualizado, pero hubo un error al obtener la nueva información.',
+          'danger',
+        )
+        console.error('Error fetching profile after update:', profileRes.message)
+        return
+      }
+      const updatedProfile = profileRes.data
 
       // 4. Actualizar todos los estados con la info completa
       setUser(updatedProfile)
@@ -336,30 +303,15 @@ const Profile = () => {
       setSelectedImage(base64Image) // Muestra la imagen en preview localmente (si aplica)
 
       try {
-        const body = JSON.stringify({ userData: { avatar: base64Image } })
-        const res = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/profile',
-          {
-            method: 'PUT',
-            headers,
-            body,
-          },
-        )
-
-        if (!res.ok) {
+        const res = await request('put', '/profile', { userData: { avatar: base64Image } }, headers)
+        if (!res.success || !res.data) {
           throw new Error('Failed to update avatar')
         }
-
-        const updatedUser = await res.json()
-
+        const updatedUser = res.data
         dispatch({ type: 'setAvatar', avatar: updatedUser.avatar })
-
-        // Asegúrate de que el avatar existe en la respuesta
         if (!updatedUser.avatar) {
           console.error('Avatar no encontrado en la respuesta del backend')
         }
-        // Actualiza el Redux solo si la respuesta es exitosa
-
         Notifications.showAlert(setAlert, 'Avatar actualizado con éxito', 'success')
       } catch (error) {
         console.error('Error al actualizar avatar:', error)
@@ -373,41 +325,27 @@ const Profile = () => {
   // Cambiar contraseña
   const handlePasswordChangeSubmit = async () => {
     try {
-      const body = JSON.stringify({ currentPassword, newPassword, confirmPassword })
-      const res = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/profile/password',
-        {
-          method: 'PUT',
-          headers,
-          body,
-        },
+      const res = await request(
+        'put',
+        '/profile/password',
+        { currentPassword, newPassword, confirmPassword },
+        headers,
       )
-
-      if (!res.ok) {
-        const errorData = await res.json()
+      if (!res.success) {
+        const errorData = res.data || {}
         console.error('Error response from backend:', errorData)
-
         let errorMessage = ''
-
-        // Si hay errores de validación Zod (array issues)
         if (errorData.issues && Array.isArray(errorData.issues)) {
           errorMessage = errorData.issues.map((issue) => issue.message).join('\n')
-        }
-        // Si es error personalizado del backend (campo message)
-        else if (errorData.message) {
+        } else if (errorData.message) {
           errorMessage = errorData.message
-        }
-        // Caso fallback
-        else {
+        } else {
           errorMessage = 'Error desconocido al cambiar contraseña.'
         }
-
         Notifications.showAlert(setAlert, errorMessage, 'danger')
         return
       }
-
       Notifications.showAlert(setAlert, 'Contraseña actualizada con éxito', 'success')
-
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')

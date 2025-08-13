@@ -29,6 +29,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPeople, cilPencil, cilInfo, cilTrash, cilUserPlus } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
+import useApi from '../../hooks/useApi'
 
 export const Patients = () => {
   const navigate = useNavigate()
@@ -52,12 +53,12 @@ export const Patients = () => {
   const token = localStorage.getItem('authToken')
   const [formDataState, setFormData] = useState({})
 
+  const { request } = useApi()
   useEffect(() => {
     const convertDefaultAvatarToBase64 = async () => {
       try {
         const response = await fetch(defaultAvatar)
         const blob = await response.blob()
-
         const reader = new FileReader()
         reader.onloadend = () => {
           setFormData({
@@ -93,23 +94,13 @@ export const Patients = () => {
         }
 
         // Hacer la solicitud al backend
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/patients',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`, // Asegúrate de pasar el token
-            },
-            body: JSON.stringify(payload),
-          },
-        )
-
-        if (!response.ok) {
-          const errorData = await response.json()
-
+        const res = await request('post', '/patients', payload, {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        })
+        if (!res.success) {
+          const errorData = res.data || {}
           if (errorData.issues && Array.isArray(errorData.issues)) {
-            // Formatear los errores de Zod
             const messages = errorData.issues
               .map((issue) =>
                 Array.isArray(issue.path)
@@ -117,8 +108,6 @@ export const Patients = () => {
                   : `${issue.path || 'unknown'} - ${issue.message}`,
               )
               .join('\n')
-
-            // Mostrar alertas con los errores
             Notifications.showAlert(setAlert, messages, 'danger')
           } else {
             Notifications.showAlert(
@@ -127,10 +116,8 @@ export const Patients = () => {
               'danger',
             )
           }
-          return // Detener el flujo si hay errores
+          return
         }
-
-        const data = await response.json()
         Notifications.showAlert(setAlert, 'Patient created successfully!', 'success')
         await fetchPatients()
       } catch (error) {
@@ -238,23 +225,14 @@ export const Patients = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
         // Solicitud DELETE al backend
-        const response = await fetch(
-          `https://aplication-backend-production-872f.up.railway.app/api/patients/${userToDelete.id}`,
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
-            },
-          },
-        )
-
-        if (response.ok) {
+        const res = await request('DELETE', `/patients/${userToDelete.id}`, null, headers)
+        if (res.success) {
           await fetchPatients()
           Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         } else {
-          const errorData = await response.json()
+          const errorData = res.data || {}
           Notifications.showAlert(
             setAlert,
             errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
@@ -277,25 +255,14 @@ export const Patients = () => {
       setselectedPatient(null)
 
       // Realizar la solicitud al backend
-      const res = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Asegúrate de definir el token si es necesario
-          },
-        },
-      )
-
-      if (!res.ok) {
-        // Manejar respuestas no exitosas del backend
-        throw new Error(`Error fetching patient data: ${res.status}`)
+      const res = await request('get', `/patients/${user.id}`, null, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (!res.success || !res.data) {
+        throw new Error(`Error fetching patient data`)
       }
-
-      // Procesar los datos de la respuesta
-      const data = await res.json()
-      setselectedPatient(data)
+      setselectedPatient(res.data)
     } catch (error) {
       console.error('Error fetching patient info:', error)
       // Establecer un valor predeterminado si ocurre un error
@@ -308,23 +275,14 @@ export const Patients = () => {
 
   const handleEdit = async (user) => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        },
-      )
-
-      if (!response.ok) {
+      const res = await request('get', `/patients/${user.id}`, null, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (!res.success || !res.data) {
         throw new Error('Error fetching professional details')
       }
-
-      const professionalData = await response.json()
-      // Guardar los datos obtenidos en localStorage
-      localStorage.setItem('selectedPatient', JSON.stringify(professionalData))
-
-      // Navegar usando los datos obtenidos
+      localStorage.setItem('selectedPatient', JSON.stringify(res.data))
       navigate(`/patients/${user.id}`)
     } catch (error) {
       console.error('Error fetching professional details for edit:', error)
@@ -401,19 +359,14 @@ export const Patients = () => {
   }
   const fetchPatients = async () => {
     try {
-      const response = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/patients',
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        },
-      )
-
-      if (response.ok) {
-        const data = await response.json()
-        const normalizedUsers = data.map((user) => ({
+      const res = await request('get', '/patients', null, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (res.success && Array.isArray(res.data)) {
+        const normalizedUsers = res.data.map((user) => ({
           ...user,
-          id: String(user.id), // Ajusta el campo según corresponda
+          id: String(user.id),
         }))
         setUsers(normalizedUsers)
         setFilteredUsers(normalizedUsers)

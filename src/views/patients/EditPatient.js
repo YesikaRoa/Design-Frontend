@@ -19,6 +19,7 @@ import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle } from '@coreui/ic
 import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
+import useApi from '../../hooks/useApi'
 
 const UserDetails = () => {
   const navigate = useNavigate()
@@ -34,19 +35,16 @@ const UserDetails = () => {
   const [patient, setPatient] = useState(null)
   const [medicalData, setMedicalData] = useState('')
 
+  const { request } = useApi()
   const fetchPatient = async (profId) => {
     setLoading(true)
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/${profId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      )
-      if (!response.ok) throw new Error('Error fetching patient')
-      const data = await response.json()
-      setPatient(data)
-      setUser(data) // Actualiza también el estado de user
+      const res = await request('get', `/patients/${profId}`, null, {
+        Authorization: `Bearer ${token}`,
+      })
+      if (!res.success || !res.data) throw new Error('Error fetching patient')
+      setPatient(res.data)
+      setUser(res.data)
     } catch (error) {
       console.error(error)
     } finally {
@@ -61,19 +59,12 @@ const UserDetails = () => {
   const save = async () => {
     try {
       // Obtener los datos actuales del usuario
-      const getResponse = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      )
-
-      if (!getResponse.ok) throw new Error('Error al obtener los datos actuales del usuario.')
-      const currentData = await getResponse.json()
-
+      const resGet = await request('get', `/patients/${user.id}`, null, {
+        Authorization: `Bearer ${token}`,
+      })
+      if (!resGet.success || !resGet.data)
+        throw new Error('Error al obtener los datos actuales del usuario.')
+      const currentData = resGet.data
       // Extraer valores del formulario
       const updatedFields = {
         first_name: document.getElementById('firstName').value || null,
@@ -83,7 +74,6 @@ const UserDetails = () => {
         phone: document.getElementById('phone').value || null,
         medical_data: medicalData || null,
       }
-
       // Comparar campos actualizados con datos actuales para enviar solo los modificados
       const changes = {}
       for (const key in updatedFields) {
@@ -91,30 +81,18 @@ const UserDetails = () => {
           changes[key] = updatedFields[key]
         }
       }
-
       // Validar si hay cambios
       if (Object.keys(changes).length === 0) {
         Notifications.showAlert(setAlert, 'No se realizaron cambios.', 'info')
         return
       }
-
       // Enviar datos al backend
-      const putResponse = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(changes),
-        },
-      )
-
-      if (!putResponse.ok) {
-        const errorData = await putResponse.json()
-
-        // Manejo de errores de validación Zod
+      const resPut = await request('put', `/patients/${user.id}`, changes, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (!resPut.success) {
+        const errorData = resPut.data || {}
         if (errorData.issues && Array.isArray(errorData.issues)) {
           const messages = errorData.issues
             .map((issue) =>
@@ -131,17 +109,14 @@ const UserDetails = () => {
             'danger',
           )
         }
-        return // Detener el flujo
+        return
       }
-
-      const result = await putResponse.json()
-      setUser(result.user)
+      setUser(resPut.data.user)
       Notifications.showAlert(setAlert, 'Cambios guardados exitosamente.', 'success')
     } catch (error) {
       console.error('Error saving changes:', error)
       Notifications.showAlert(setAlert, 'Hubo un error al guardar los cambios.', 'danger')
     }
-
     handleFieldsDisabled()
   }
 
@@ -155,22 +130,14 @@ const UserDetails = () => {
   const handleToggleStatus = async (patientId) => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/status/${patientId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ newStatus: updatedStatus }),
-        },
+      const res = await request(
+        'put',
+        `/patients/status/${patientId}`,
+        { newStatus: updatedStatus },
+        { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-
+      if (!res.success) {
+        const errorData = res.data || {}
         if (errorData.issues && Array.isArray(errorData.issues)) {
           const messages = errorData.issues
             .map((issue) =>
@@ -189,9 +156,7 @@ const UserDetails = () => {
         }
         return
       }
-
-      const result = await response.json()
-      setUser({ ...user, status: result.user.status })
+      setUser({ ...user, status: res.data.user.status })
       Notifications.showAlert(
         setAlert,
         `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
@@ -205,36 +170,23 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/patients/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`, // Agregar token si es necesario
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-
-      if (response.ok) {
-        Notifications.showAlert(setAlert, 'Paciente y usuario eliminados con éxito.', 'success')
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('delete', `/patients/${user.id}`, null, headers)
+      if (res.success) {
+        Notifications.showAlert(setAlert, 'Paciente eliminado con éxito.', 'success')
         setDeleteModalVisible(false)
         navigate('/patients')
       } else {
-        const errorData = await response.json()
+        const errorData = res.data || {}
         Notifications.showAlert(
           setAlert,
-          errorData.message || 'No se pudo eliminar el paciente y usuario.',
+          errorData.message || 'No se pudo eliminar el Paciente.',
           'danger',
         )
       }
     } catch (error) {
       console.error('Error deleting user:', error)
-      Notifications.showAlert(
-        setAlert,
-        'Ocurrió un error al eliminar el paciente y usuario.',
-        'danger',
-      )
+      Notifications.showAlert(setAlert, 'Ocurrió un error al eliminar el paciente', 'danger')
     }
   }
 
