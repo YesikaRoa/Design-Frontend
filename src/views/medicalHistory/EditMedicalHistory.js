@@ -21,8 +21,8 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
+import useApi from '../../hooks/useApi'
 import { useTranslation } from 'react-i18next'
-import { format } from 'date-fns'
 
 const EditMedicalHistory = () => {
   const location = useLocation()
@@ -35,33 +35,21 @@ const EditMedicalHistory = () => {
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const getToken = () => localStorage.getItem('authToken')
+  const { request, loading: apiLoading } = useApi()
   useEffect(() => {
     const fetchMedicalHistory = async (id) => {
-      try {
-        const response = await fetch(
-          `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${getToken()}`,
-            },
-          },
-        )
-        if (response.ok) {
-          const data = await response.json()
-          setMedicalHistory(data)
-          seteditedMedicalHistory({
-            ...data,
-            created_at: data.created_at ? new Date(data.created_at).toISOString().slice(0, 16) : '',
-          })
-        }
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching medical history:', error)
-        setLoading(false)
+      const { data, success } = await request('get', `/medical_record/${id}`, null, {
+        Authorization: `Bearer ${getToken()}`,
+      })
+      if (success && data) {
+        setMedicalHistory(data)
+        seteditedMedicalHistory({
+          ...data,
+          created_at: data.created_at ? new Date(data.created_at).toISOString().slice(0, 16) : '',
+        })
       }
+      setLoading(false)
     }
-
-    // Eliminar uso de localStorage, siempre consulta el backend
     if (location.state?.medicalHistory?.id) {
       fetchMedicalHistory(location.state.medicalHistory.id)
     } else {
@@ -121,62 +109,44 @@ const EditMedicalHistory = () => {
       return
     }
 
-    try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${medicalHistory.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken()}`,
-          },
-          body: JSON.stringify(changedFields),
-        },
-      )
-
-      if (response.ok) {
-        const result = await response.json()
-        const updated = result.medicalRecord ? result.medicalRecord : result
-        const merged = {
-          ...medicalHistory,
-          ...updated,
-          image: updated.image || medicalHistory.image || '',
-        }
-        setMedicalHistory(merged)
-        seteditedMedicalHistory({
-          ...merged,
-          attachment_image: merged.image || '',
-        })
-        Notifications.showAlert(setAlert, 'Changes saved successfully!', 'success')
-      } else {
-        throw new Error('Error saving changes.')
+    const { data, success } = await request(
+      'put',
+      `/medical_record/${medicalHistory.id}`,
+      changedFields,
+      {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+      },
+    )
+    if (success && data) {
+      const updated = data.medicalRecord ? data.medicalRecord : data
+      const merged = {
+        ...medicalHistory,
+        ...updated,
+        image: updated.image || medicalHistory.image || '',
       }
-    } catch (error) {
+      setMedicalHistory(merged)
+      seteditedMedicalHistory({
+        ...merged,
+        attachment_image: merged.image || '',
+      })
+      Notifications.showAlert(setAlert, 'Changes saved successfully!', 'success')
+    } else {
       Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
     }
     handleFieldsDisabled()
   }
 
   const deleteMedicalHistory = async () => {
-    try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${medicalHistory.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        },
-      )
-      if (response.ok) {
-        Notifications.showAlert(setAlert, 'Medical history deleted successfully.', 'success', 5000)
-        setTimeout(() => {
-          navigate('/medicalHistory') // Redirige después de 5 segundos
-        }, 5000)
-      } else {
-        throw new Error('Error deleting the medical history.')
-      }
-    } catch (error) {
+    const { success } = await request('delete', `/medical_record/${medicalHistory.id}`, null, {
+      Authorization: `Bearer ${getToken()}`,
+    })
+    if (success) {
+      Notifications.showAlert(setAlert, 'Medical history deleted successfully.', 'success', 5000)
+      setTimeout(() => {
+        navigate('/medicalHistory')
+      }, 5000)
+    } else {
       Notifications.showAlert(
         setAlert,
         'There was an error deleting the medical history.',
@@ -190,7 +160,7 @@ const EditMedicalHistory = () => {
     setFieldsDisabled((prev) => !prev)
   }
 
-  if (loading) return <p>Loading medical history...</p>
+  if (loading || apiLoading) return <p>Loading medical history...</p>
   if (!medicalHistory) return <p>Medical history not found.</p>
 
   return (

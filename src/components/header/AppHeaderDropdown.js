@@ -16,6 +16,7 @@ import { cilUser, cilExitToApp } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import { useNavigate } from 'react-router-dom'
 import './style/header.css'
+import useApi from '../../hooks/useApi'
 
 const AppHeaderDropdown = () => {
   const navigate = useNavigate()
@@ -27,23 +28,16 @@ const AppHeaderDropdown = () => {
   const [counter, setCounter] = useState(15)
   const [timerId, setTimerId] = useState(null) // ID del intervalo para detenerlo
 
+  const { request } = useApi()
   useEffect(() => {
     const token = localStorage.getItem('authToken')
     if (token) {
-      fetch('https://aplication-backend-production-872f.up.railway.app/api/profile', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
+      request('get', '/profile', null, { Authorization: `Bearer ${token}` })
+        .then((res) => {
+          if (!res.success || !res.data) {
             throw new Error('Error al obtener los datos del perfil')
           }
-          return response.json()
-        })
-        .then((data) => {
-          dispatch({ type: 'setAvatar', avatar: data.avatar }) // Actualiza Redux
+          dispatch({ type: 'setAvatar', avatar: res.data.avatar })
         })
         .catch((error) => console.error('Error al obtener los datos del perfil:', error))
     }
@@ -52,25 +46,15 @@ const AppHeaderDropdown = () => {
   const handleTokenRenewal = async () => {
     const token = localStorage.getItem('authToken')
     if (!token) return
-
     try {
-      const res = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/auth/renew-token',
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      )
-
-      if (!res.ok) throw new Error('Failed to renew token')
-
-      const data = await res.json()
-      localStorage.setItem('authToken', data.token)
-
-      // Reinicia el estado y detén el contador
+      const res = await request('post', '/auth/renew-token', null, {
+        Authorization: `Bearer ${token}`,
+      })
+      if (!res.success || !res.data || !res.data.token) throw new Error('Failed to renew token')
+      localStorage.setItem('authToken', res.data.token)
       setTokenExpiring(false)
       setCounter(15)
-      clearInterval(timerId) // Detén el intervalo
+      clearInterval(timerId)
     } catch (error) {
       console.error('Error renewing token:', error)
     }

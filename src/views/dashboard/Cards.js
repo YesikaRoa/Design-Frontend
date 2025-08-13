@@ -3,6 +3,7 @@ import { CRow, CCol, CCard, CCardBody } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilUser, cilUserFollow, cilListRich } from '@coreui/icons'
 import { useTranslation } from 'react-i18next'
+import useApi from '../../hooks/useApi'
 
 const Cards = () => {
   const { t } = useTranslation()
@@ -12,23 +13,17 @@ const Cards = () => {
     topSpecialty: '',
   })
 
+  const { request } = useApi()
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/dashboard',
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('authToken')}`, // Asegúrate de incluir el token
-            },
-          },
-        )
+        const token = localStorage.getItem('authToken')
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await request('get', '/dashboard', null, headers)
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data')
-        }
+        if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+        const result = res.data
 
-        const result = await response.json()
         setData({
           attendedPatients: result.attendedPatients || 0,
           newPatients: result.newPatients || 0,
@@ -38,7 +33,6 @@ const Cards = () => {
         console.error('Error fetching dashboard data:', error)
       }
     }
-
     fetchDashboardData()
   }, [])
 

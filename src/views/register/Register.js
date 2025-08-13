@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import useApi from '../../hooks/useApi'
 import { useNavigate } from 'react-router-dom'
 
 import Notifications from '../../components/Notifications'
@@ -51,48 +52,33 @@ const Register = () => {
 
   const [specialtiesData, setSpecialtiesData] = useState([])
 
+  const { request, loading: apiLoading } = useApi()
   useEffect(() => {
     const fetchProfessionalTypes = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/auth/professional-types',
-        )
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const data = await response.json()
-
-        setProfessionalTypes(data)
+        const { data } = await request('get', '/auth/professional-types')
+        setProfessionalTypes(data || [])
       } catch (error) {
         console.error('Error fetching professional types:', error)
       }
     }
-
     const fetchspecialties = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/auth/specialties',
-        )
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const data = await response.json()
-
-        setSpecialtiesData(data)
+        const { data } = await request('get', '/auth/specialties')
+        setSpecialtiesData(data || [])
       } catch (error) {
-        console.error('Error fetching professional types:', error)
+        console.error('Error fetching specialties:', error)
       }
     }
     const convertDefaultAvatarToBase64 = async () => {
       try {
         const response = await fetch(defaultAvatar)
         const blob = await response.blob()
-
         const reader = new FileReader()
         reader.onloadend = () => {
           setFormData((prevData) => ({
             ...prevData,
-            avatar: reader.result, // Base64 string
+            avatar: reader.result,
           }))
         }
         reader.readAsDataURL(blob)
@@ -100,10 +86,8 @@ const Register = () => {
         console.error('Error converting default avatar to Base64:', error)
       }
     }
-
     convertDefaultAvatarToBase64()
     fetchProfessionalTypes()
-
     fetchspecialties()
   }, [])
 
@@ -139,8 +123,6 @@ const Register = () => {
         Notifications.showAlert(setAlert, 'Invalid avatar format.', 'danger')
         return
       }
-
-      // Consolidar todos los datos en un único payload
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
@@ -150,38 +132,30 @@ const Register = () => {
         phone: formData.phone,
         birth_date: formData.birth_date,
         gender: formData.gender,
-        avatar: formData.avatar, // Base64 string
-        role_id: 3, // ID del rol (Asegúrate de usar el correcto para "Profesional")
+        avatar: formData.avatar,
+        role_id: 3,
         status: 'Active',
         professional_type_id: Number(formData.professional_type),
         biography: formData.biography,
         years_of_experience: Number(formData.years_experience),
         specialty_ids: [Number(formData.specialty), Number(formData.subspecialty)].filter(Boolean),
       }
-
-      const response = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/auth/register',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Error response from backend:', errorData)
-
-        if (errorData.issues && Array.isArray(errorData.issues)) {
-          // Muestra los errores específicos de validación en el frontend
-          const messages = errorData.issues.map((issue) => issue.message).join('\n')
+      const { success, error: apiError } = await request('post', '/auth/register', payload, {
+        'Content-Type': 'application/json',
+      })
+      if (!success) {
+        if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
+          const messages = apiError.issues.map((issue) => issue.message).join('\n')
           Notifications.showAlert(setAlert, messages, 'danger')
         } else {
-          Notifications.showAlert(setAlert, errorData.message || 'Registration failed.', 'danger')
+          Notifications.showAlert(
+            setAlert,
+            (apiError && apiError.message) || 'Registration failed.',
+            'danger',
+          )
         }
         return
       }
-
       Notifications.showAlert(setAlert, 'Registration successful!', 'success')
       setTimeout(() => navigate('/login'), 1000)
     } catch (error) {

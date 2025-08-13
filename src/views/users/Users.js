@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import useApi from '../../hooks/useApi'
 import UserFilter from '../../components/Filter'
 import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
@@ -56,16 +57,11 @@ export const Users = () => {
   const [specialties, setSpecialties] = useState([])
   const [formDataState, setFormData] = useState({})
 
+  const { request, loading: apiLoading } = useApi()
   useEffect(() => {
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/roles')
-      .then((res) => res.json())
-      .then(setRoles)
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/professional-types')
-      .then((res) => res.json())
-      .then(setProfessionalTypes)
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/specialties')
-      .then((res) => res.json())
-      .then(setSpecialties)
+    request('get', '/users/roles').then(({ data }) => setRoles(data || []))
+    request('get', '/users/professional-types').then(({ data }) => setProfessionalTypes(data || []))
+    request('get', '/users/specialties').then(({ data }) => setSpecialties(data || []))
   }, [])
 
   useEffect(() => {
@@ -127,35 +123,29 @@ export const Users = () => {
             ],
           }
         }
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/users',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(completeUser),
-          },
-        )
-
-        if (!response.ok) {
-          const errorData = await response.json()
-
-          if (errorData.issues && Array.isArray(errorData.issues)) {
-            // Mostrar errores específicos de Zod en la alerta
-            const messages = errorData.issues.map((issue) => issue.message).join('\n')
+        const {
+          data: savedUser,
+          success,
+          error: apiError,
+        } = await request('post', '/users', completeUser, {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        })
+        if (!success) {
+          if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
+            const messages = apiError.issues.map((issue) => issue.message).join('\n')
             Notifications.showAlert(setAlert, messages, 'danger')
           } else {
-            // Mostrar mensaje general de error
-            Notifications.showAlert(setAlert, errorData.message || 'Error creating user', 'danger')
+            Notifications.showAlert(
+              setAlert,
+              (apiError && apiError.message) || 'Error creating user',
+              'danger',
+            )
           }
-
-          return // Salir para no continuar con el flujo normal
+          return
         }
-
-        const savedUser = await response.json()
-
         setUsers((prev) => [...prev, savedUser])
         setFilteredUsers((prev) => [...prev, savedUser])
-
         Notifications.showAlert(setAlert, 'User created successfully', 'success')
       } catch (error) {
         console.error('Error saving user:', error)
@@ -328,32 +318,20 @@ export const Users = () => {
     if (userToDelete) {
       try {
         // Solicitud DELETE al backend
-        const response = await fetch(
-          `https://aplication-backend-production-872f.up.railway.app/api/users/${userToDelete.id}`,
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
-            },
-          },
-        )
-
-        if (response.ok) {
-          // Actualizar las listas en el frontend después de eliminar
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await request('delete', `/users/${userToDelete.id}`, null, headers)
+        if (res.success) {
           setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
           setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
           Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         } else {
-          const errorData = await response.json()
           Notifications.showAlert(
             setAlert,
-            errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
-            'error',
+            'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+            'danger',
           )
         }
       } catch (error) {
-        console.error('Error eliminando usuario:', error)
         Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
       } finally {
         setVisible(false)
@@ -449,22 +427,19 @@ export const Users = () => {
     setFilteredUsers(users)
   }
   useEffect(() => {
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/users', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    request('get', '/users', null, {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     })
-      .then((res) => {
-        if (res.status === 403 || res.status === 401) {
+      .then(({ data, status }) => {
+        if (status === 403 || status === 401) {
           navigate('/404')
-          return null
+          return
         }
-        return res.json()
-      })
-      .then((data) => {
         if (!data) return
         const normalizedUsers = data.map((user) => ({
           ...user,
-          id: String(user.id), // asegura que todos los IDs sean string
+          id: String(user.id),
         }))
         setUsers(normalizedUsers)
         setFilteredUsers(normalizedUsers)

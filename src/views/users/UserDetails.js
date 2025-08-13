@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import useApi from '../../hooks/useApi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import './styles/UserDetails.css'
 import {
@@ -58,17 +59,15 @@ const UserDetails = () => {
   const [roles, setRoles] = useState([])
   const token = localStorage.getItem('authToken')
 
+  const { request, loading: apiLoading } = useApi()
   useEffect(() => {
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/roles')
-      .then((res) => res.json())
-      .then(setRoles)
+    request('get', '/users/roles').then(({ data }) => setRoles(data || []))
   }, [])
   const handleFieldsDisabled = () => {
     setFieldsDisabled(!fieldsDisabled)
   }
   const save = async () => {
     try {
-      // Obtener datos actualizados del formulario
       const updatedFields = {
         first_name: document.getElementById('firstName').value.trim(),
         last_name: document.getElementById('lastName').value.trim(),
@@ -76,41 +75,27 @@ const UserDetails = () => {
         address: document.getElementById('address').value.trim(),
         phone: document.getElementById('phone').value.trim(),
       }
-
-      // Enviar solicitud PUT al backend
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/users/${user.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Añade token si es necesario
-          },
-          body: JSON.stringify(updatedFields),
-        },
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Error response from backend:', errorData)
-
-        if (errorData.issues && Array.isArray(errorData.issues)) {
-          // Muestra los errores específicos de validación en el frontend
-          const messages = errorData.issues.map((issue) => issue.message).join('\n')
+      const {
+        data: result,
+        success,
+        error: apiError,
+      } = await request('put', `/users/${user.id}`, updatedFields, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (!success) {
+        if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
+          const messages = apiError.issues.map((issue) => issue.message).join('\n')
           Notifications.showAlert(setAlert, messages, 'danger')
         } else {
           Notifications.showAlert(
             setAlert,
-            errorData.message || 'Error al actualizar el usuario.',
+            (apiError && apiError.message) || 'Error al actualizar el usuario.',
             'danger',
           )
         }
         return
       }
-
-      const result = await response.json()
-
-      // Actualizar usuario en el frontend
       setUser(result.user)
       Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
     } catch (error) {
@@ -121,7 +106,7 @@ const UserDetails = () => {
         'danger',
       )
     } finally {
-      handleFieldsDisabled() // Asegúrate de deshabilitar los campos después de la operación
+      handleFieldsDisabled()
     }
   }
 
@@ -129,57 +114,38 @@ const UserDetails = () => {
   useEffect(() => {
     setUser(null)
     setLoading(true)
-
-    // Obtener el ID de la URL (React Router v6+)
     let userId = null
     if (params && params['*']) {
-      // Si usas rutas catch-all
       userId = params['*']
     } else if (params && params.id) {
       userId = params.id
     } else {
-      // Extraer el ID del hash si es necesario
       const hash = window.location.hash
       const match = hash.match(/\/users\/(\d+)/)
       if (match) {
         userId = match[1]
       }
     }
-
     if (!userId && location.state && location.state.user) {
       userId = location.state.user.id
     }
-
     if (!userId) {
       setLoading(false)
       setUser(null)
       return
     }
-
-    // Corregir si userId viene como 'users/69' o similar
     if (typeof userId === 'string' && userId.startsWith('users/')) {
       userId = userId.replace('users/', '')
     }
-
-    fetch(`https://aplication-backend-production-872f.up.railway.app/api/users/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+    request('get', `/users/${userId}`, null, {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     })
-      .then((res) => {
-        if (res.status === 403 || res.status === 401) {
+      .then(({ data, status }) => {
+        if (status === 403 || status === 401) {
           navigate('/404')
-          return null
+          return
         }
-        if (!res.ok) {
-          navigate('/404')
-          return null
-        }
-        return res.json()
-      })
-      .then((data) => {
         if (!data) return
         setUser(data.user ? data.user : data)
       })
@@ -204,40 +170,26 @@ const UserDetails = () => {
     }
 
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/users/password/${user.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Agrega el token si es necesario
-          },
-          body: JSON.stringify({ currentPassword, newPassword }),
-        },
+      const { success, error: apiError } = await request(
+        'put',
+        `/users/password/${user.id}`,
+        { currentPassword, newPassword },
+        { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
-
-      // Lee el cuerpo de la respuesta una sola vez
-      const result = await response.json()
-
-      if (!response.ok) {
-        if (result.issues && Array.isArray(result.issues)) {
-          // Errores específicos de validación de Zod
-          const messages = result.issues.map((issue) => issue.message).join('\n')
+      if (!success) {
+        if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
+          const messages = apiError.issues.map((issue) => issue.message).join('\n')
           Notifications.showAlert(setAlert, messages, 'danger')
         } else {
-          // Otros errores generales
           Notifications.showAlert(
             setAlert,
-            result.message || 'Error al cambiar la contraseña.',
+            (apiError && apiError.message) || 'Error al cambiar la contraseña.',
             'danger',
           )
         }
         return
       }
-
       Notifications.showAlert(setAlert, 'La contraseña se ha actualizado correctamente.', 'success')
-
-      // Limpia los campos y cierra el modal
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')
@@ -250,30 +202,25 @@ const UserDetails = () => {
   const handleToggleStatus = async (userId) => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/users/status/${userId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
-          },
-          body: JSON.stringify({ newStatus: updatedStatus }),
-        },
+      const {
+        data: result,
+        success,
+        error: apiError,
+      } = await request(
+        'put',
+        `/users/status/${userId}`,
+        { newStatus: updatedStatus },
+        { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setUser(result.user) // Asegúrate de que `result.user` contenga los datos actualizados
+      if (success) {
+        setUser(result.user)
         Notifications.showAlert(
           setAlert,
           `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
           'success',
         )
       } else {
-        const errorMessage = result.message || 'Failed to update user status.'
+        const errorMessage = (apiError && apiError.message) || 'Failed to update user status.'
         Notifications.showAlert(setAlert, errorMessage, 'danger')
       }
     } catch (error) {
@@ -284,26 +231,23 @@ const UserDetails = () => {
 
   const handleDeleteUser = async () => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/users/${user.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`, // Si usas autenticación
-          },
-        },
-      )
-
-      const result = await response.json()
-
-      if (response.ok) {
-        Notifications.showAlert(setAlert, result.message || 'User deleted successfully.', 'success')
+      const {
+        success,
+        error: apiError,
+        data: result,
+      } = await request('delete', `/users/${user.id}`, null, { Authorization: `Bearer ${token}` })
+      if (success) {
+        Notifications.showAlert(
+          setAlert,
+          (result && result.message) || 'User deleted successfully.',
+          'success',
+        )
         setDeleteModalVisible(false)
-        navigate('/users') // Navega de regreso a la lista de usuarios
+        navigate('/users')
       } else {
         Notifications.showAlert(
           setAlert,
-          result.message || 'Failed to delete user. Please try again.',
+          (apiError && apiError.message) || 'Failed to delete user. Please try again.',
           'danger',
         )
       }

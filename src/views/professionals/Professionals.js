@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import useApi from '../../hooks/useApi'
 import UserFilter from '../../components/Filter'
 import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
@@ -31,6 +32,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatDate } from '../../utils/dateUtils'
 
 export const Professionls = () => {
+  const { request, loading: apiLoading } = useApi()
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])
@@ -55,24 +57,18 @@ export const Professionls = () => {
 
   const fetchProfessionals = async () => {
     try {
-      const response = await fetch(
-        'https://aplication-backend-production-872f.up.railway.app/api/professionals',
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        },
-      )
-
-      if (response.status === 403 || response.status === 401) {
+      const { data, success, status } = await request('get', '/professionals', null, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (status === 403 || status === 401) {
         navigate('/404')
         return
       }
-
-      if (response.ok) {
-        const data = await response.json()
+      if (success && Array.isArray(data)) {
         const normalizedUsers = data.map((user) => ({
           ...user,
-          id: String(user.professional_id), // Ajusta el campo según corresponda
+          id: String(user.professional_id),
         }))
         setUsers(normalizedUsers)
         setFilteredUsers(normalizedUsers)
@@ -88,31 +84,24 @@ export const Professionls = () => {
 
   useEffect(() => {
     // Cargar tipos de profesional y especialidades
-    fetch('https://aplication-backend-production-872f.up.railway.app/api/users/professional-types')
-      .then((res) => res.json())
-      .then(setProfessionalTypes)
+    // Tipos de profesional
+    request('get', '/users/professional-types').then(({ data }) => setProfessionalTypes(data || []))
+    // Especialidades y subespecialidades
     const fetchSpecialties = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/users/specialties',
-        )
-        const data = await response.json()
-
+        const { data } = await request('get', '/users/specialties')
         // Filtrar y mapear specialties y subspecialties
-        const specialtyOptions = data
-          .filter((s) => s.type === 'specialty') // Filtrar solo las specialties
-          .map((s) => ({ label: s.name, value: s.id })) // Transformar en opciones
-
-        const subspecialtyOptions = data
-          .filter((s) => s.type === 'subspecialty') // Filtrar solo las subspecialties
-          .map((s) => ({ label: s.name, value: s.id })) // Transformar en opciones
-
+        const specialtyOptions = (data || [])
+          .filter((s) => s.type === 'specialty')
+          .map((s) => ({ label: s.name, value: s.id }))
+        const subspecialtyOptions = (data || [])
+          .filter((s) => s.type === 'subspecialty')
+          .map((s) => ({ label: s.name, value: s.id }))
         setSpecialties({ specialties: specialtyOptions, subspecialties: subspecialtyOptions })
       } catch (error) {
         console.error('Error fetching specialties:', error)
       }
     }
-
     fetchSpecialties()
   }, [])
   useEffect(() => {
@@ -138,40 +127,39 @@ export const Professionls = () => {
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/professionals',
+        const {
+          data,
+          success,
+          error: apiError,
+        } = await request(
+          'post',
+          '/professionals',
           {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({
-              user: {
-                first_name: formData.first_name,
-                last_name: formData.last_name,
-                email: formData.email,
-                password: formData.password,
-                address: formData.address,
-                phone: formData.phone,
-                birth_date: formData.birth_date,
-                gender: formData.gender,
-                role_id: 3,
-                status: formData.status,
-                avatar: formData.avatar || formDataState.avatar || null,
-              },
-              professional: {
-                professional_type_id: formData.professional_type_id,
-                biography: formData.biography,
-                years_of_experience: Number(formData.years_of_experience),
-              },
-              specialties: [formData.specialty_id, formData.subspecialty_id].filter(Boolean),
-            }),
+            user: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              email: formData.email,
+              password: formData.password,
+              address: formData.address,
+              phone: formData.phone,
+              birth_date: formData.birth_date,
+              gender: formData.gender,
+              role_id: 3,
+              status: formData.status,
+              avatar: formData.avatar || formDataState.avatar || null,
+            },
+            professional: {
+              professional_type_id: formData.professional_type_id,
+              biography: formData.biography,
+              years_of_experience: Number(formData.years_of_experience),
+            },
+            specialties: [formData.specialty_id, formData.subspecialty_id].filter(Boolean),
           },
+          { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         )
-
-        if (!response.ok) {
-          const errorData = await response.json()
-
-          if (errorData.issues && Array.isArray(errorData.issues)) {
-            const messages = errorData.issues
+        if (!success) {
+          if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
+            const messages = apiError.issues
               .map((issue) =>
                 Array.isArray(issue.path)
                   ? `${issue.path.join('.')} - ${issue.message}`
@@ -182,16 +170,13 @@ export const Professionls = () => {
           } else {
             Notifications.showAlert(
               setAlert,
-              errorData.message || 'Error creating professional',
+              (apiError && apiError.message) || 'Error creating professional',
               'danger',
             )
           }
-          return // Detener el flujo
+          return
         }
-
-        const data = await response.json()
         Notifications.showAlert(setAlert, 'Professional created successfully!', 'success')
-        // Actualizar la lista de usuarios
         await fetchProfessionals()
         setUsers((prev) => [...prev, data])
       } catch (error) {
@@ -326,23 +311,14 @@ export const Professionls = () => {
   const confirmDelete = async () => {
     if (userToDelete) {
       try {
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
         // Solicitud DELETE al backend
-        const response = await fetch(
-          `https://aplication-backend-production-872f.up.railway.app/api/professionals/${userToDelete.professional_id}`,
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
-            },
-          },
-        )
-
-        if (response.ok) {
+        const res = await request('DELETE', `/professionals/${userToDelete.id}`, null, headers)
+        if (res.success) {
           await fetchProfessionals()
           Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         } else {
-          const errorData = await response.json()
+          const errorData = res.data || {}
           Notifications.showAlert(
             setAlert,
             errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
@@ -351,7 +327,7 @@ export const Professionls = () => {
         }
       } catch (error) {
         console.error('Error eliminando usuario:', error)
-        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
+        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'danger')
       } finally {
         setVisible(false)
         setUserToDelete(null)
@@ -361,17 +337,12 @@ export const Professionls = () => {
 
   const handleInfo = async (user) => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${user.professional_id}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        },
-      )
-      const data = await response.json()
-      setselectedProfessional(data) // Asignar la información completa del profesional
-
-      setInfoVisible(true) // Mostrar el modal de información
+      const { data } = await request('get', `/professionals/${user.professional_id}`, null, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      setselectedProfessional(data)
+      setInfoVisible(true)
     } catch (error) {
       console.error('Error fetching professional details:', error)
     }
@@ -379,23 +350,12 @@ export const Professionls = () => {
 
   const handleEdit = async (user) => {
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${user.id}`,
-        {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        },
-      )
-
-      if (!response.ok) {
-        throw new Error('Error fetching professional details')
-      }
-
-      const professionalData = await response.json()
-      // Guardar los datos obtenidos en localStorage
-      localStorage.setItem('selectedProfessional', JSON.stringify(professionalData))
-
-      // Navegar usando los datos obtenidos
+      const { data, success } = await request('get', `/professionals/${user.id}`, null, {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      })
+      if (!success) throw new Error('Error fetching professional details')
+      localStorage.setItem('selectedProfessional', JSON.stringify(data))
       navigate(`/professionals/${user.id}`)
     } catch (error) {
       console.error('Error fetching professional details for edit:', error)

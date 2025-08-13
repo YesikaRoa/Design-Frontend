@@ -4,12 +4,14 @@ import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
 import Notifications from '../../components/Notifications'
+import useApi from '../../hooks/useApi'
+import axios from 'axios'
 import AsyncSelect from 'react-select/async'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import ModalDownloadPDF from '../../components/ModalDownloadPDF'
-
+import debounce from 'lodash/debounce'
 import '../appointments/styles/appointments.css'
 import '../users/styles/filter.css'
 import '../users/styles/users.css'
@@ -43,10 +45,9 @@ function parseJwt(token) {
   }
 }
 
-const API_URL = 'https://aplication-backend-production-872f.up.railway.app/api/medical_record'
-const getToken = () => localStorage.getItem('authToken')
-
 const MedicalHistory = () => {
+  let token = localStorage.getItem('authToken')
+
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [alert, setAlert] = useState(null)
@@ -58,6 +59,7 @@ const MedicalHistory = () => {
     startDate: null,
     endDate: null,
   })
+
   const [visible, setVisible] = useState(false)
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedMedicalHistory, setselectedMedicalHistory] = useState(null)
@@ -65,21 +67,17 @@ const MedicalHistory = () => {
   const [selectedPatient, setSelectedPatient] = useState(null)
   const ModalAddRef = useRef()
   // Obtener el rol del token
-  const authToken = getToken()
-  const tokenPayload = authToken ? parseJwt(authToken) : {}
-
+  const tokenPayload = token ? parseJwt(token) : {}
+  const headers = token ? { Authorization: `Bearer ${token}` } : {}
+  const { request, fetchAppointmentsForSelect } = useApi()
   // Mueve fetchData fuera del useEffect para que esté disponible globalmente
   const fetchData = async () => {
     try {
-      // Solo obtenemos los historiales médicos del backend nuevo
-      const medicalRecordsRes = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      })
-      if (!medicalRecordsRes.ok) throw new Error('Failed to fetch data')
-      const medicalRecordsData = await medicalRecordsRes.json()
-      // El backend ya devuelve los nombres completos
-      setMedicalHistory(medicalRecordsData)
-      setFilteredMedicalHistory(medicalRecordsData)
+      const { data, success } = await request('get', '/medical_record', null, headers)
+
+      if (!success || !data) throw new Error('Failed to fetch data')
+      setMedicalHistory(data)
+      setFilteredMedicalHistory(data)
     } catch (error) {
       console.error('Error fetching data:', error)
     }
@@ -91,9 +89,10 @@ const MedicalHistory = () => {
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'MedicalHistory') {
-      // Usa directamente el objeto seleccionado
+      // Aquí usas directamente el objeto completo de la cita seleccionado
       const selectedAppointment = formData.appointment_raw
 
+      // Validar que exista y sea un objeto válido
       if (!selectedAppointment || typeof selectedAppointment !== 'object') {
         console.error(
           'No se encontró la cita seleccionada o el objeto es inválido.',
@@ -101,12 +100,14 @@ const MedicalHistory = () => {
         )
         return
       }
-      // Mapeo defensivo de campos
+
+      // Mapeo defensivo para extraer los ids requeridos
       const patientId = Number(selectedAppointment.patient_id ?? selectedAppointment.patient?.id)
       const professionalId = Number(
         selectedAppointment.professional_id ?? selectedAppointment.professional?.id,
       )
       const appointmentId = Number(selectedAppointment.id ?? selectedAppointment.appointment_id)
+
       if (!patientId || !professionalId || !appointmentId) {
         console.error('Faltan campos requeridos en la cita seleccionada:', {
           patientId,
@@ -116,7 +117,8 @@ const MedicalHistory = () => {
         })
         return
       }
-      // Convierte la imagen a base64 si existe y es un File o ya es base64
+
+      // Convertir la imagen adjunta a base64 si es necesario
       let base64Image = null
       if (formData.attachment_image instanceof File) {
         base64Image = await fileToBase64(formData.attachment_image)
@@ -128,7 +130,8 @@ const MedicalHistory = () => {
       } else {
         base64Image = null
       }
-      // Crea el nuevo historial médico
+
+      // Construir el objeto para crear el historial médico
       const newMedicalHistory = {
         patient_id: patientId,
         professional_id: professionalId,
@@ -136,19 +139,12 @@ const MedicalHistory = () => {
         general_notes: formData.general_notes || '',
         image: base64Image,
       }
+
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken()}`,
-          },
-          body: JSON.stringify(newMedicalHistory),
-        })
-        if (!response.ok) throw new Error('Failed to save medical history.')
-        // Notificación de éxito
+        const { success } = await request('post', '/medical_record', newMedicalHistory, headers)
+        if (!success) throw new Error('Failed to save medical history.')
+
         Notifications.showAlert(setAlert, 'Medical history added successfully.', 'success', 5000)
-        // Espera a que el backend procese y luego recarga la lista completa
         ModalAddRef.current.close()
         await fetchData()
       } catch (error) {
@@ -209,67 +205,69 @@ const MedicalHistory = () => {
     },
   ]
 
-  // Nueva función para cargar citas desde el backend con token y búsqueda
-  const loadAppointments = async (inputValue = '') => {
-    try {
-      const res = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/appointments?search=${encodeURIComponent(inputValue)}`,
-        {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        },
-      )
-      if (!res.ok) throw new Error('No se pudieron cargar las citas')
-
-      const data = await res.json()
-
-      // El value ahora es el objeto completo de la cita
-      return data.map((appt) => ({
-        label: `${appt.id} - Paciente: ${appt.patient_full_name} - Profesional: ${appt.professional_full_name} (${appt.reason_for_visit || 'Motivo no especificado'})`,
-        value: appt, // value es el objeto completo
-      }))
-    } catch (error) {
-      console.error('Error cargando citas:', error)
-      return []
-    }
-  }
-
-  // Componente seguro para hooks
   const AppointmentAsyncSelect = ({ value, onChange, placeholder }) => {
+    const { request, loading } = useApi() // Llamamos al hook aquí
     const [selectValue, setSelectValue] = useState(null)
+
+    const loadAppointments = async (inputValue = '') => {
+      const token = localStorage.getItem('authToken')
+
+      if (!token) {
+        console.error('Error: No se encontró el token de autenticación.')
+        return []
+      }
+
+      try {
+        const res = await request(
+          'get',
+          `/appointments?search=${encodeURIComponent(inputValue)}`,
+          null,
+          { Authorization: `Bearer ${token}` },
+        )
+
+        if (!res.success) {
+          throw new Error(res.message || 'No se pudieron cargar las citas')
+        }
+
+        const data = res.data
+
+        // Retornamos el formato esperado directamente
+        return data.map((appt) => ({
+          label: `${appt.id} - Paciente: ${appt.patient_full_name} - Profesional: ${appt.professional_full_name} (${appt.reason_for_visit || 'Motivo no especificado'})`,
+          value: appt, // value es el objeto completo, como querías
+        }))
+      } catch (error) {
+        console.error('Error cargando citas:', error)
+        return []
+      }
+    }
 
     useEffect(() => {
       if (value && typeof value === 'object') {
         setSelectValue({
           label: `${value.id} - Paciente: ${value.patient_full_name} - Profesional: ${value.professional_full_name} (${value.reason_for_visit || 'Motivo no especificado'})`,
-          value: value.id,
-          _full: value, // guardamos el objeto completo para el onChange
+          value: value,
         })
       } else {
         setSelectValue(null)
       }
     }, [value])
 
+    const handleOnChange = (option) => {
+      setSelectValue(option)
+      onChange(option ? option.value : null) // Devuelve el objeto completo
+    }
+
     return (
       <AsyncSelect
         cacheOptions
-        loadOptions={async (inputValue) => {
-          const options = await loadAppointments(inputValue)
-          // value: id, _full: objeto completo
-          return options.map((opt) => ({
-            label: opt.label,
-            value: opt.value.id,
-            _full: opt.value,
-          }))
-        }}
-        defaultOptions={true}
+        loadOptions={loadAppointments}
+        defaultOptions
         value={selectValue}
-        onChange={(option) => {
-          setSelectValue(option)
-          // Pasa el id como appointment_id y el objeto completo como _selectedAppointment
-          onChange(option ? option._full : null)
-        }}
+        onChange={handleOnChange}
         placeholder={placeholder || 'Seleccione una cita'}
         isClearable
+        isLoading={loading} // Usas el estado de carga del hook para mostrar el spinner
         styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
       />
     )
@@ -320,11 +318,8 @@ const MedicalHistory = () => {
 
   const handleDelete = async (medicalHistory) => {
     try {
-      const response = await fetch(`${API_URL}/${medicalHistory.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${getToken()}` },
-      })
-      if (response.ok) {
+      const res = await request('delete', `/medical_record/${medicalHistory.id}`, null, headers)
+      if (res.success) {
         Notifications.showAlert(setAlert, 'medicalHistory deleted successfully.', 'success', 5000)
         setMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
         setFilteredMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
@@ -343,19 +338,10 @@ const MedicalHistory = () => {
 
   const handleEdit = async (medicalHistory) => {
     try {
-      const res = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/medical_record/${medicalHistory.id}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${getToken()}`,
-          },
-        },
-      )
-      if (res.ok) {
-        const data = await res.json()
-        navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory: data } })
+      const res = await request('get', `/medical_record/${medicalHistory.id}`, null, headers)
+
+      if (res.success && res.data) {
+        navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory: res.data } })
       } else {
         navigate(`/medicalHistory/${medicalHistory.id}`, { state: { medicalHistory } })
       }
@@ -470,13 +456,13 @@ const MedicalHistory = () => {
   // AsyncSelect para pacientes asociados al profesional logueado, usando nueva URL del backend
   const loadPatients = async (inputValue = '') => {
     try {
-      const res = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/pdf/my-patients?search=${encodeURIComponent(inputValue)}`,
-        { headers: { Authorization: `Bearer ${getToken()}` } },
+      const { data, success } = await request(
+        'get',
+        `/pdf/my-patients?search=${encodeURIComponent(inputValue)}`,
+        null,
+        headers,
       )
-      if (!res.ok) throw new Error('No se pudieron cargar los pacientes')
-      const data = await res.json()
-      // data debe ser un array de pacientes con id y nombre completo
+      if (!success || !Array.isArray(data)) throw new Error('No se pudieron cargar los pacientes')
       const filtered = data
         .filter((patient) =>
           inputValue
@@ -511,17 +497,13 @@ const MedicalHistory = () => {
         )
         return
       }
-      const res = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/pdf?patient_id=${selectedPatient.value}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        },
-      )
-      if (!res.ok) throw new Error('No se pudo descargar el PDF')
-      const blob = await res.blob()
+      // Usar axios directamente para obtener el blob
+      const response = await axios.get(`/pdf?patient_id=${selectedPatient.value}`, {
+        baseURL: 'https://aplication-backend-production-5657.up.railway.app/api',
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const blob = response.data
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url

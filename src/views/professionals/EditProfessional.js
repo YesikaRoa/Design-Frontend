@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import useApi from '../../hooks/useApi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import '../users/styles/UserDetails.css'
 import { useTranslation } from 'react-i18next'
@@ -47,21 +48,18 @@ const UserDetails = () => {
   const token = localStorage.getItem('authToken')
   const { id } = useParams()
 
+  const { request, loading: apiLoading } = useApi()
   const fetchProfessional = async (profId) => {
     setLoading(true)
     try {
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${profId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      )
-      if (response.status === 403 || response.status === 401) {
+      const { data, status, success } = await request('get', `/professionals/${profId}`, null, {
+        Authorization: `Bearer ${token}`,
+      })
+      if (status === 403 || status === 401) {
         navigate('/404')
         return
       }
-      if (!response.ok) throw new Error('Error fetching professional')
-      const data = await response.json()
+      if (!success || !data) throw new Error('Error fetching professional')
       setProfessional(data)
     } catch (error) {
       console.error(error)
@@ -75,36 +73,22 @@ const UserDetails = () => {
 
     const fetchSpecialties = async () => {
       try {
-        const response = await fetch(
-          'https://aplication-backend-production-872f.up.railway.app/api/auth/specialties',
-        )
-        const data = await response.json()
-
-        const specialtyList = data
+        const { data } = await request('get', '/auth/specialties')
+        const specialtyList = (data || [])
           .filter((item) => item.type === 'specialty')
-          .map((s) => ({
-            label: s.name,
-            value: s.id,
-          }))
-
-        const subspecialtyList = data
+          .map((s) => ({ label: s.name, value: s.id }))
+        const subspecialtyList = (data || [])
           .filter((item) => item.type === 'subspecialty')
-          .map((s) => ({
-            label: s.name,
-            value: s.id,
-          }))
-
+          .map((s) => ({ label: s.name, value: s.id }))
         setSpecialties(specialtyList)
         setSubspecialties(subspecialtyList)
       } catch (error) {
         console.error('Error fetching specialties:', error)
       }
     }
-
     fetchSpecialties()
-  }, [id, token]) // <-- importante agregar id y token como dependencias
+  }, [id, token])
 
-  // Otro useEffect para cuando specialties y professional estén listos
   useEffect(() => {
     if (professional && specialties.length > 0 && subspecialties.length > 0) {
       if (Array.isArray(professional.specialties)) {
@@ -142,19 +126,15 @@ const UserDetails = () => {
 
   const save = async () => {
     try {
-      // Combinar specialties y subspecialties
       const combinedSpecialties = [
         ...selectedSpecialties.map((s) => s.value),
         ...selectedSubspecialties.map((s) => s.value),
       ]
-
-      // Datos del profesional y usuario
       const updatedProfessional = {
         professional_type_id: professional.professional_type_id || null,
         biography: professional.biography || null,
         years_of_experience: professional.years_of_experience || 0,
       }
-
       const updatedUser = {
         first_name: professional.first_name || '',
         last_name: professional.last_name || '',
@@ -162,33 +142,24 @@ const UserDetails = () => {
         address: professional.address || '',
         phone: professional.phone || '',
       }
-
-      // Asignar specialties directamente como arreglo
-      const specialties = combinedSpecialties
-
-      // Hacer la petición al backend
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${professional.id}`,
+      const specialtiesArr = combinedSpecialties
+      const {
+        data: result,
+        success,
+        error: apiError,
+      } = await request(
+        'put',
+        `/professionals/${professional.id}`,
         {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            professional: updatedProfessional,
-            specialties,
-            ...updatedUser,
-          }),
+          professional: updatedProfessional,
+          specialties: specialtiesArr,
+          ...updatedUser,
         },
+        { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
-
-      if (!response.ok) {
-        const errorData = await response.json()
-
-        // Manejo de errores de validación Zod
-        if (errorData.issues && Array.isArray(errorData.issues)) {
-          const messages = errorData.issues
+      if (!success) {
+        if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
+          const messages = apiError.issues
             .map((issue) =>
               Array.isArray(issue.path)
                 ? `${issue.path.join('.')} - ${issue.message}`
@@ -199,22 +170,16 @@ const UserDetails = () => {
         } else {
           Notifications.showAlert(
             setAlert,
-            errorData.message || 'Error updating professional and user data.',
+            (apiError && apiError.message) || 'Error updating professional and user data.',
             'danger',
           )
         }
-        return // Detener el flujo
+        return
       }
-
-      const result = await response.json()
       fetchProfessional(professional.id)
-
-      // Actualizar estado
       setProfessional(result.professional)
       setUser(result.user)
-
       const specialtyIds = (result.specialties || []).map((s) => (typeof s === 'object' ? s.id : s))
-
       setSelectedSpecialties(
         specialtyIds.map((id) => {
           const found = specialties.find((s) => s.value === id)
@@ -258,30 +223,25 @@ const UserDetails = () => {
   const handleToggleStatus = async (userId) => {
     try {
       const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/professionals/status/${userId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Asegúrate de incluir el token si es necesario
-          },
-          body: JSON.stringify({ newStatus: updatedStatus }),
-        },
+      const {
+        data: result,
+        success,
+        error: apiError,
+      } = await request(
+        'put',
+        `/professionals/status/${userId}`,
+        { newStatus: updatedStatus },
+        { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
-
-      const result = await response.json()
-
-      if (response.ok) {
-        setUser(result.user) // Asegúrate de que `result.user` contenga los datos actualizados
+      if (success) {
+        setUser(result.user)
         Notifications.showAlert(
           setAlert,
           `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
           'success',
         )
       } else {
-        const errorMessage = result.message || 'Failed to update user status.'
+        const errorMessage = (apiError && apiError.message) || 'Failed to update user status.'
         Notifications.showAlert(setAlert, errorMessage, 'danger')
       }
     } catch (error) {
@@ -292,45 +252,27 @@ const UserDetails = () => {
 
   const confirmDelete = async () => {
     try {
-      // Solicitud DELETE al backend
-      const response = await fetch(
-        `https://aplication-backend-production-872f.up.railway.app/api/professionals/${id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Si usas autenticación basada en tokens
-          },
-        },
-      )
-
-      if (response.status === 403 || response.status === 401) {
-        navigate('/404')
-        return
-      }
-
-      if (response.ok) {
-        Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
-        navigate('/professionals/')
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('delete', `/professionals/${professional.id}`, null, headers)
+      if (res.success) {
+        Notifications.showAlert(setAlert, 'Professional eliminado con éxito.', 'success')
+        setDeleteModalVisible(false)
+        navigate('/professionals')
       } else {
-        const errorData = await response.json()
+        const errorData = res.data || {}
         Notifications.showAlert(
           setAlert,
-          errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+          errorData.message || 'No se pudo eliminar el Professional.',
           'danger',
         )
       }
     } catch (error) {
-      console.error('Error eliminando usuario:', error)
-      Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
-      navigate('/404')
-    } finally {
-      setDeleteModalVisible(false)
-      setUserToDelete(null)
+      console.error('Error deleting user:', error)
+      Notifications.showAlert(setAlert, 'Ocurrió un error al eliminar el professional', 'danger')
     }
   }
 
-  const openDeleteModal = (userId) => {
+  const openDeleteModal = () => {
     setDeleteModalVisible(true)
   }
 
@@ -378,10 +320,7 @@ const UserDetails = () => {
                   ? t('Deactivate Professional')
                   : t('Activate Professional')}
               </span>
-              <span
-                className="card-actions-link delete-user"
-                onClick={() => openDeleteModal(user.id)}
-              >
+              <span className="card-actions-link delete-user" onClick={openDeleteModal}>
                 <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
                 {t('Delete Professional')}
               </span>
