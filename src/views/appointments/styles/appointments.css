@@ -63,7 +63,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2000;
+  z-index: 2000 !important; /* Asegura que el modal esté por encima de otros elementos */
   background: white;
   border-radius: 0.75rem;
   padding: 1.5rem;
