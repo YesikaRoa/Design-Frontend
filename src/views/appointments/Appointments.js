@@ -171,17 +171,10 @@ const Appointments = () => {
             onChange(newValue ? newValue.toISOString() : '')
           }}
           format="dd/MM/yyyy HH:mm"
-          disablePortal={false} // ✅ permitir portal evita el loop de foco
-          disableEnforceFocus={true}
           slotProps={{
             popper: {
-              disablePortal: false, // ✅ monta el calendario en <body>, fuera del modal
-              modifiers: [
-                {
-                  name: 'preventOverflow',
-                  enabled: true,
-                },
-              ],
+              disablePortal: true, // ✅ fuerza que el popper viva DENTRO del modal
+              modifiers: [{ name: 'preventOverflow', enabled: true }],
             },
             textField: {
               variant: 'standard',
@@ -191,7 +184,7 @@ const Appointments = () => {
               placeholder,
             },
           }}
-          reduceAnimations // ⚡ mejora rendimiento en producción
+          reduceAnimations
         />
       </LocalizationProvider>
     ),
