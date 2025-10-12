@@ -137,7 +137,7 @@ const MedicalHistory = () => {
         professional_id: professionalId,
         appointment_id: appointmentId,
         general_notes: formData.general_notes || '',
-        image: base64Image,
+        image: base64Image ? base64Image : null,
       }
 
       try {
@@ -300,6 +300,7 @@ const MedicalHistory = () => {
           value={value ? new Date(value) : null}
           onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
           format="dd/MM/yyyy HH:mm"
+          disablePortal
           slotProps={{
             textField: {
               variant: 'standard',
