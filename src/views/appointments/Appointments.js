@@ -171,8 +171,17 @@ const Appointments = () => {
             onChange(newValue ? newValue.toISOString() : '')
           }}
           format="dd/MM/yyyy HH:mm"
-          disablePortal
+          disablePortal={false} // ✅ permitir portal evita el loop de foco
           slotProps={{
+            popper: {
+              disablePortal: false, // ✅ monta el calendario en <body>, fuera del modal
+              modifiers: [
+                {
+                  name: 'preventOverflow',
+                  enabled: true,
+                },
+              ],
+            },
             textField: {
               variant: 'standard',
               fullWidth: true,
@@ -181,9 +190,11 @@ const Appointments = () => {
               placeholder,
             },
           }}
+          reduceAnimations // ⚡ mejora rendimiento en producción
         />
       </LocalizationProvider>
     ),
+
     has_medical_record: ({ value, onChange, placeholder }) => (
       <select
         className="form-select"
