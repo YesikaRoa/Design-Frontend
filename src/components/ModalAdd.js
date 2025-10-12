@@ -233,7 +233,13 @@ const ModalAdd = forwardRef(
     }
 
     return (
-      <CModal alignment="center" visible={visible} onClose={() => setVisible(false)}>
+      <CModal
+        alignment="center"
+        visible={visible}
+        onClose={() => setVisible(false)}
+        portal={false}
+        backdrop="static"
+      >
         <CModalHeader className="custom-modal-header">
           <CModalTitle className="custom-modal-title">{title}</CModalTitle>
         </CModalHeader>
