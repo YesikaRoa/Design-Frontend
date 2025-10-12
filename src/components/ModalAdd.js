@@ -238,7 +238,6 @@ const ModalAdd = forwardRef(
         visible={visible}
         onClose={() => setVisible(false)}
         backdrop="static"
-        portal={false} // ⛔️ fuerza el contenido dentro del body
         scrollable
       >
         <CModalHeader className="custom-modal-header">
