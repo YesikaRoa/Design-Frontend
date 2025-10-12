@@ -171,6 +171,7 @@ const Appointments = () => {
             onChange(newValue ? newValue.toISOString() : '')
           }}
           format="dd/MM/yyyy HH:mm"
+          disablePortal
           slotProps={{
             textField: {
               variant: 'standard',
