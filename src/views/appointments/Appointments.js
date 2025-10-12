@@ -172,6 +172,7 @@ const Appointments = () => {
           }}
           format="dd/MM/yyyy HH:mm"
           disablePortal={false} // ✅ permitir portal evita el loop de foco
+          disableEnforceFocus={true}
           slotProps={{
             popper: {
               disablePortal: false, // ✅ monta el calendario en <body>, fuera del modal

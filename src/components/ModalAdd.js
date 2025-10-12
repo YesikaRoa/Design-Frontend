@@ -237,7 +237,6 @@ const ModalAdd = forwardRef(
         alignment="center"
         visible={visible}
         onClose={() => setVisible(false)}
-        portal={true}
         backdrop="static"
       >
         <CModalHeader className="custom-modal-header">
