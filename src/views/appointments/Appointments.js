@@ -173,7 +173,7 @@ const Appointments = () => {
           format="dd/MM/yyyy HH:mm"
           slotProps={{
             popper: {
-              disablePortal: false, // ✅ fuerza que el popper viva DENTRO del modal
+              disablePortal: true, // ✅ fuerza que el popper viva DENTRO del modal
               modifiers: [{ name: 'preventOverflow', enabled: true }],
             },
             textField: {

@@ -302,12 +302,17 @@ const MedicalHistory = () => {
           format="dd/MM/yyyy HH:mm"
           disablePortal
           slotProps={{
+            popper: {
+              disablePortal: true, // ✅ fuerza que el popper viva DENTRO del modal
+              modifiers: [{ name: 'preventOverflow', enabled: true }],
+            },
             textField: {
               variant: 'standard',
               fullWidth: true,
               placeholder,
             },
           }}
+          reduceAnimations
         />
       </LocalizationProvider>
     ),

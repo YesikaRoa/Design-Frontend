@@ -238,7 +238,7 @@ const ModalAdd = forwardRef(
         visible={visible}
         onClose={() => setVisible(false)}
         backdrop="static"
-        scrollable
+        portal={false}
       >
         <CModalHeader className="custom-modal-header">
           <CModalTitle className="custom-modal-title">{title}</CModalTitle>
