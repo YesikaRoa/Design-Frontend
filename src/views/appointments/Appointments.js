@@ -33,6 +33,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilInfo, cilTrash, cilPlus } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
+import { jwtDecode } from 'jwt-decode'
 
 const Appointments = () => {
   const navigate = useNavigate()
@@ -54,6 +55,7 @@ const Appointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const ModalAddRef = useRef()
   const token = localStorage.getItem('authToken')
+  const user = token ? jwtDecode(token) : null
   const { request, loading } = useApi()
 
   const fetchAppointments = async () => {
@@ -85,6 +87,7 @@ const Appointments = () => {
   const loadOptions = async (entity, inputValue) => {
     try {
       const token = localStorage.getItem('authToken')
+
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request(
         'get',
@@ -104,10 +107,13 @@ const Appointments = () => {
         }))
       }
       if (entity === 'professionals') {
-        return data.professionals.map((item) => ({
-          label: `${item.first_name} ${item.last_name}`,
-          value: item.id,
-        }))
+        return data.professionals.map((item) => {
+          const professionalValue = user?.role === 1 ? (item.professional_id ?? item.id) : item.id
+          return {
+            label: `${item.first_name} ${item.last_name}`,
+            value: professionalValue,
+          }
+        })
       }
       if (entity === 'cities') {
         return data.cities.map((item) => ({
@@ -213,6 +219,7 @@ const Appointments = () => {
       </select>
     ),
   }
+  const isAdmin = user?.role === 1
 
   const appointmentSteps = [
     {
@@ -226,14 +233,18 @@ const Appointments = () => {
           placeholder: 'Seleccione al paciente',
           options: [], // Usado por customFields con AsyncSelect
         },
-        {
-          name: 'professional',
-          label: 'Profesional',
-          type: 'select',
-          required: true,
-          placeholder: 'Seleccione al profesional',
-          options: [], // Usado por customFields con AsyncSelect
-        },
+        ...(isAdmin
+          ? [
+              {
+                name: 'professional',
+                label: 'Profesional',
+                type: 'select',
+                required: true,
+                placeholder: 'Seleccione al profesional',
+                options: [],
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -301,6 +312,8 @@ const Appointments = () => {
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'appointments') {
       try {
+        const professionalId = user?.role === 3 ? undefined : formData.professional
+
         // Construye el objeto de la nueva cita directamente desde formData
         const newAppointment = {
           scheduled_at: formData.scheduled_at,
@@ -308,26 +321,22 @@ const Appointments = () => {
           notes: formData.notes || null,
           reason_for_visit: formData.reason_for_visit,
           patient_id: formData.patient, // Usamos directamente el value seleccionado
-          professional_id: formData.professional, // Usamos directamente el value seleccionado
+          professional_id: professionalId, // Usamos directamente el value seleccionado
           city_id: formData.city_id, // Usamos directamente el value seleccionado
           has_medical_record: formData.has_medical_record === 'true', // Convierte de string a boolean
         }
 
         // Valida los datos antes de enviar la solicitud
-        if (
-          !newAppointment.patient_id ||
-          !newAppointment.professional_id ||
-          !newAppointment.city_id
-        ) {
+        if (!newAppointment.patient_id || !newAppointment.city_id) {
           throw new Error(
             'Datos incompletos. Asegúrate de seleccionar un paciente, profesional y ciudad válidos.',
           )
         }
-
-        // Envía los datos al backend
         const res = await request('post', '/appointments', newAppointment, {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         })
+
         if (!res.success) {
           throw new Error(res.message || 'Error al crear la cita.')
         }
