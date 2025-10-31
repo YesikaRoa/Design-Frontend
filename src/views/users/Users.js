@@ -86,21 +86,24 @@ export const Users = () => {
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'users') {
       try {
+        // Primero crea el objeto base
         const completeUser = {
+          role_id: Number(formData.role_id),
           first_name: formData.first_name,
           last_name: formData.last_name,
           email: formData.email,
-          password: formData.password, // texto plano, mínimo 6 caracteres
+          password: formData.password, // temporal
           address: formData.address || undefined,
           phone: formData.phone || undefined,
           birth_date: formData.birth_date ? new Date(formData.birth_date).toISOString() : undefined,
           gender: formData.gender || undefined,
           avatar: formData.avatar || formDataState.avatar || null,
-          role_id: Number(formData.role_id),
           status: formData.status,
         }
 
+        // Luego ajusta la contraseña según el rol
         if (completeUser.role_id === 2) {
+          completeUser.password = null
           completeUser.patient_data = {
             medical_data: formData.medical_data || '',
           }
@@ -123,6 +126,8 @@ export const Users = () => {
             ],
           }
         }
+
+        // Luego haces la petición
         const {
           data: savedUser,
           success,
@@ -131,22 +136,91 @@ export const Users = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         })
+
         if (!success) {
-          if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
-            const messages = apiError.issues.map((issue) => issue.message).join('\n')
-            Notifications.showAlert(setAlert, messages, 'danger')
-          } else {
-            Notifications.showAlert(
-              setAlert,
-              (apiError && apiError.message) || 'Error creating user',
-              'danger',
-            )
+          // Mapear errores del backend a errores por campo para mostrarlos en la modal
+          const fieldErrors = {}
+
+          if (apiError) {
+            // Caso Zod: { issues: [ { path: [...], message } ] }
+            if (apiError.issues && Array.isArray(apiError.issues)) {
+              apiError.issues.forEach((issue) => {
+                const path = Array.isArray(issue.path) ? issue.path : []
+                const fieldName = path.length > 0 ? path[path.length - 1] : null
+                if (fieldName) {
+                  // Mapear nombres anidados que pueden venir desde Zod (ej. patient_data)
+                  if (fieldName === 'patient_data') {
+                    // En el formulario el campo es 'medical_data'
+                    fieldErrors['medical_data'] = issue.message
+                  } else if (fieldName === 'professional_data') {
+                    // Si es un error genérico de professional_data, asignarlo a professional_type_id
+                    fieldErrors['professional_type_id'] = issue.message
+                  } else {
+                    fieldErrors[fieldName] = issue.message
+                  }
+                } else {
+                  // Si no hay path, acumular en global
+                  fieldErrors._global = fieldErrors._global
+                    ? `${fieldErrors._global}\n${issue.message}`
+                    : issue.message
+                }
+              })
+            } else if (apiError.errors && typeof apiError.errors === 'object') {
+              // Caso errores por clave: { errors: { email: ['exists'] } }
+              Object.keys(apiError.errors).forEach((k) => {
+                const v = apiError.errors[k]
+                fieldErrors[k] = Array.isArray(v) ? v.join(' ') : String(v)
+              })
+            } else if (apiError.message) {
+              // Mensaje único: intentar mapear a email u otros campos comunes
+              if (/email/i.test(apiError.message)) {
+                fieldErrors.email = apiError.message
+              } else {
+                fieldErrors._global = apiError.message
+              }
+            }
           }
-          return
+
+          // Mostrar errores en la modal si hay campos específicos
+          if (Object.keys(fieldErrors).length > 0) {
+            ModalAddRef.current && ModalAddRef.current.setErrorsFromServer(fieldErrors)
+            if (fieldErrors._global) {
+              Notifications.showAlert(setAlert, fieldErrors._global, 'danger')
+            }
+            return { success: false, errors: fieldErrors }
+          }
+
+          // Fallback: mostrar alerta genérica
+          Notifications.showAlert(
+            setAlert,
+            (apiError && apiError.message) || 'Error creating user',
+            'danger',
+          )
+          return { success: false }
         }
-        setUsers((prev) => [...prev, savedUser])
-        setFilteredUsers((prev) => [...prev, savedUser])
+        try {
+          const headers = token
+            ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+            : { 'Content-Type': 'application/json' }
+          const usersRes = await request('get', '/users', null, headers)
+          if (usersRes && usersRes.data && Array.isArray(usersRes.data)) {
+            const normalizedUsers = usersRes.data.map((u) => ({ ...u, id: String(u.id) }))
+            setUsers(normalizedUsers)
+            setFilteredUsers(normalizedUsers)
+          } else {
+            // Fallback: si la reconsulta falla, añadimos el savedUser normalizado
+            const normalized = { ...savedUser, id: String(savedUser.id) }
+            setUsers((prev) => [...prev, normalized])
+            setFilteredUsers((prev) => [...prev, normalized])
+          }
+        } catch (err) {
+          console.error('Error reconsultando usuarios tras crear:', err)
+          const normalized = { ...savedUser, id: String(savedUser.id) }
+          setUsers((prev) => [...prev, normalized])
+          setFilteredUsers((prev) => [...prev, normalized])
+        }
         Notifications.showAlert(setAlert, 'User created successfully', 'success')
+        return { success: true }
       } catch (error) {
         console.error('Error saving user:', error)
         Notifications.showAlert(
@@ -154,6 +228,10 @@ export const Users = () => {
           error.message || 'An error occurred while saving the user.',
           'error',
         )
+        return {
+          success: false,
+          errors: { _global: error.message || 'An error occurred while saving the user.' },
+        }
       }
     }
   }
@@ -161,65 +239,7 @@ export const Users = () => {
   const getUserSteps = (formData = {}) => [
     {
       fields: [
-        {
-          name: 'first_name',
-          label: 'Primer nombre',
-          placeholder: 'Ingrese el primer nombre',
-          required: true,
-        },
-        {
-          name: 'last_name',
-          label: 'Apellido',
-          placeholder: 'Ingrese el apellido',
-          required: true,
-        },
-        {
-          name: 'birth_date',
-          type: 'date',
-          label: 'Fecha de nacimiento',
-          required: true,
-        },
-        {
-          name: 'gender',
-          label: 'Género',
-          type: 'select',
-          required: true,
-          options: [
-            { label: 'Femenino', value: 'F' },
-            { label: 'Masculino', value: 'M' },
-          ],
-        },
-      ],
-    },
-    {
-      fields: [
-        {
-          name: 'email',
-          label: 'Correo electrónico',
-          type: 'email',
-          required: true,
-        },
-        {
-          name: 'password',
-          label: 'Contraseña',
-          type: 'password',
-          required: true,
-          placeholder: 'Ingrese una contraseña mínima 6 caracteres',
-        },
-        {
-          name: 'phone',
-          label: 'Teléfono',
-          placeholder: 'Ingrese el número de teléfono',
-        },
-        {
-          name: 'address',
-          label: 'Dirección',
-          placeholder: 'Ingrese la dirección',
-        },
-      ],
-    },
-    {
-      fields: [
+        // Preguntar el rol como primer campo
         {
           name: 'role_id',
           label: 'Rol',
@@ -229,17 +249,6 @@ export const Users = () => {
             .filter((r) => [1, 2, 3].includes(r.id))
             .map((r) => ({ label: r.name, value: r.id })),
         },
-        {
-          name: 'status',
-          label: 'Estado',
-          type: 'select',
-          required: true,
-          options: [
-            { label: 'Activo', value: 'Active' },
-            { label: 'Inactivo', value: 'Inactive' },
-          ],
-        },
-
         // Campos para Profesional (role_id === 3)
         ...(Number(formData.role_id) === 3
           ? [
@@ -297,6 +306,80 @@ export const Users = () => {
               },
             ]
           : []),
+      ],
+    },
+    {
+      fields: [
+        {
+          name: 'first_name',
+          label: 'Primer nombre',
+          placeholder: 'Ingrese el primer nombre',
+          required: true,
+        },
+        {
+          name: 'last_name',
+          label: 'Apellido',
+          placeholder: 'Ingrese el apellido',
+          required: true,
+        },
+        {
+          name: 'birth_date',
+          type: 'date',
+          label: 'Fecha de nacimiento',
+          required: true,
+        },
+        {
+          name: 'gender',
+          label: 'Género',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Femenino', value: 'F' },
+            { label: 'Masculino', value: 'M' },
+          ],
+        },
+      ],
+    },
+    {
+      fields: [
+        {
+          name: 'email',
+          label: 'Correo electrónico',
+          type: 'email',
+          required: true,
+        },
+        // Si el rol seleccionado es paciente (role_id === 2) no pedimos contraseña
+        ...(Number(formData.role_id) === 2
+          ? []
+          : [
+              {
+                name: 'password',
+                label: 'Contraseña',
+                type: 'password',
+                required: true,
+                placeholder: 'Ingrese una contraseña mínima 6 caracteres',
+              },
+            ]),
+        {
+          name: 'phone',
+          label: 'Teléfono',
+          placeholder: 'Ingrese el número de teléfono',
+        },
+        {
+          name: 'address',
+          label: 'Dirección',
+          placeholder: 'Ingrese la dirección',
+        },
+        {
+          name: 'status',
+          label: 'Estado',
+          type: 'select',
+          required: true,
+          options: [
+            { label: 'Activo', value: 'Active' },
+            { label: 'Inactivo', value: 'Inactive' },
+          ],
+        },
       ],
     },
   ]

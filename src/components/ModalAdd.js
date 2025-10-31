@@ -1,5 +1,13 @@
 import React, { useState, useImperativeHandle, forwardRef } from 'react'
-import { CModal, CModalHeader, CModalTitle, CModalBody, CModalFooter, CButton } from '@coreui/react'
+import {
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CButton,
+  CAlert,
+} from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPlus } from '@coreui/icons'
 import '../views/users/styles/modalAddUser.css'
@@ -17,6 +25,7 @@ const ModalAdd = forwardRef(
     const [stepIndex, setStepIndex] = useState(0)
     const [formData, setFormData] = useState({})
     const [errors, setErrors] = useState({}) // Estado para errores
+    const [serverErrorMessage, setServerErrorMessage] = useState('')
     const { t } = useTranslation()
 
     useImperativeHandle(ref, () => ({
@@ -24,9 +33,15 @@ const ModalAdd = forwardRef(
         setFormData(initialData)
         setStepIndex(0)
         setErrors({}) // Reinicia los errores al abrir la modal
+        setServerErrorMessage('')
         setVisible(true)
       },
       close: () => setVisible(false), // <-- Añadido para exponer el método close
+      // Permite al padre establecer errores provenientes del servidor
+      setErrorsFromServer: (serverErrors = {}) => {
+        setErrors(serverErrors)
+        setServerErrorMessage('')
+      },
     }))
 
     const validateField = (field, value) => {
@@ -98,7 +113,7 @@ const ModalAdd = forwardRef(
       if (stepIndex > 0) setStepIndex(stepIndex - 1)
     }
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
       const newErrors = {}
       getStepsArray(steps, formData).forEach((step) => {
         step.fields.forEach((field) => {
@@ -114,8 +129,27 @@ const ModalAdd = forwardRef(
         return
       }
 
-      onFinish && onFinish(purpose, formData)
-      setVisible(false)
+      // Llamamos al handler del padre y esperamos su resultado.
+      // Se espera que onFinish devuelva un objeto { success: boolean, errors?: { field: message } }
+      if (onFinish) {
+        try {
+          const result = await onFinish(purpose, formData)
+          if (result && result.success) {
+            setServerErrorMessage('')
+            setVisible(false)
+          } else if (result && result.errors) {
+            // Si el servidor devolvió errores por campo, los mostramos
+            setErrors(result.errors)
+            setServerErrorMessage('')
+          } else {
+            // Respuesta inesperada: mostramos un banner dentro de la modal y la mantenemos abierta
+            setServerErrorMessage('Unexpected response from server. Please try again.')
+          }
+        } catch (err) {
+          // Si onFinish lanza, mantenemos la modal abierta y mostramos nada más aquí
+          console.error('Error en onFinish:', err)
+        }
+      }
     }
 
     const currentStep = getStepsArray(steps, formData)[stepIndex] || {}
@@ -254,7 +288,14 @@ const ModalAdd = forwardRef(
           ))}
         </div>
 
-        <CModalBody>{renderInputs()}</CModalBody>
+        <CModalBody>
+          {serverErrorMessage && (
+            <CAlert color="danger" className="mb-3 text-center">
+              {serverErrorMessage}
+            </CAlert>
+          )}
+          {renderInputs()}
+        </CModalBody>
 
         <CModalFooter
           className="custom-footer"
