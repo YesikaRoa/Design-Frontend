@@ -99,27 +99,45 @@ export const Patients = () => {
           Authorization: `Bearer ${token}`,
         })
         if (!res.success) {
-          const errorData = res.data || {}
+          const errorData = res.error || {}
+          // Si el backend envía issues (por ejemplo, Zod/joi), convertirlos a errores por campo
           if (errorData.issues && Array.isArray(errorData.issues)) {
-            const messages = errorData.issues
-              .map((issue) =>
-                Array.isArray(issue.path)
-                  ? `${issue.path.join('.')} - ${issue.message}`
-                  : `${issue.path || 'unknown'} - ${issue.message}`,
-              )
-              .join('\n')
+            const fieldErrors = {}
+            errorData.issues.forEach((issue) => {
+              // Tomamos la primera parte del path como nombre de campo si existe
+              const fieldName =
+                Array.isArray(issue.path) && issue.path[0] ? issue.path[0] : issue.path || 'unknown'
+              fieldErrors[fieldName] = issue.message || 'Invalid value'
+            })
+            const messages = Object.values(fieldErrors).join('\n')
             Notifications.showAlert(setAlert, messages, 'danger')
+            return { success: false, errors: fieldErrors }
+          } else if (errorData.errors && typeof errorData.errors === 'object') {
+            // Backend might send structured errors, por ejemplo { errors: { email: '...' } }
+            const fieldErrors = {}
+            Object.keys(errorData.errors).forEach((key) => {
+              const val = errorData.errors[key]
+              fieldErrors[key] = Array.isArray(val) ? val.join('\n') : String(val)
+            })
+            const messages = Object.values(fieldErrors).join('\n')
+            Notifications.showAlert(setAlert, messages, 'danger')
+            return { success: false, errors: fieldErrors }
           } else {
-            Notifications.showAlert(
-              setAlert,
-              errorData.message || 'An error occurred during validation',
-              'danger',
-            )
+            const message = errorData.message || 'An error occurred during validation'
+            // Intentar mapear mensajes comunes de unicidad al campo correspondiente
+            const lower = String(message).toLowerCase()
+            if (lower.includes('email') || lower.includes('correo') || lower.includes('registr')) {
+              const fieldErrors = { email: message }
+              Notifications.showAlert(setAlert, message, 'danger')
+              return { success: false, errors: fieldErrors }
+            }
+            Notifications.showAlert(setAlert, message, 'danger')
+            return { success: false, message }
           }
-          return
         }
         Notifications.showAlert(setAlert, 'Patient created successfully!', 'success')
         await fetchPatients()
+        return { success: true }
       } catch (error) {
         console.error(error)
         Notifications.showAlert(
@@ -127,6 +145,11 @@ export const Patients = () => {
           'An unexpected error occurred while creating the patient.',
           'error',
         )
+        // Devolver un objeto indicando fallo para que el modal pueda mostrar un mensaje
+        return {
+          success: false,
+          message: 'An unexpected error occurred while creating the patient.',
+        }
       }
     }
   }
@@ -232,7 +255,7 @@ export const Patients = () => {
           await fetchPatients()
           Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
         } else {
-          const errorData = res.data || {}
+          const errorData = res.error || {}
           Notifications.showAlert(
             setAlert,
             errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
