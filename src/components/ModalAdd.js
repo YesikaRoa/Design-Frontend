@@ -141,13 +141,12 @@ const ModalAdd = forwardRef(
             // Si el servidor devolvió errores por campo, los mostramos
             setErrors(result.errors)
             setServerErrorMessage('')
-          } else {
-            // Respuesta inesperada: mostramos un banner dentro de la modal y la mantenemos abierta
-            setServerErrorMessage('Unexpected response from server. Please try again.')
           }
         } catch (err) {
-          // Si onFinish lanza, mantenemos la modal abierta y mostramos nada más aquí
+          // Si onFinish lanza, mantenemos la modal abierta y mostramos un mensaje claro
           console.error('Error en onFinish:', err)
+          const message = err?.message || 'An unexpected error occurred. Please try again.'
+          setServerErrorMessage(message)
         }
       }
     }

@@ -338,13 +338,40 @@ const Appointments = () => {
         })
 
         if (!res.success) {
-          throw new Error(res.message || 'Error al crear la cita.')
+          const errorData = res.error || {}
+          // Manejar errores por campo si el backend los retorna
+          if (errorData.issues && Array.isArray(errorData.issues)) {
+            const fieldErrors = {}
+            errorData.issues.forEach((issue) => {
+              const fieldName =
+                Array.isArray(issue.path) && issue.path[0] ? issue.path[0] : issue.path || 'unknown'
+              fieldErrors[fieldName] = issue.message || 'Invalid value'
+            })
+            const messages = Object.values(fieldErrors).join('\n')
+            Notifications.showAlert(setAlert, messages, 'danger')
+            return { success: false, errors: fieldErrors }
+          } else if (errorData.errors && typeof errorData.errors === 'object') {
+            const fieldErrors = {}
+            Object.keys(errorData.errors).forEach((key) => {
+              const val = errorData.errors[key]
+              fieldErrors[key] = Array.isArray(val) ? val.join('\n') : String(val)
+            })
+            const messages = Object.values(fieldErrors).join('\n')
+            Notifications.showAlert(setAlert, messages, 'danger')
+            return { success: false, errors: fieldErrors }
+          } else {
+            const message = res.message || errorData.message || 'Error al crear la cita.'
+            Notifications.showAlert(setAlert, message, 'danger')
+            return { success: false, message }
+          }
         }
         await fetchAppointments()
         Notifications.showAlert(setAlert, 'Appointment created successfully.', 'success')
+        return { success: true }
       } catch (error) {
         console.error('Error al crear la cita:', error)
         Notifications.showAlert(setAlert, 'Appointment not created.', 'danger')
+        return { success: false, message: error?.message || 'Appointment not created.' }
       }
     }
   }
