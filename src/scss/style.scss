@@ -83,6 +83,36 @@ body {
   .footer {
     --cui-footer-bg: var(--cui-body-bg);
   }
+
+  /* Estilos para las alertas en modo oscuro: fondo oscuro, texto claro y sombra suave */
+  .alert-fixed {
+    background: linear-gradient(180deg, rgba(43, 47, 51, 0.95), rgba(36, 39, 42, 0.95));
+    color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Ajustes por tipo para mantener contraste y color de texto adecuado */
+  .alert-fixed.alert-success {
+    background: linear-gradient(180deg, rgba(40, 90, 60, 0.95), rgba(34, 75, 50, 0.95));
+    color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .alert-fixed.alert-danger {
+    background: linear-gradient(180deg, rgba(125, 40, 40, 0.95), rgba(100, 35, 35, 0.95));
+    color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .alert-fixed.alert-warning {
+    background: linear-gradient(180deg, rgba(120, 90, 40, 0.95), rgba(100, 75, 35, 0.95));
+    color: rgba(0, 0, 0, 0.85);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+  .alert-fixed.alert-info {
+    background: linear-gradient(180deg, rgba(50, 80, 110, 0.95), rgba(40, 70, 95, 0.95));
+    color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
 }
 
 .space-component {

@@ -24,6 +24,31 @@ const UserDetails = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
@@ -417,6 +442,45 @@ const UserDetails = () => {
               classNamePrefix="react-select"
               placeholder={t('Select specialties')}
               isDisabled={fieldsDisabled}
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  background: colorScheme === 'dark' ? '#23262b' : provided.background,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+                input: (provided) => ({
+                  ...provided,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+                placeholder: (provided) => ({
+                  ...provided,
+                  color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  zIndex: 9999,
+                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+                }),
+                menuList: (provided) => ({
+                  ...provided,
+                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  background: state.isFocused
+                    ? colorScheme === 'dark'
+                      ? '#3a3f44'
+                      : provided.background
+                    : colorScheme === 'dark'
+                      ? '#2b2f33'
+                      : provided.background,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+              }}
             />
 
             {/* Subespecialidades */}
@@ -433,6 +497,45 @@ const UserDetails = () => {
               classNamePrefix="react-select"
               placeholder={t('Select subspecialties')}
               isDisabled={fieldsDisabled}
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  background: colorScheme === 'dark' ? '#23262b' : provided.background,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+                input: (provided) => ({
+                  ...provided,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+                placeholder: (provided) => ({
+                  ...provided,
+                  color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  zIndex: 9999,
+                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+                }),
+                menuList: (provided) => ({
+                  ...provided,
+                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  background: state.isFocused
+                    ? colorScheme === 'dark'
+                      ? '#3a3f44'
+                      : provided.background
+                    : colorScheme === 'dark'
+                      ? '#2b2f33'
+                      : provided.background,
+                  color: colorScheme === 'dark' ? '#fff' : provided.color,
+                }),
+              }}
             />
 
             <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>

@@ -179,6 +179,12 @@ export const Professionls = () => {
         Notifications.showAlert(setAlert, 'Professional created successfully!', 'success')
         await fetchProfessionals()
         setUsers((prev) => [...prev, data])
+        // Cerrar la modal después de crear el profesional
+        try {
+          ModalAddRef.current && ModalAddRef.current.close && ModalAddRef.current.close()
+        } catch (e) {
+          console.warn('Could not close ModalAdd via ref:', e)
+        }
       } catch (error) {
         console.error(error)
         Notifications.showAlert(
