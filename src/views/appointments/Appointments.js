@@ -39,6 +39,32 @@ const Appointments = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
+
   const [alert, setAlert] = useState(null)
   const [appointments, setAppointments] = useState([])
   const [filteredAppointments, setFilteredAppointments] = useState([])
@@ -107,13 +133,15 @@ const Appointments = () => {
         }))
       }
       if (entity === 'professionals') {
-        return data.professionals.map((item) => {
-          const professionalValue = user?.role === 1 ? (item.professional_id ?? item.id) : item.id
-          return {
-            label: `${item.first_name} ${item.last_name}`,
-            value: professionalValue,
-          }
-        })
+        return data.professionals
+          .filter((item) => item.role_id !== 1) // 👈 filtra los administradores
+          .map((item) => {
+            const professionalValue = user?.role === 1 ? (item.professional_id ?? item.id) : item.id
+            return {
+              label: `${item.first_name} ${item.last_name}`,
+              value: professionalValue,
+            }
+          })
       }
       if (entity === 'cities') {
         return data.cities.map((item) => ({
@@ -143,7 +171,45 @@ const Appointments = () => {
         onChange={onChange}
         placeholder={placeholder || 'Buscar paciente...'}
         isClearable
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+        styles={{
+          control: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#23262b' : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          singleValue: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          input: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          placeholder: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+          }),
+          menu: (provided) => ({
+            ...provided,
+            zIndex: 9999,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          menuList: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          option: (provided, state) => ({
+            ...provided,
+            background: state.isFocused
+              ? colorScheme === 'dark'
+                ? '#3a3f44'
+                : provided.background
+              : colorScheme === 'dark'
+                ? '#2b2f33'
+                : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+        }}
       />
     ),
     professional: ({ value, onChange, error, helperText, placeholder }) => (
@@ -154,7 +220,45 @@ const Appointments = () => {
         onChange={onChange}
         placeholder={placeholder || 'Buscar profesional...'}
         isClearable
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+        styles={{
+          control: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#23262b' : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          singleValue: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          input: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          placeholder: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+          }),
+          menu: (provided) => ({
+            ...provided,
+            zIndex: 9999,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          menuList: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          option: (provided, state) => ({
+            ...provided,
+            background: state.isFocused
+              ? colorScheme === 'dark'
+                ? '#3a3f44'
+                : provided.background
+              : colorScheme === 'dark'
+                ? '#2b2f33'
+                : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+        }}
       />
     ),
     city_id: ({ value, onChange, error, helperText, placeholder }) => (
@@ -165,7 +269,45 @@ const Appointments = () => {
         onChange={onChange}
         placeholder={placeholder || 'Buscar ciudad...'}
         isClearable
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+        styles={{
+          control: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#23262b' : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          singleValue: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          input: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          placeholder: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+          }),
+          menu: (provided) => ({
+            ...provided,
+            zIndex: 9999,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          menuList: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          option: (provided, state) => ({
+            ...provided,
+            background: state.isFocused
+              ? colorScheme === 'dark'
+                ? '#3a3f44'
+                : provided.background
+              : colorScheme === 'dark'
+                ? '#2b2f33'
+                : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+        }}
       />
     ),
     scheduled_at: ({ value, onChange, error, helperText, placeholder }) => (
@@ -188,6 +330,19 @@ const Appointments = () => {
               error: !!error,
               helperText,
               placeholder,
+              InputLabelProps: {
+                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+              },
+              InputProps: {
+                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              },
+              inputProps: {
+                placeholder: placeholder || '',
+                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              },
+              FormHelperTextProps: {
+                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+              },
             },
           }}
           reduceAnimations

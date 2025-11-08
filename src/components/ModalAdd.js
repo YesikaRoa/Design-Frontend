@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react'
+import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react'
 import {
   CModal,
   CModalHeader,
@@ -27,6 +27,33 @@ const ModalAdd = forwardRef(
     const [errors, setErrors] = useState({}) // Estado para errores
     const [serverErrorMessage, setServerErrorMessage] = useState('')
     const { t } = useTranslation()
+    const [colorScheme, setColorScheme] = useState(() => {
+      if (typeof window === 'undefined') return 'light'
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) return ds
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+    })
+
+    useEffect(() => {
+      if (typeof window === 'undefined') return
+      const onColorSchemeChange = () => {
+        const ds = document.documentElement.dataset.coreuiTheme
+        if (ds) setColorScheme(ds)
+        else if (window.matchMedia)
+          setColorScheme(
+            window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+          )
+      }
+      document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+      const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+      mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+      return () => {
+        document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+        mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+      }
+    }, [])
 
     useImperativeHandle(ref, () => ({
       open: (initialData = {}) => {
@@ -196,9 +223,30 @@ const ModalAdd = forwardRef(
                 fullWidth
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
+                InputLabelProps={{
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+                }}
+                InputProps={{ style: { color: colorScheme === 'dark' ? '#fff' : undefined } }}
+                FormHelperTextProps={{
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+                }}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      style: {
+                        backgroundColor: colorScheme === 'dark' ? '#2b2f33' : undefined,
+                        color: colorScheme === 'dark' ? '#fff' : undefined,
+                      },
+                    },
+                  },
+                }}
               >
                 {field.options.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
+                  <MenuItem
+                    key={option.value}
+                    value={option.value}
+                    style={{ color: colorScheme === 'dark' ? '#fff' : undefined }}
+                  >
                     {option.label}
                   </MenuItem>
                 ))}
@@ -226,13 +274,18 @@ const ModalAdd = forwardRef(
                 margin="normal"
                 InputLabelProps={{
                   shrink: true,
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
                 }}
                 inputProps={{
                   placeholder: field.placeholder || '',
                   accept: field.accept || undefined,
+                  style: { color: colorScheme === 'dark' ? '#fff' : undefined },
                 }}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
+                FormHelperTextProps={{
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+                }}
               />
             ) : (
               <TextField
@@ -252,12 +305,17 @@ const ModalAdd = forwardRef(
                     !!formData[field.name] ||
                     field.type === 'datetime-local' ||
                     field.type === 'date',
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
                 }}
                 inputProps={{
                   placeholder: field.placeholder || '',
+                  style: { color: colorScheme === 'dark' ? '#fff' : undefined },
                 }}
                 error={!!errors[field.name]}
                 helperText={errors[field.name]}
+                FormHelperTextProps={{
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+                }}
               />
             )}
           </div>

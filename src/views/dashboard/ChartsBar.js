@@ -15,6 +15,14 @@ const ChartBarExample = () => {
   })
 
   const { request } = useApi()
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -72,6 +80,26 @@ const ChartBarExample = () => {
     fetchDashboardData()
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
+
   const data1 = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
@@ -116,18 +144,22 @@ const ChartBarExample = () => {
       legend: {
         display: true,
         position: 'top',
+        labels: {
+          // chart legend label color
+          color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : '#000',
+        },
       },
     },
     scales: {
       x: {
         ticks: {
-          color: '#000',
+          color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : '#000',
         },
       },
       y: {
         beginAtZero: true,
         ticks: {
-          color: '#000',
+          color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : '#000',
         },
       },
     },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { CButton, CPopover, CToast, CToastBody, CToastHeader } from '@coreui/react'
 import { cilBell } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
@@ -10,6 +10,31 @@ export const NotificationPopover = () => {
     { id: 2, text: 'Se actualizó tu perfil.', color: '#FFE5D1' }, // Naranja pastel
     { id: 3, text: 'Mensaje del administrador.', color: '#E3F6FD' }, // Azul pastel
   ])
+
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
 
   const removeNotification = (id) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id))
@@ -24,9 +49,13 @@ export const NotificationPopover = () => {
               width: '250px', // Define un ancho fijo
               maxHeight: '300px',
               overflowY: 'auto',
-              backgroundColor: '#fff',
+              backgroundColor: colorScheme === 'dark' ? '#23262b' : '#fff',
               borderRadius: '8px',
-              boxShadow: '0 2px 3px rgba(0, 0, 0,0.02)',
+              boxShadow:
+                colorScheme === 'dark'
+                  ? '0 8px 20px rgba(0,0,0,0.6)'
+                  : '0 2px 3px rgba(0, 0, 0,0.02)',
+              padding: '8px',
             }}
           >
             {notifications.length > 0 ? (
@@ -37,12 +66,17 @@ export const NotificationPopover = () => {
                   visible={true}
                   autohide={false}
                   style={{
-                    backgroundColor: notification.color,
+                    backgroundColor:
+                      colorScheme === 'dark'
+                        ? getDarkToastBackground(notification.color)
+                        : notification.color,
+                    color: colorScheme === 'dark' ? '#fff' : '#000',
                     borderRadius: '8px',
                     marginBottom: '10px',
                     padding: '8px',
                     width: '100%',
                     boxSizing: 'border-box',
+                    boxShadow: colorScheme === 'dark' ? '0 6px 14px rgba(0,0,0,0.5)' : undefined,
                   }}
                 >
                   <CToastHeader
@@ -116,4 +150,15 @@ export const NotificationPopover = () => {
       </CPopover>
     </div>
   )
+}
+
+// Mapea colores pastel a versiones más oscuras para modo dark
+function getDarkToastBackground(originalColor) {
+  const map = {
+    '#DFF6DD': '#22432b', // dark green
+    '#FFE5D1': '#4a341f', // dark orange/brown
+    '#E3F6FD': '#203846', // dark blue
+  }
+  const upper = (originalColor || '').toUpperCase()
+  return map[upper] || '#2b2f33'
 }

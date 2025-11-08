@@ -50,6 +50,31 @@ const MedicalHistory = () => {
 
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
   const [alert, setAlert] = useState(null)
   const [medicalHistory, setMedicalHistory] = useState([])
   const [FilteredMedicalHistory, setFilteredMedicalHistory] = useState([])
@@ -268,7 +293,45 @@ const MedicalHistory = () => {
         placeholder={placeholder || 'Seleccione una cita'}
         isClearable
         isLoading={loading} // Usas el estado de carga del hook para mostrar el spinner
-        styles={{ menu: (provided) => ({ ...provided, zIndex: 9999 }) }}
+        styles={{
+          control: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#23262b' : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          singleValue: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          input: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+          placeholder: (provided) => ({
+            ...provided,
+            color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+          }),
+          menu: (provided) => ({
+            ...provided,
+            zIndex: 9999,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          menuList: (provided) => ({
+            ...provided,
+            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+          }),
+          option: (provided, state) => ({
+            ...provided,
+            background: state.isFocused
+              ? colorScheme === 'dark'
+                ? '#3a3f44'
+                : provided.background
+              : colorScheme === 'dark'
+                ? '#2b2f33'
+                : provided.background,
+            color: colorScheme === 'dark' ? '#fff' : provided.color,
+          }),
+        }}
       />
     )
   }
@@ -310,6 +373,18 @@ const MedicalHistory = () => {
               variant: 'standard',
               fullWidth: true,
               placeholder,
+              InputLabelProps: {
+                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+              },
+              InputProps: {
+                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              },
+              inputProps: {
+                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              },
+              FormHelperTextProps: {
+                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+              },
             },
           }}
           reduceAnimations
