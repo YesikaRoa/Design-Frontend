@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { getStyle } from '@coreui/utils'
 import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader } from '@coreui/react'
@@ -21,6 +21,14 @@ const ChartsSection = () => {
   const { t } = useTranslation()
   const [cityData, setCityData] = useState([])
   const [specialtyData, setSpecialtyData] = useState([])
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
 
   const { request } = useApi()
   useEffect(() => {
@@ -46,25 +54,45 @@ const ChartsSection = () => {
     fetchDashboardData()
   }, [])
 
-  const doughnutData1 = {
-    labels: cityData.labels || [],
-    datasets: [
-      {
-        backgroundColor: generateColors(cityData.labels?.length || 0),
-        data: cityData.data || [],
-      },
-    ],
+  // Helper to return a placeholder donut when there's no data
+  const buildDoughnut = (dataObj, emptyLabel) => {
+    const labels = dataObj?.labels || []
+    const data = dataObj?.data || []
+    const sum = Array.isArray(data) ? data.reduce((s, v) => s + (Number(v) || 0), 0) : 0
+    const hasData = labels.length > 0 && sum > 0
+    if (!hasData) {
+      const placeholderColor = getStyle('--cui-bg-muted') || '#9a9aa0ff'
+      return {
+        labels: [emptyLabel || 'No data'],
+        datasets: [
+          {
+            backgroundColor: [placeholderColor],
+            data: [1],
+          },
+        ],
+        __isPlaceholder: true,
+      }
+    }
+    return {
+      labels,
+      datasets: [
+        {
+          backgroundColor: generateColors(labels.length),
+          data,
+        },
+      ],
+    }
   }
 
-  const doughnutData2 = {
-    labels: specialtyData.labels || [],
-    datasets: [
-      {
-        backgroundColor: generateColors(specialtyData.labels?.length || 0),
-        data: specialtyData.data || [],
-      },
-    ],
-  }
+  const doughnutData1WithFallback = useMemo(
+    () => buildDoughnut(cityData, t('No data available')),
+    [cityData, colorScheme, t],
+  )
+
+  const doughnutData2WithFallback = useMemo(
+    () => buildDoughnut(specialtyData, t('No data available')),
+    [specialtyData, colorScheme, t],
+  )
 
   const options = {
     maintainAspectRatio: false,
@@ -77,6 +105,55 @@ const ChartsSection = () => {
     },
   }
 
+  // Listen for theme changes so charts re-render and pick up new CSS variables
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const THEME_KEY = 'coreui-free-react-admin-template-theme'
+
+    const updatePlaceholders = () => {
+      const newPlaceholderColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--cui-bg-muted')?.trim() ||
+        '#e9ecef'
+
+      const updatePlaceholder = (ref) => {
+        if (!ref?.current) return
+        const inst = ref.current.chart || ref.current
+        if (!inst) return
+
+        const labels = inst.data?.labels || []
+        const isPlaceholder =
+          labels.length === 1 &&
+          String(labels[0]).toLowerCase().includes(t('No data available').toLowerCase())
+
+        if (isPlaceholder && inst.data.datasets?.[0]) {
+          inst.data.datasets[0].backgroundColor = [newPlaceholderColor]
+          inst.update()
+        }
+      }
+
+      updatePlaceholder(doughnutRef1)
+      updatePlaceholder(doughnutRef2)
+    }
+
+    const checkThemeChange = () => {
+      const storedTheme = localStorage.getItem(THEME_KEY)
+      if (!storedTheme) return
+
+      if (storedTheme !== colorScheme) {
+        setColorScheme(storedTheme)
+        // 🔹 Esperar a que CoreUI aplique el tema (retardo necesario)
+        setTimeout(updatePlaceholders, 150)
+        setTimeout(updatePlaceholders, 400)
+      }
+    }
+
+    // Revisar cada cierto tiempo si el valor en localStorage cambió
+    const interval = setInterval(checkThemeChange, 250)
+
+    return () => clearInterval(interval)
+  }, [colorScheme, t])
+
   return (
     <CCardBody className="mb-4">
       <div className="row">
@@ -85,7 +162,22 @@ const ChartsSection = () => {
             <CCardHeader style={{ fontWeight: 'bold' }}>{t('Patients by City')}</CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
-                <CChart type="doughnut" data={doughnutData1} options={options} ref={doughnutRef1} />
+                {doughnutData1WithFallback.__isPlaceholder ? (
+                  <div className="doughnut-placeholder">
+                    <div className="outer">
+                      <div className="inner" />
+                    </div>
+                    <div className="label">{t('No data available')}</div>
+                  </div>
+                ) : (
+                  <CChart
+                    key={`doughnut1-${colorScheme}-${(doughnutData1WithFallback.labels || []).join('-')}-${(doughnutData1WithFallback.datasets[0].data || []).join('-')}`}
+                    type="doughnut"
+                    data={doughnutData1WithFallback}
+                    options={options}
+                    ref={doughnutRef1}
+                  />
+                )}
               </div>
             </CCardBody>
           </CCard>
@@ -97,7 +189,22 @@ const ChartsSection = () => {
             </CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
-                <CChart type="doughnut" data={doughnutData2} options={options} ref={doughnutRef2} />
+                {doughnutData2WithFallback.__isPlaceholder ? (
+                  <div className="doughnut-placeholder">
+                    <div className="outer">
+                      <div className="inner" />
+                    </div>
+                    <div className="label">{t('No data available')}</div>
+                  </div>
+                ) : (
+                  <CChart
+                    key={`doughnut2-${colorScheme}-${(doughnutData2WithFallback.labels || []).join('-')}-${(doughnutData2WithFallback.datasets[0].data || []).join('-')}`}
+                    type="doughnut"
+                    data={doughnutData2WithFallback}
+                    options={options}
+                    ref={doughnutRef2}
+                  />
+                )}
               </div>
             </CCardBody>
           </CCard>

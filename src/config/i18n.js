@@ -136,6 +136,7 @@ const resources = {
       'Confirm new password': 'Confirm new password',
       Male: 'Male',
       Female: 'Female',
+      'No data available': 'No data available',
     },
   },
   es: {
@@ -267,6 +268,7 @@ const resources = {
       'Confirm new password': 'Confirmar nueva contraseña',
       Male: 'Masculino',
       Female: 'Femenino',
+      'No data available': 'No hay datos disponibles',
     },
   },
 }

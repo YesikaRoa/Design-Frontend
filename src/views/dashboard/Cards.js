@@ -4,6 +4,7 @@ import CIcon from '@coreui/icons-react'
 import { cilUser, cilUserFollow, cilListRich } from '@coreui/icons'
 import { useTranslation } from 'react-i18next'
 import useApi from '../../hooks/useApi'
+import styles from './Styles.css/Cards.module.css'
 
 const Cards = () => {
   const { t } = useTranslation()
@@ -12,6 +13,7 @@ const Cards = () => {
     newPatients: 0,
     topSpecialty: '',
   })
+  const [loading, setLoading] = useState(true)
 
   const { request } = useApi()
   const [colorScheme, setColorScheme] = useState(() => {
@@ -35,10 +37,12 @@ const Cards = () => {
         setData({
           attendedPatients: result.attendedPatients || 0,
           newPatients: result.newPatients || 0,
-          topSpecialty: result.topSpecialty?.specialty || 'Unknown',
+          topSpecialty: result.topSpecialty?.specialty || 'No hay datos disponibles',
         })
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchDashboardData()
@@ -110,55 +114,77 @@ const Cards = () => {
   }
 
   return (
-    <CRow className="mb-4">
-      <CCol sm="4">
+    <div className={`${styles['dashboard-cards-row']} space-component`}>
+      <div className={styles['dashboard-card-col']}>
         <CCard
           className={colorScheme === 'dark' ? 'text-light' : 'text-dark'}
-          style={getCardStyle(1)}
+          style={{ ...getCardStyle(1) }}
         >
           <CCardBody>
-            <div className="fs-3 fw-bold">{data.attendedPatients}</div>
-            <div className="text-uppercase">{t('Patients Attended')}</div>
-            <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
-              {t('In the last month with completed status')}
-            </small>
+            {loading ? (
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            ) : (
+              <>
+                <div className="fs-3 fw-bold">{data.attendedPatients}</div>
+                <div className="text-uppercase">{t('Patients Attended')}</div>
+                <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
+                  {t('In the last month with completed status')}
+                </small>
+              </>
+            )}
           </CCardBody>
           <CIcon icon={cilUser} size="xl" className="m-3 text-success" />
         </CCard>
-      </CCol>
-
-      <CCol sm="4">
+      </div>
+      <div className={styles['dashboard-card-col']}>
         <CCard
           className={colorScheme === 'dark' ? 'text-light' : 'text-dark'}
           style={getCardStyle(2)}
         >
           <CCardBody>
-            <div className="fs-3 fw-bold">{data.newPatients}</div>
-            <div className="text-uppercase">{t('New Patients')}</div>
-            <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
-              {t('This week with confirmed status')}
-            </small>
+            {loading ? (
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            ) : (
+              <>
+                <div className="fs-3 fw-bold">{data.newPatients}</div>
+                <div className="text-uppercase">{t('New Patients')}</div>
+                <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
+                  {t('This week with confirmed status')}
+                </small>
+              </>
+            )}
           </CCardBody>
           <CIcon icon={cilUserFollow} size="xl" className="m-3 text-info" />
         </CCard>
-      </CCol>
-
-      <CCol sm="4">
+      </div>
+      <div className={styles['dashboard-card-col']}>
         <CCard
           className={colorScheme === 'dark' ? 'text-light' : 'text-dark'}
           style={getCardStyle(3)}
         >
           <CCardBody>
-            <div className="fs-3 fw-bold">{data.topSpecialty}</div>
-            <div className="text-uppercase">{t('Most Requested Specialty')}</div>
-            <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
-              {t('Based on recent appointments')}
-            </small>
+            {loading ? (
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+            ) : (
+              <>
+                <div className="fs-3 fw-bold">{data.topSpecialty}</div>
+                <div className="text-uppercase">{t('Most Requested Specialty')}</div>
+                <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
+                  {t('Based on recent appointments')}
+                </small>
+              </>
+            )}
           </CCardBody>
           <CIcon icon={cilListRich} size="xl" className="m-3 text-warning" />
         </CCard>
-      </CCol>
-    </CRow>
+      </div>
+    </div>
   )
 }
 
