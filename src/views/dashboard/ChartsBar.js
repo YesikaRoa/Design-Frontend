@@ -9,7 +9,12 @@ const ChartBarExample = () => {
   const chartRef = useRef(null)
   const { t } = useTranslation()
   const [chartData, setChartData] = useState({
-    appointmentsByMonth: [],
+    appointmentsByMonth: {
+      pending: Array(12).fill(0),
+      confirmed: Array(12).fill(0),
+      completed: Array(12).fill(0),
+      canceled: Array(12).fill(0),
+    },
     professionals: [],
     professionalCounts: [],
   })
@@ -83,20 +88,32 @@ const ChartBarExample = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const onColorSchemeChange = () => {
-      const ds = document.documentElement.dataset.coreuiTheme
-      if (ds) setColorScheme(ds)
-      else if (window.matchMedia)
-        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    }
-
-    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    // Listen to system preference changes
     const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
-    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    const onMqChange = (e) => setColorScheme(e.matches ? 'dark' : 'light')
+    mq && mq.addEventListener && mq.addEventListener('change', onMqChange)
+
+    // Observe changes to data-coreui-theme on the root element (CoreUI toggles this attribute)
+    const root = document.documentElement
+    const getDs = () => root.dataset.coreuiTheme
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'attributes' && m.attributeName === 'data-coreui-theme') {
+          const ds = getDs()
+          if (ds) setColorScheme(ds)
+          else if (mq) setColorScheme(mq.matches ? 'dark' : 'light')
+        }
+      }
+    })
+    observer.observe(root, { attributes: true })
+
+    // In case the attribute already exists, ensure state is correct
+    const initialDs = getDs()
+    if (initialDs) setColorScheme(initialDs)
 
     return () => {
-      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
-      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onMqChange)
+      observer.disconnect()
     }
   }, [])
 
@@ -173,7 +190,13 @@ const ChartBarExample = () => {
             <CCardHeader style={{ fontWeight: 'bold' }}>{t('Appointment Summary')}</CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
-                <CChart type="bar" data={data1} options={options} ref={chartRef} />
+                <CChart
+                  key={`chart1-${colorScheme}`}
+                  type="bar"
+                  data={data1}
+                  options={options}
+                  ref={chartRef}
+                />
               </div>
             </CCardBody>
           </CCard>
@@ -185,7 +208,13 @@ const ChartBarExample = () => {
             </CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
-                <CChart type="bar" data={data2} options={options} ref={chartRef} />
+                <CChart
+                  key={`chart2-${colorScheme}`}
+                  type="bar"
+                  data={data2}
+                  options={options}
+                  ref={chartRef}
+                />
               </div>
             </CCardBody>
           </CCard>

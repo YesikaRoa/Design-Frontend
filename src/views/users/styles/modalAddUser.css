@@ -22,13 +22,14 @@
   background-color: white;
   border: 2px solid #5856d6;
   color: #5856d6;
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  font-size: 1.1rem;
 }
 
 .step-circle.active {
@@ -79,31 +80,35 @@
 
 .steps-indicator {
   display: flex;
-  justify-content: center;
+  justify-content: space-between; /* ocupar más espacio horizontal */
   align-items: center;
   position: relative;
   margin: 20px 0;
+  padding: 0 20px;
 }
 
 .step-item {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 0 8px;
 }
-
 .step-item:not(:last-child)::after {
   content: '';
   height: 2px;
   background-color: #5856d6;
-  width: 40px;
-  margin: 0 10px;
+  width: 100px; /* barra más ancha entre pasos */
+  margin: 0 16px;
+  display: block;
+  align-self: center;
 }
 .custom-modal-header .btn-close {
   background-color: white !important;
   border-radius: 50%;
   color: var(--cui-primary);
   border: 1px solid var(--cui-primary);
-  height: 12px;
+  height: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
