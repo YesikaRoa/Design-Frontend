@@ -52,9 +52,9 @@ const RecentPatientsTable = () => {
   }
 
   return (
-    <CCard className="space-component">
+    <CCard className="mb-4 mb-sm-0">
       <CCardHeader>
-        <h5>{t('Recent Patients')}</h5>
+        <h5>{t('Recent patients')}</h5>
         <small className="text-muted">
           {t('Patients registered in appointments during the last 7 days')}
         </small>
@@ -71,7 +71,16 @@ const RecentPatientsTable = () => {
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {recentPatients.length === 0 ? (
+            {loading ? (
+              // === Skeleton Loader ===
+              Array.from({ length: 5 }).map((_, index) => (
+                <CTableRow key={index}>
+                  <CTableDataCell colSpan={5}>
+                    <div className="skeleton-row"></div>
+                  </CTableDataCell>
+                </CTableRow>
+              ))
+            ) : recentPatients.length === 0 ? (
               <CTableRow>
                 <CTableDataCell colSpan={5} className="text-center">
                   {t('No recent patients available')}

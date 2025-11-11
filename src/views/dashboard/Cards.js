@@ -37,7 +37,7 @@ const Cards = () => {
         setData({
           attendedPatients: result.attendedPatients || 0,
           newPatients: result.newPatients || 0,
-          topSpecialty: result.topSpecialty?.specialty || 'No hay datos disponibles',
+          topSpecialty: result.topSpecialty?.specialty || '',
         })
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -117,7 +117,7 @@ const Cards = () => {
     <div className={`${styles['dashboard-cards-row']} space-component`}>
       <div className={styles['dashboard-card-col']}>
         <CCard
-          className={colorScheme === 'dark' ? 'text-light' : 'text-dark'}
+          className={`${colorScheme === 'dark' ? 'text-light' : 'text-dark'} mb-4 mb-sm-0`}
           style={{ ...getCardStyle(1) }}
         >
           <CCardBody>
@@ -140,7 +140,7 @@ const Cards = () => {
       </div>
       <div className={styles['dashboard-card-col']}>
         <CCard
-          className={colorScheme === 'dark' ? 'text-light' : 'text-dark'}
+          className={`${colorScheme === 'dark' ? 'text-light' : 'text-dark'} mb-4 mb-sm-0`}
           style={getCardStyle(2)}
         >
           <CCardBody>
@@ -163,7 +163,7 @@ const Cards = () => {
       </div>
       <div className={styles['dashboard-card-col']}>
         <CCard
-          className={colorScheme === 'dark' ? 'text-light' : 'text-dark'}
+          className={`${colorScheme === 'dark' ? 'text-light' : 'text-dark'} mb-4 mb-sm-0`}
           style={getCardStyle(3)}
         >
           <CCardBody>
@@ -173,7 +173,10 @@ const Cards = () => {
               </div>
             ) : (
               <>
-                <div className="fs-3 fw-bold">{data.topSpecialty}</div>
+                <div className="label" style={{ fontSize: '1.7rem', fontWeight: 'bold' }}>
+                  {data.topSpecialty || t('No data available')} {/* ← traducción aquí */}
+                </div>
+
                 <div className="text-uppercase">{t('Most Requested Specialty')}</div>
                 <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
                   {t('Based on recent appointments')}

@@ -57,7 +57,7 @@ export const Users = () => {
   const [specialties, setSpecialties] = useState([])
   const [formDataState, setFormData] = useState({})
 
-  const { request, loading: apiLoading } = useApi()
+  const { request, loading } = useApi()
   useEffect(() => {
     request('get', '/users/roles').then(({ data }) => setRoles(data || []))
     request('get', '/users/professional-types').then(({ data }) => setProfessionalTypes(data || []))
@@ -565,13 +565,27 @@ export const Users = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {filteredUsers.length === 0 ? (
+              {/* 1. Muestra el Skeleton Loader si loading es true */}
+              {loading ? (
+                // Simula 5 filas de carga
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CTableRow key={index}>
+                    {/* ColSpan es 7 para cubrir todas las columnas de esta tabla (7 celdas de datos por fila) */}
+                    <CTableDataCell colSpan={7}>
+                      <div className="skeleton-row"></div> {/* Aplica la animación CSS */}
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : filteredUsers.length === 0 ? (
+                // 2. Muestra "No hay usuarios disponibles" si no hay datos
                 <CTableRow>
-                  <CTableDataCell colSpan={6} className="text-center">
+                  {/* ColSpan es 7 para cubrir todas las columnas */}
+                  <CTableDataCell colSpan={7} className="text-center">
                     No hay usuarios disponibles
                   </CTableDataCell>
                 </CTableRow>
               ) : (
+                // 3. Muestra los datos si loading es false y hay usuarios
                 filteredUsers.map((user, index) => (
                   <CTableRow key={index}>
                     <CTableDataCell className="text-center">

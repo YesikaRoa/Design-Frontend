@@ -733,13 +733,26 @@ const Appointments = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {filteredAppointments.length === 0 ? (
+              {/* 1. Muestra el Skeleton Loader si loading es true */}
+              {loading ? (
+                // Simula 5 filas de carga
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CTableRow key={index}>
+                    {/* ColSpan es 6 para cubrir todas las columnas de la tabla */}
+                    <CTableDataCell colSpan={6}>
+                      <div className="skeleton-row"></div> {/* Aplica la animación CSS */}
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : filteredAppointments.length === 0 ? (
+                // 2. Muestra "No appointments available" si no hay datos
                 <CTableRow>
                   <CTableDataCell colSpan={6} className="text-center">
                     {t('No appointments available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
+                // 3. Muestra los datos si loading es false y hay citas
                 filteredAppointments.map((appointment, index) => (
                   <CTableRow key={index}>
                     <CTableDataCell>{appointment.patient_full_name}</CTableDataCell>

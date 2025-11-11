@@ -32,7 +32,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatDate } from '../../utils/dateUtils'
 
 export const Professionls = () => {
-  const { request, loading: apiLoading } = useApi()
+  const { request, loading } = useApi()
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [filteredUsers, setFilteredUsers] = useState([])
@@ -475,13 +475,26 @@ export const Professionls = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {filteredUsers.length === 0 ? (
+              {/* 1. Muestra el Skeleton Loader si loading es true */}
+              {loading ? (
+                // Simula 5 filas de carga
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CTableRow key={index}>
+                    {/* ColSpan es 6 para cubrir todas las columnas de la tabla */}
+                    <CTableDataCell colSpan={6}>
+                      <div className="skeleton-row"></div>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : filteredUsers.length === 0 ? (
+                // 2. Muestra "No users available" si no hay datos
                 <CTableRow>
                   <CTableDataCell colSpan={6} className="text-center">
                     {t('No users available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
+                // 3. Muestra los datos si loading es false y hay usuarios
                 filteredUsers.map((user, index) => (
                   <CTableRow key={index}>
                     <CTableDataCell className="text-center">

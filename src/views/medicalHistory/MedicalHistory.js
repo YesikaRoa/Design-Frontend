@@ -11,7 +11,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import ModalDownloadPDF from '../../components/ModalDownloadPDF'
-import debounce from 'lodash/debounce'
+
 import '../appointments/styles/appointments.css'
 import '../users/styles/filter.css'
 import '../users/styles/users.css'
@@ -94,7 +94,7 @@ const MedicalHistory = () => {
   // Obtener el rol del token
   const tokenPayload = token ? parseJwt(token) : {}
   const headers = token ? { Authorization: `Bearer ${token}` } : {}
-  const { request, fetchAppointmentsForSelect } = useApi()
+  const { request, loading } = useApi()
   // Mueve fetchData fuera del useEffect para que esté disponible globalmente
   const fetchData = async () => {
     try {
@@ -637,13 +637,26 @@ const MedicalHistory = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {FilteredMedicalHistory.length === 0 ? (
+              {/* 1. Muestra el Skeleton Loader si loading es true */}
+              {loading ? (
+                // Simula 5 filas de carga
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CTableRow key={index}>
+                    {/* ColSpan es 5 para cubrir todas las columnas de esta tabla */}
+                    <CTableDataCell colSpan={5}>
+                      <div className="skeleton-row"></div>
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : FilteredMedicalHistory.length === 0 ? (
+                // 2. Muestra "No appointments available" si no hay datos
                 <CTableRow>
-                  <CTableDataCell colSpan={6} className="text-center">
+                  <CTableDataCell colSpan={5} className="text-center">
                     No appointments available
                   </CTableDataCell>
                 </CTableRow>
               ) : (
+                // 3. Muestra los datos si loading es false y hay registros
                 FilteredMedicalHistory.map((record, index) => (
                   <CTableRow key={index}>
                     <CTableDataCell>{record.patient_full_name}</CTableDataCell>
