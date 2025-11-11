@@ -1,13 +1,15 @@
-/* ChartBarExample.css */
-
-/* Tarjeta que contiene el gráfico */
+/* === Tarjeta y header === */
 .chart-card {
   margin-bottom: 20px;
   border-radius: 10px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
 }
 
-/* Encabezado de la tarjeta */
 .chart-card .ccard-header {
   font-size: 1.25rem;
   font-weight: bold;
@@ -16,46 +18,101 @@
   text-align: center;
   padding: 10px;
   border-bottom: 2px solid #ddd;
+  width: 100%;
 }
 
-/* Estilos de las filas y columnas */
+/* === Wrapper de gráfico === */
 .chart-wrapper {
   width: 100%;
-  height: 250px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Placeholder donut when there's no data */
+/* === Doughnut Base === */
 .doughnut-placeholder {
   width: 100%;
-  height: 250px;
+  max-width: 180px;
+  aspect-ratio: 1;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
+  flex-direction: column;
+  margin: 0 auto;
 }
+
 .doughnut-placeholder .outer {
-  width: 190px;
-  height: 190px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--cui-bg-muted, #d3d6db);
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .doughnut-placeholder .inner {
-  width: 95px;
-  height: 95px;
+  width: 60%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--cui-body-bg, #ffffff);
 }
+
+/* Texto centrado en la dona */
 .doughnut-placeholder .label {
   position: absolute;
-  bottom: 3px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  color: var(--cui-body-color, #333);
+  transform: translate(-50%, -50%);
   font-size: 0.9rem;
+  text-align: center;
+  word-wrap: break-word;
+  padding: 0 5px; /* evita overflow */
+}
+
+/* === Media query para móviles === */
+@media (max-width: 768px) {
+  .doughnut-placeholder {
+    max-width: 140px;
+  }
+
+  .doughnut-placeholder .inner {
+    width: 60%;
+  }
+
+  .doughnut-placeholder .label {
+    font-size: 0.5rem;
+  }
+}
+/* === Modo CLARO === */
+:root[data-coreui-theme='light'] .doughnut-placeholder .outer {
+  background: linear-gradient(145deg, #e6e8eb, #f6f7f8);
+  box-shadow:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.05),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+}
+
+:root[data-coreui-theme='light'] .doughnut-placeholder .inner {
+  background: #ffffff;
+}
+
+:root[data-coreui-theme='light'] .doughnut-placeholder .label {
+  color: #444;
+}
+
+/* === Modo OSCURO === */
+:root[data-coreui-theme='dark'] .doughnut-placeholder .outer {
+  background: linear-gradient(145deg, #2d2f32, #3a3c3f);
+  box-shadow:
+    inset 2px 2px 6px rgba(255, 255, 255, 0.05),
+    inset -2px -2px 6px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-coreui-theme='dark'] .doughnut-placeholder .inner {
+  background: #242931;
+}
+
+:root[data-coreui-theme='dark'] .doughnut-placeholder .label {
+  color: #ccc;
 }
 
 @media (max-width: 768px) {
@@ -69,4 +126,80 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+/* Animación general */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animación para el estado de carga */
+.doughnut-loading {
+  width: 100%;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  flex-direction: column;
+}
+
+/* === EFECTO PULSO === */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(128, 128, 128, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 25px 8px rgba(128, 128, 128, 0.2);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(128, 128, 128, 0.3);
+    transform: scale(1);
+  }
+}
+
+.doughnut-loading.pulse .outer {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: pulseGlow 2s ease-in-out infinite;
+
+  /* 🔹 Fondo adaptable al tema */
+  background: conic-gradient(
+    color-mix(in srgb, var(--cui-bg-muted, #ccc) 80%, var(--cui-body-bg, #fff) 20%) 30%,
+    color-mix(in srgb, var(--cui-body-bg, #fff) 70%, var(--cui-bg-muted, #aaa) 30%) 70%
+  );
+
+  /* 🔹 Borde sutil según modo */
+  border: 1px solid color-mix(in srgb, var(--cui-body-color, #444) 10%, transparent 90%);
+}
+
+.doughnut-loading.pulse .inner {
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  background: var(--cui-body-bg, #fff);
+}
+
+.doughnut-loading .label {
+  margin-top: 12px;
+  color: var(--cui-body-color, #555);
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Estado sin datos (estático) */
+.doughnut-placeholder .outer {
+  background: var(--cui-bg-muted, #d8d8d8);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+  opacity: 0.8;
 }

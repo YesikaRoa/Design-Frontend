@@ -3,6 +3,7 @@ import UserFilter from '../../components/Filter'
 import ModalDelete from '../../components/ModalDelete'
 import ModalInformation from '../../components/ModalInformation'
 import ModalAdd from '../../components/ModalAdd'
+import './../../scss/style.scss'
 
 import Notifications from '../../components/Notifications'
 import { formatDate } from '../../utils/dateUtils'
@@ -53,7 +54,7 @@ export const Patients = () => {
   const token = localStorage.getItem('authToken')
   const [formDataState, setFormData] = useState({})
 
-  const { request } = useApi()
+  const { request, loading } = useApi()
   useEffect(() => {
     const convertDefaultAvatarToBase64 = async () => {
       try {
@@ -439,13 +440,27 @@ export const Patients = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {filteredUsers.length === 0 ? (
+              {/* 1. Muestra el Skeleton Loader si loading es true */}
+              {loading ? (
+                // === Skeleton Loader ===
+                // Simulamos 5 filas de carga
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CTableRow key={index}>
+                    {/* ColSpan es 6 para cubrir todas las columnas */}
+                    <CTableDataCell colSpan={6}>
+                      <div className="skeleton-row"></div> {/* Aplica la animación CSS */}
+                    </CTableDataCell>
+                  </CTableRow>
+                ))
+              ) : filteredUsers.length === 0 ? (
+                // 2. Muestra "No hay usuarios disponibles" si no hay datos
                 <CTableRow>
                   <CTableDataCell colSpan={6} className="text-center">
                     No hay usuarios disponibles
                   </CTableDataCell>
                 </CTableRow>
               ) : (
+                // 3. Muestra los datos si loading es false y hay usuarios
                 filteredUsers.map((user, index) => (
                   <CTableRow key={index}>
                     <CTableDataCell className="text-center">

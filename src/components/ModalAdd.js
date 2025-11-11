@@ -27,6 +27,7 @@ const ModalAdd = forwardRef(
     const [errors, setErrors] = useState({}) // Estado para errores
     const [serverErrorMessage, setServerErrorMessage] = useState('')
     const { t } = useTranslation()
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [colorScheme, setColorScheme] = useState(() => {
       if (typeof window === 'undefined') return 'light'
       const ds = document.documentElement.dataset.coreuiTheme
@@ -155,7 +156,7 @@ const ModalAdd = forwardRef(
         setErrors(newErrors)
         return
       }
-
+      setIsSubmitting(true) // Bloquea el botón
       // Llamamos al handler del padre y esperamos su resultado.
       // Se espera que onFinish devuelva un objeto { success: boolean, errors?: { field: message } }
       if (onFinish) {
@@ -174,6 +175,8 @@ const ModalAdd = forwardRef(
           console.error('Error en onFinish:', err)
           const message = err?.message || 'An unexpected error occurred. Please try again.'
           setServerErrorMessage(message)
+        } finally {
+          setIsSubmitting(false)
         }
       }
     }
@@ -400,7 +403,12 @@ const ModalAdd = forwardRef(
               >
                 {t('Back')}
               </CButton>
-              <CButton color="success" className="full-width" onClick={handleAdd}>
+              <CButton
+                color="success"
+                className="full-width"
+                onClick={handleAdd}
+                disabled={isSubmitting}
+              >
                 <CIcon icon={cilPlus} style={{ marginRight: '8px' }} />
                 {t('Add')}
               </CButton>

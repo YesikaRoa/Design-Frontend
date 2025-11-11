@@ -6,7 +6,36 @@
   border-radius: 10px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
+.chart-card-header {
+  min-height: 4rem; /* altura suficiente para 1-2 líneas */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+}
+.chart-card-body {
+  height: 250px; /* altura fija para desktop */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* Contenedor de las columnas */
+.chart-row {
+  display: flex;
+  flex-wrap: wrap; /* Permite que se apilen en pantallas pequeñas */
+  gap: 20px; /* Espacio entre cards */
+}
 
+/* Cada columna */
+.ccol {
+  flex: 1 1 45%; /* Crece, encoge y ocupa ~45% del ancho en desktop */
+  min-width: 250px; /* Evita que se achique demasiado */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 /* Encabezado de la tarjeta */
 .chart-card .ccard-header {
   font-size: 1.25rem;
@@ -36,4 +65,34 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.chart-loading-overlay {
+  position: absolute;
+  inset: 0; /* cubre todo el card */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent; /* fondo translúcido */
+  z-index: 10;
+  border-radius: 0.5rem; /* coincide con el borde del card */
+}
+
+[data-coreui-theme='dark'] .chart-loading-overlay {
+  background-color: transparent;
+}
+.no-data-text {
+  font-size: 1.7rem; /* un poco más grande */
+  font-weight: 600; /* negrita media */
+  text-align: center;
+  margin: 0;
+  color: var(--cui-body-color, #333);
+}
+
+.no-data-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%; /* ocupa todo el alto del card body */
+  min-height: 250px; /* asegura que tenga espacio visible */
+  text-align: center;
 }

@@ -19,6 +19,7 @@ const ChartsSection = () => {
   const doughnutRef1 = useRef(null)
   const doughnutRef2 = useRef(null)
   const { t } = useTranslation()
+  const [loading, setLoading] = useState(true)
   const [cityData, setCityData] = useState([])
   const [specialtyData, setSpecialtyData] = useState([])
   const [colorScheme, setColorScheme] = useState(() => {
@@ -38,17 +39,19 @@ const ChartsSection = () => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {}
         const res = await request('get', '/dashboard', null, headers)
         if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+
         const data = res.data
-        // Procesar pacientes por ciudad
         const cityLabels = data.patientsByCity.map((entry) => entry.city)
         const cityValues = data.patientsByCity.map((entry) => entry.patient_count)
-        // Procesar especialidades más solicitadas
         const specialtyLabels = data.specialtiesByRequest.map((entry) => entry.specialty)
         const specialtyValues = data.specialtiesByRequest.map((entry) => entry.patient_count)
+
         setCityData({ labels: cityLabels, data: cityValues })
         setSpecialtyData({ labels: specialtyLabels, data: specialtyValues })
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchDashboardData()
@@ -158,16 +161,29 @@ const ChartsSection = () => {
     <CCardBody className="mb-4">
       <div className="row">
         <div className="col-sm-6">
-          <CCard>
-            <CCardHeader style={{ fontWeight: 'bold' }}>{t('Patients by City')}</CCardHeader>
+          <CCard className=" mb-4 mb-sm-0">
+            <CCardHeader style={{ fontWeight: 'bold' }}>{t('Patients by city')}</CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
-                {doughnutData1WithFallback.__isPlaceholder ? (
+                {loading ? (
+                  <div className="doughnut-loading pulse">
+                    <div className="outer">
+                      <div className="inner" />
+                    </div>
+                  </div>
+                ) : doughnutData1WithFallback.__isPlaceholder ? (
                   <div className="doughnut-placeholder">
                     <div className="outer">
                       <div className="inner" />
                     </div>
-                    <div className="label">{t('No data available')}</div>
+                    <div
+                      className="label"
+                      style={{
+                        fontSize: '1.1rem', // letra más grande
+                      }}
+                    >
+                      {t('No data available')}
+                    </div>
                   </div>
                 ) : (
                   <CChart
@@ -183,22 +199,35 @@ const ChartsSection = () => {
           </CCard>
         </div>
         <div className="col-sm-6">
-          <CCard>
+          <CCard className="mb-4 mb-sm-0">
             <CCardHeader style={{ fontWeight: 'bold' }}>
-              {t('Most Requested Specialties')}
+              {t('Most requested specialties')}
             </CCardHeader>
             <CCardBody>
               <div className="chart-wrapper">
-                {doughnutData2WithFallback.__isPlaceholder ? (
+                {loading ? (
+                  <div className="doughnut-loading pulse">
+                    <div className="outer">
+                      <div className="inner" />
+                    </div>
+                  </div>
+                ) : doughnutData1WithFallback.__isPlaceholder ? (
                   <div className="doughnut-placeholder">
                     <div className="outer">
                       <div className="inner" />
                     </div>
-                    <div className="label">{t('No data available')}</div>
+                    <div
+                      className="label"
+                      style={{
+                        fontSize: '1.1rem', // letra más grande
+                      }}
+                    >
+                      {t('No data available')}{' '}
+                    </div>
                   </div>
                 ) : (
                   <CChart
-                    key={`doughnut2-${colorScheme}-${(doughnutData2WithFallback.labels || []).join('-')}-${(doughnutData2WithFallback.datasets[0].data || []).join('-')}`}
+                    key={`doughnutRef2-${colorScheme}-${(doughnutData2WithFallback.labels || []).join('-')}-${(doughnutData2WithFallback.datasets[0].data || []).join('-')}`}
                     type="doughnut"
                     data={doughnutData2WithFallback}
                     options={options}
