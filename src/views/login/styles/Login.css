@@ -1,13 +1,215 @@
 .login-background {
-  background-image: url('/src/assets/images/4.png'), url('/src/assets/images/2.png');
-  background-size: 15%, 25%;
-  background-position:
-    120px 98px,
-    right bottom;
-  background-color: rgb(202, 224, 240) !important;
-  background-repeat: no-repeat, no-repeat;
+  position: relative;
+  background-color: #cae0f0;
+  overflow: hidden;
+  z-index: 0;
 }
-.some-class {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra alrededor del elemento */
-  border-radius: 8px; /* Opcional: bordes redondeados */
+
+/* === Imagen 1 (por defecto) === */
+.login-background::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  width: 280px;
+  height: 280px;
+  background: url('/src/assets/images/dark2.2.jpg') no-repeat center/cover;
+  border-radius: 50%;
+  z-index: -1;
+  transition: all 0.4s ease-in-out;
+  opacity: 0.9;
+}
+
+/* === Imagen 2 (igual para ambos modos) === */
+.login-background::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  right: 10%;
+  width: 300px;
+  height: 250px;
+  background: url('/src/assets/images/4.png') no-repeat center/cover;
+  z-index: -1;
+  transition: all 0.4s ease-in-out;
+  opacity: 0.9;
+}
+
+/* === Texto general === */
+.login-background h1,
+.login-background p,
+.login-background label {
+  color: #0d0d0d;
+}
+html[data-coreui-theme='light'] .login-background p.whit,
+html[data-coreui-theme='dark'] .login-background p.whit {
+  color: #ffffff !important;
+  font-size: 1.1rem;
+  margin-top: 30px;
+}
+/* === 💡 MODO CLARO (CoreUI) === */
+html[data-coreui-theme='light'] .login-background {
+  background: linear-gradient(135deg, #a9c9dd 40%, #cae0f0 60%) !important;
+}
+
+html[data-coreui-theme='light'] .login-background::before {
+  background-image: url('/src/assets/images/dark2.2.jpg') !important;
+}
+
+html[data-coreui-theme='light'] .login-background::after {
+  background-image: url('/src/assets/images/4.png') !important;
+}
+
+html[data-coreui-theme='light'] .login-background h1,
+html[data-coreui-theme='light'] .login-background p,
+html[data-coreui-theme='light'] .login-background label {
+  color: #222121 !important;
+}
+
+/* === 🌙 MODO OSCURO (CoreUI) === */
+html[data-coreui-theme='dark'] .login-background {
+  background: linear-gradient(135deg, #0b1d33 30%, #132238 60%) !important;
+}
+
+html[data-coreui-theme='dark'] .login-background::before {
+  background-image: url('/src/assets/images/dark2.3.jpg') !important;
+}
+
+html[data-coreui-theme='dark'] .login-background::after {
+  background-image: url('/src/assets/images/4.png') !important;
+}
+
+html[data-coreui-theme='dark'] .login-background h1,
+html[data-coreui-theme='dark'] .login-background h6,
+html[data-coreui-theme='dark'] .login-background h1,
+html[data-coreui-theme='dark'] .login-background p,
+html[data-coreui-theme='dark'] .login-background label {
+  color: #e0e0e0 !important;
+}
+
+html[data-coreui-theme='dark'] .some-class {
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+}
+
+/* === Tablets (pantallas medianas) === */
+@media (max-width: 1440px) {
+  .login-background::before {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    left: 5%;
+  }
+
+  .login-background::after {
+    width: 200px;
+    height: 200px;
+    bottom: 5%;
+    right: 5%;
+  }
+}
+@media (max-width: 1024px) {
+  .login-background::before {
+    width: 130px;
+    height: 130px;
+    top: 10%;
+    left: 5%;
+  }
+
+  .login-background::after {
+    width: 170px;
+    height: 150px;
+    bottom: 5%;
+    right: 5%;
+  }
+}
+/* === Móviles grandes (pantallas pequeñas ≤767px) === */
+@media (max-width: 768px) {
+  .login-background::before,
+  .login-background::after {
+    display: none;
+  }
+
+  /* Card más pequeño */
+  .some-class .card {
+    width: 90% !important;
+    max-width: 280px !important;
+    margin: 0 auto !important;
+    padding: 0.75rem !important;
+    box-sizing: border-box;
+    border-radius: 3px !important;
+  }
+
+  /* Texto dentro del card más pequeño */
+  .some-class .card h1,
+  .some-class .card h2,
+  .some-class .card h3 {
+    font-size: 1.1rem !important;
+  }
+
+  .some-class .card p,
+  .some-class .card label,
+  .some-class .card span {
+    font-size: 0.9rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Botones dentro del card también reducidos */
+  .some-class .card button,
+  .some-class .card .btn {
+    font-size: 0.85rem !important;
+    padding: 0.4rem 0.8rem !important;
+  }
+}
+
+/* === Móviles muy pequeños (≤480px) === */
+@media (max-width: 480px) {
+  .login-background::before,
+  .login-background::after {
+    display: none;
+  }
+
+  /* mejora el look de la tarjeta cuando no hay fondo */
+  .login-card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
+/* 🔧 Corrige desplazamiento lateral en móviles */
+@media (max-width: 425px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+  }
+
+  .login-background {
+    overflow-x: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ajuste extra del contenedor de las tarjetas */
+  .some-class {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  /* Tarjetas más pequeñas y centradas */
+  .some-class .card {
+    width: 92% !important;
+    max-width: 350px !important;
+    margin: 0 auto !important;
+    padding: 1rem !important;
+    box-sizing: border-box;
+  }
+
+  /* Evita que el contenedor principal agregue margen lateral */
+  .container,
+  .CContainer {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+  }
 }

@@ -21,12 +21,14 @@ import ModalSendInformation from '../../components/ModalSendInformation'
 import Notifications from '../../components/Notifications'
 import emailjs from 'emailjs-com'
 import './styles/Login.css'
+import { useTranslation } from 'react-i18next'
 
 const Login = () => {
   const { request, loading } = useApi()
   const [modalVisible, setModalVisible] = useState(false)
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
+  const { t } = useTranslation()
 
   // Estados controlados para inputs
   const [email, setEmail] = useState('')
@@ -124,15 +126,15 @@ const Login = () => {
                     </CAlert>
                   )}
                   <CForm>
-                    <h1>Login</h1>
-                    <p className="text-body-secondary">Sign In to your account</p>
+                    <h1>{t('Login')}</h1>
+                    <p className="text-body-secondary">{t('Sign In to your account')}</p>
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
                         id="username-input"
-                        placeholder="Email"
+                        placeholder={t('Email')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -148,7 +150,7 @@ const Login = () => {
                       <CFormInput
                         id="password-input"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Password"
+                        placeholder={t('Password')}
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -162,7 +164,7 @@ const Login = () => {
                           onClick={handleLogin}
                           disabled={loading}
                         >
-                          Login
+                          {t('Login')}
                         </CButton>
                       </CCol>
                       <CCol xs={6} className="text-right">
@@ -171,24 +173,25 @@ const Login = () => {
                           className="px-0"
                           onClick={() => setModalVisible(true)}
                         >
-                          Forgot password?
+                          {t('Forgot password?')}
                         </CButton>
                       </CCol>
                     </CRow>
                   </CForm>
                 </CCardBody>
               </CCard>
-              <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
+              <CCard className="text-white bg-primary py-4">
                 <CCardBody className="text-center">
                   <div>
-                    <h3>Welcome to MediPanel</h3>
-                    <p>
-                      "Every appointment is an opportunity to change a life. This panel will help
-                      you do it with love and excellence."
+                    <h2>{t('Welcome to MediPanel')}</h2>
+                    <p className="whit">
+                      {t(
+                        '"Every appointment is an opportunity to change a life. This panel will help you do it with love and excellence."',
+                      )}
                     </p>
                     <Link to="/register">
                       <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
+                        {t('Register Now!')}
                       </CButton>
                     </Link>
                   </div>
@@ -202,14 +205,14 @@ const Login = () => {
       <ModalSendInformation
         visible={modalVisible}
         setVisible={setModalVisible}
-        title="Recuperar Contraseña"
-        message="Ingrese su correo electrónico registrado para recibir su contraseña."
+        title={t('Recover Password')}
+        message={t('Please enter your registered email to receive your password.')}
         onSend={handleSendPassword}
       >
         <CFormInput
           id="email-input"
           type="email"
-          placeholder="Correo electrónico"
+          placeholder={t('Email')}
           value={recoveryEmail}
           onChange={(e) => setRecoveryEmail(e.target.value)}
           required

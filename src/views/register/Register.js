@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import useApi from '../../hooks/useApi'
 import { useNavigate } from 'react-router-dom'
-
+import { useTranslation } from 'react-i18next'
 import Notifications from '../../components/Notifications'
 import './styles/Register.css'
 
@@ -18,6 +18,7 @@ import {
   CRow,
   CAlert,
   CFormSelect,
+  CLink,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilLockUnlocked, cilUser } from '@coreui/icons'
@@ -47,6 +48,7 @@ const Register = () => {
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const [professionalTypes, setProfessionalTypes] = useState([])
 
@@ -181,7 +183,7 @@ const Register = () => {
               </CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="First Name"
+                placeholder={t('First name')}
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleInputChange}
@@ -193,7 +195,7 @@ const Register = () => {
               </CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Last Name"
+                placeholder={t('Last name')}
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleInputChange}
@@ -203,7 +205,7 @@ const Register = () => {
               <CInputGroupText>@</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Email"
+                placeholder={t('Email')}
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
@@ -221,7 +223,7 @@ const Register = () => {
               <CFormInput
                 className="form-input"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
+                placeholder={t('Password')}
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
@@ -236,7 +238,7 @@ const Register = () => {
               <CInputGroupText>📍</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Address"
+                placeholder={t('Address')}
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
@@ -246,7 +248,7 @@ const Register = () => {
               <CInputGroupText>📞</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="Phone"
+                placeholder={t('Phone')}
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
@@ -271,7 +273,7 @@ const Register = () => {
                 value={formData.gender}
                 onChange={handleInputChange}
               >
-                <option value="">Select Gender</option>
+                <option value="">{t('Select Gender')}</option>
                 <option value="F">F</option>
                 <option value="M">M</option>
               </CFormSelect>
@@ -285,7 +287,7 @@ const Register = () => {
               <CInputGroupText>📝</CInputGroupText>
               <CFormInput
                 className="form-input"
-                placeholder="biography"
+                placeholder={t('Biography')}
                 name="biography"
                 value={formData.biography}
                 onChange={handleInputChange}
@@ -301,7 +303,7 @@ const Register = () => {
                 onChange={handleInputChange}
                 required
               >
-                <option value="">Seleccione tipo de profesional</option>
+                <option value="">{t('Select type of professional')}</option>
                 {professionalTypes.map((type) => (
                   <option key={type.id} value={type.id}>
                     {type.name}
@@ -312,14 +314,14 @@ const Register = () => {
             {formData.professional_type && (
               <>
                 <CInputGroup className="mb-3 form-step">
-                  <CInputGroupText>Especialidad</CInputGroupText>
+                  <CInputGroupText>{t('Specialty')}</CInputGroupText>
                   <CFormSelect
                     className="form-select"
                     name="specialty"
                     value={formData.specialty}
                     onChange={handleInputChange}
                   >
-                    <option value="">Seleccione especialidad</option>
+                    <option value="">{t('-- No specialty --')}</option>
                     {specialties.map((spec) => (
                       <option key={spec.id} value={spec.id}>
                         {spec.name}
@@ -327,24 +329,24 @@ const Register = () => {
                     ))}
                   </CFormSelect>
                 </CInputGroup>
-                {formData.specialty && (
-                  <CInputGroup className="mb-3 form-step">
-                    <CInputGroupText>Subespecialidad</CInputGroupText>
-                    <CFormSelect
-                      className="form-select"
-                      name="subspecialty"
-                      value={formData.subspecialty}
-                      onChange={handleInputChange}
-                    >
-                      <option value="">Seleccione subespecialidad</option>
-                      {subspecialties.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.name}
-                        </option>
-                      ))}
-                    </CFormSelect>
-                  </CInputGroup>
-                )}
+
+                <CInputGroup className="mb-3 form-step">
+                  <CInputGroupText>{t('Subspecialty')}</CInputGroupText>
+                  <CFormSelect
+                    className="form-select"
+                    name="subspecialty"
+                    value={formData.subspecialty}
+                    onChange={handleInputChange}
+                    disabled={!formData.specialty} // 🔹 Solo habilita si hay una especialidad seleccionada
+                  >
+                    <option value="">{t('-- No subspecialty --')}</option>
+                    {subspecialties.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </option>
+                    ))}
+                  </CFormSelect>
+                </CInputGroup>
               </>
             )}
             <CInputGroup className="mb-3 form-step">
@@ -352,7 +354,7 @@ const Register = () => {
               <CFormInput
                 className="form-input"
                 type="number"
-                placeholder="Years of Experience"
+                placeholder={t('Years of Experience')}
                 name="years_experience"
                 value={formData.years_experience}
                 onChange={handleInputChange}
@@ -373,7 +375,7 @@ const Register = () => {
             <CCard className="mx-4">
               <CCardBody className="p-4">
                 <CForm>
-                  <h1 className="text-center">Register</h1>
+                  <h1 className="text-center">{t('Register')}</h1>
                   <div className="steps-indicator">
                     {Array.from({ length: 3 }, (_, index) => (
                       <div className="step-item" key={index}>
@@ -398,21 +400,24 @@ const Register = () => {
                       </CButton>
                     )}
                     {step === 1 && (
-                      <CButton
-                        color="light"
-                        className="text-primary"
+                      <CLink
+                        style={{
+                          color: 'var(--cui-primary)',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
                         onClick={() => navigate('/login')}
                       >
-                        Ir a inicio de sesión
-                      </CButton>
+                        {t('Go to login')}
+                      </CLink>
                     )}
                     {step < 3 ? (
                       <CButton color="primary" onClick={handleNext}>
-                        Next
+                        {t('Next')}
                       </CButton>
                     ) : (
                       <CButton color="success" onClick={handleRegister}>
-                        Register
+                        {t('Register')}
                       </CButton>
                     )}
                   </div>

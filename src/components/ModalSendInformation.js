@@ -1,7 +1,10 @@
 import React from 'react'
 import { CButton, CModal, CModalBody, CModalFooter, CModalHeader, CModalTitle } from '@coreui/react'
+import { useTranslation } from 'react-i18next'
 
 const ModalSendInformation = ({ visible, setVisible, title, message, onSend, children }) => {
+  const { t } = useTranslation()
+
   return (
     <CModal
       visible={visible}
@@ -23,10 +26,10 @@ const ModalSendInformation = ({ visible, setVisible, title, message, onSend, chi
             setVisible(false)
           }}
         >
-          Enviar
+          {t('Send')}
         </CButton>
         <CButton color="secondary" onClick={() => setVisible(false)}>
-          Cerrar
+          {t('Close')}
         </CButton>
       </CModalFooter>
     </CModal>

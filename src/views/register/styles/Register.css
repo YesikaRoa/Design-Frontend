@@ -1,50 +1,256 @@
-.step-circle {
-  background-color: white;
-  border: 2px solid #5856d6;
-  color: #5856d6;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.step-circle.active {
-  background-color: #5856d6;
-  color: #fff;
-}
+/* === Indicador de pasos (1-2-3) === */
 .steps-indicator {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
-  margin: 20px 0;
+  flex-wrap: nowrap; /* ✅ Siempre horizontal */
+  gap: 18px;
+  margin: 16px 0;
 }
+
 .step-item {
   position: relative;
   display: flex;
   align-items: center;
 }
 
+.step-circle {
+  background-color: white;
+  border: 2px solid #5856d6;
+  color: #5856d6;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.step-circle.active {
+  background-color: #5856d6;
+  color: #fff;
+}
+
+/* Línea entre pasos */
 .step-item:not(:last-child)::after {
   content: '';
   height: 2px;
   background-color: #5856d6;
-  width: 40px;
+  width: 110px;
   margin: 0 10px;
+  transition: width 0.3s ease;
 }
+/* === Fondo principal === */
 .Register-background {
-  background-image: url('/src/assets/images/4.png'), url('/src/assets/images/2.png');
-  background-size: 15%, 25%;
-  background-position:
-    120px 98px,
-    right bottom;
+  position: relative;
   background-color: rgb(202, 224, 240) !important;
-  background-repeat: no-repeat, no-repeat;
+  overflow: hidden;
+  z-index: 0;
+} /* === Imagen 1 === */
+.Register-background::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 7%;
+  width: 250px;
+  height: 250px;
+  background: url('/src/assets/images/2.png') no-repeat center/cover;
+  border-radius: 50%;
+  opacity: 0.9;
+  z-index: -1;
+  transition: all 0.4s ease-in-out;
+} /* === Imagen 2 === */
+.Register-background::after {
+  content: '';
+  position: absolute;
+  bottom: 10%;
+  right: 5%;
+  width: 300px;
+  height: 250px;
+  background: url('/src/assets/images/4.png') no-repeat center/cover;
+  opacity: 0.9;
+  z-index: -1;
+  transition: all 0.4s ease-in-out;
+} /* === 💡 MODO CLARO === */
+html[data-coreui-theme='light'] .Register-background {
+  background: linear-gradient(135deg, #a9c9dd 40%, #cae0f0 60%) !important;
 }
-.some-class {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra alrededor del elemento */
-  border-radius: 8px; /* Opcional: bordes redondeados */
+html[data-coreui-theme='light'] .Register-background::before {
+  background-image: url('/src/assets/images/2.png') !important;
+}
+html[data-coreui-theme='light'] .Register-background::after {
+  background-image: url('/src/assets/images/4.png') !important;
+}
+html[data-coreui-theme='light'] .Register-background h1,
+html[data-coreui-theme='light'] .Register-background p,
+html[data-coreui-theme='light'] .Register-background label {
+  color: #333131 !important;
+} /* === 🌙 MODO OSCURO === */
+html[data-coreui-theme='dark'] .Register-background {
+  background: linear-gradient(135deg, #0b1d33 30%, #132238 60%) !important;
+}
+html[data-coreui-theme='dark'] .Register-background::before {
+  background-image: url('/src/assets/images/dark2.3.jpg') !important;
+}
+html[data-coreui-theme='dark'] .Register-background::after {
+  background-image: url('/src/assets/images/4.png') !important;
+}
+html[data-coreui-theme='dark'] .Register-background h1,
+html[data-coreui-theme='dark'] .Register-background p,
+html[data-coreui-theme='dark'] .Register-background label {
+  color: #e0e0e0 !important;
+} /* === Sombras de las tarjetas === */
+html[data-coreui-theme='light'] .some-class {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+html[data-coreui-theme='dark'] .some-class {
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+}
+
+/* === Tablets (1440px) === */ /* === Tablets y Laptops (≤1440px) === */
+@media (max-width: 2260) {
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .step-item:not(:last-child)::after {
+    width: 60px;
+  }
+
+  /* 💡 Imágenes reposicionadas a los lados, más pequeñas */
+  .Register-background::before {
+    width: 450px;
+    height: 450px;
+    top: 10%;
+    left: 5%;
+    opacity: 0.8;
+  }
+
+  .Register-background::after {
+    width: 350px;
+    height: 3500px;
+    bottom: 5%;
+    right: 5%;
+    opacity: 0.8;
+  }
+}
+
+@media (max-width: 1024px) {
+  .Register-background::before {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    left: 3%;
+  }
+
+  .Register-background::after {
+    width: 240px;
+    height: 200px;
+    bottom: 5%;
+    right: 3%;
+  }
+}
+
+/* === Móviles grandes (≤767px) === */
+@media (max-width: 768px) {
+  .steps-indicator {
+    gap: 12px;
+  }
+
+  .step-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+  }
+
+  .step-item:not(:last-child)::after {
+    width: 35px;
+  }
+
+  /* Imágenes ocultas completamente */
+  .Register-background::before,
+  .Register-background::after {
+    display: none;
+  }
+}
+
+/* === Móviles pequeños (≤480px) === */
+@media (max-width: 480px) {
+  .steps-indicator {
+    gap: 10px;
+    margin: 10px 0;
+  }
+
+  .step-circle {
+    width: 22px;
+    height: 22px;
+    font-size: 0.7rem;
+    border-width: 1.5px;
+  }
+
+  .step-item:not(:last-child)::after {
+    width: 25px;
+    margin: 0 6px;
+  }
+
+  /* Imágenes ocultas completamente */
+  .Register-background::before,
+  .Register-background::after {
+    display: none;
+  }
+}
+/* === 💜 Botones responsivos === */
+.Register-background .btn,
+.Register-background button,
+.Register-background .c-button,
+.Register-background .CButton {
+  transition: all 0.3s ease;
+}
+
+/* Tablets (≤1024px) */
+@media (max-width: 1024px) {
+  .Register-background .btn,
+  .Register-background button {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+}
+
+/* Móviles grandes (≤768px) */
+@media (max-width: 768px) {
+  .Register-background .btn,
+  .Register-background button {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
+
+  /* Ajuste si los botones están uno al lado del otro */
+  .Register-background .btn + .btn,
+  .Register-background button + button {
+    margin-left: 6px;
+  }
+}
+
+/* Móviles pequeños (≤480px) */
+@media (max-width: 480px) {
+  .Register-background .btn,
+  .Register-background button {
+    font-size: 0.8rem;
+    padding: 3px 8px;
+    border-radius: 8px;
+    min-width: 50px;
+  }
+
+  /* Si quieres que los botones ocupen todo el ancho en móviles */
+  .Register-background .btn-block,
+  .Register-background .button-block {
+    width: 100%;
+    display: block;
+  }
 }
