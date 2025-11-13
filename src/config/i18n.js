@@ -71,7 +71,7 @@ const resources = {
       'Professional Type': 'Professional Type',
       Subspecialty: 'Subspecialty',
       Biography: 'Biography',
-      'Years of Experience': 'Years of Experience',
+
       'Add new professional': 'Add new professional',
       'Confirm professional deletion': 'Confirm professional deletion',
       Cancel: 'Cancel',
@@ -127,7 +127,7 @@ const resources = {
       'Personal Information': 'Personal Information',
       'Professional Information': 'Professional Information',
       Type: 'Type',
-      'Years of experience': 'Years of experience',
+
       Specialties: 'Specialties',
       Subspecialties: 'Subspecialties',
       'Save Changes': 'Save Changes',
@@ -157,6 +157,9 @@ const resources = {
       'Years of Experience': 'Years of Experience',
       'Go to login': 'Go to login',
       Next: 'Next',
+      Profile: 'Profile',
+      'Sign out': 'Sign out',
+      'All rights reserved.': 'All rights reserved.',
     },
   },
   es: {
@@ -223,7 +226,7 @@ const resources = {
       'Professional Type': 'Tipo de Profesional',
       Subspecialty: 'Subespecialidad',
       Biography: 'Biografía',
-      'Years of Experience': 'Años de Experiencia',
+
       'Add new professional': 'Agregar nuevo profesional',
       'Confirm professional deletion': 'Confirmar eliminación de profesional',
       Cancel: 'Cancelar',
@@ -279,7 +282,7 @@ const resources = {
       'Personal Information': 'Información Personal',
       'Professional Information': 'Información Profesional',
       Type: 'Tipo',
-      'Years of experience': 'Años de experiencia',
+
       Specialties: 'Especialidades',
       Subspecialties: 'Subespecialidades',
       'Save Changes': 'Guardar Cambios',
@@ -309,6 +312,9 @@ const resources = {
       'Years of Experience': 'Años de Experiencia',
       'Go to login': 'Ir a inicio de sesión',
       Next: 'Siguiente',
+      Profile: 'Perfil',
+      'Sign out': 'Cerrar sesión',
+      'All rights reserved.': 'Todos los derechos reservados.',
     },
   },
 }

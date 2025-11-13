@@ -43,7 +43,7 @@ const AppSidebar = () => {
           <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={200} />
         </CSidebarBrand>
         <CCloseButton
-          className="d-lg-none"
+          className="d-lg-none position-absolute top-0 end-0 m-1"
           dark
           onClick={() => dispatch({ type: 'set', sidebarShow: false })}
         />

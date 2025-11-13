@@ -68,3 +68,23 @@
   justify-content: center; /* o flex-start si prefieres alineación a la izquierda */
   flex-wrap: wrap; /* permite que bajen si no hay espacio */
 }
+.contain {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #ccc;
+  border-top: 5px solid #324152; /* color principal */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.text {
+  margin-top: 12px;
+  color: #555;
+  font-size: 14px;
+}

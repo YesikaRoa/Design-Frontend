@@ -1,30 +1,84 @@
+/* === Estilos base del toast === */
 .custom-toast {
   position: fixed;
   top: 20px;
   right: 20px;
   max-width: 300px;
   z-index: 1050;
-  background-color: #fff; /* Fondo blanco para mejor visibilidad */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
-  border-radius: 8px; /* Bordes redondeados */
+  border-radius: 10px;
+  backdrop-filter: blur(8px); /* efecto de transparencia elegante */
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+  border: 1px solid transparent;
 }
 
+/* Contenido */
 .custom-toast .toast-content {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centra el contenido horizontalmente */
-  gap: 10px; /* Espacio entre el texto y el botón */
+  align-items: center;
+  gap: 10px;
 }
 
 .custom-toast .toast-content p {
-  margin: 0; /* Elimina márgenes predeterminados */
-  font-size: 14px; /* Tamaño de texto más pequeño */
-  text-align: center; /* Centra el texto */
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
 }
 
 .renew-session-button {
-  padding: 5px 10px; /* Tamaño pequeño */
-  font-size: 12px; /* Texto más pequeño */
-  border-radius: 20px; /* Botón con bordes redondeados */
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 20px;
   text-align: center;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* === 💡 MODO CLARO === */
+html[data-coreui-theme='light'] .custom-toast {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: #1c1c1c !important;
+  border-color: rgba(0, 123, 255, 0.2); /* borde azul suave */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+html[data-coreui-theme='light'] .custom-toast .renew-session-button {
+  background-color: #007bff;
+  color: #fff;
+}
+
+html[data-coreui-theme='light'] .custom-toast .renew-session-button:hover {
+  background-color: #0056b3;
+}
+
+/* === 🌙 MODO OSCURO === */
+html[data-coreui-theme='dark'] .custom-toast {
+  background-color: rgba(43, 47, 51, 0.9) !important; /* fondo oscuro con transparencia */
+  color: #f1f1f1 !important;
+  border-color: rgba(255, 255, 255, 0.1); /* borde gris suave */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+html[data-coreui-theme='dark'] .custom-toast .renew-session-button {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+html[data-coreui-theme='dark'] .custom-toast .renew-session-button:hover {
+  background-color: #0b5ed7;
+}
+
+/* === Estilo para el header del toast === */
+html[data-coreui-theme='dark'] .c-toast-header {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+html[data-coreui-theme='light'] .c-toast-header {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #000000;
 }

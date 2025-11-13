@@ -17,12 +17,14 @@ import CIcon from '@coreui/icons-react'
 import { useNavigate } from 'react-router-dom'
 import './style/header.css'
 import useApi from '../../hooks/useApi'
+import { useTranslation } from 'react-i18next'
 
 const AppHeaderDropdown = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const avatar = useSelector((state) => state.avatar)
   const defaultAvatar = '/avatar.png'
+  const { t } = useTranslation()
 
   const [tokenExpiring, setTokenExpiring] = useState(false)
   const [counter, setCounter] = useState(15)
@@ -110,12 +112,12 @@ const AppHeaderDropdown = () => {
       <CDropdownMenu className="pt-0" placement="bottom-end">
         <CDropdownItem onClick={handleProfileClick}>
           <CIcon icon={cilUser} className="me-2" />
-          Profile
+          {t('Profile')}
         </CDropdownItem>
         <CDropdownDivider />
         <CDropdownItem onClick={handleLogout}>
           <CIcon icon={cilExitToApp} className="me-2" />
-          Sign out
+          {t('Sign out')}
         </CDropdownItem>
       </CDropdownMenu>
       {tokenExpiring && (

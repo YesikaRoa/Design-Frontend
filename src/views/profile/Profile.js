@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-// Decodificador JWT simple (no seguro para producción, pero suficiente para frontend)
-function parseJwt(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]))
-  } catch (e) {
-    return {}
-  }
-}
+
 import {
   CCard,
   CCardBody,
@@ -39,6 +32,14 @@ import { useDispatch } from 'react-redux'
 import useApi from '../../hooks/useApi'
 
 const Profile = () => {
+  // Decodificador JWT simple (no seguro para producción, pero suficiente para frontend)
+  function parseJwt(token) {
+    try {
+      return JSON.parse(atob(token.split('.')[1]))
+    } catch (e) {
+      return {}
+    }
+  }
   // Estados principales
   const [user, setUser] = useState(null)
   const [professionalType, setProfessionalType] = useState(null)
@@ -355,8 +356,14 @@ const Profile = () => {
       Notifications.showAlert(setAlert, 'Error al cambiar contraseña', 'danger')
     }
   }
-
-  if (!user) return <div>Cargando...</div>
+  if (!user) {
+    return (
+      <div className="contain">
+        <div className="spinner"></div>
+        <p className="text">Cargando perfil</p>
+      </div>
+    )
+  }
 
   return (
     <CCard className="space-component">
