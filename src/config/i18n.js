@@ -160,6 +160,21 @@ const resources = {
       Profile: 'Profile',
       'Sign out': 'Sign out',
       'All rights reserved.': 'All rights reserved.',
+      'Complete all fields to continue.': 'Complete all fields to continue.',
+      'Please enter a valid email address.': 'Please enter a valid email address.',
+      'First name is required': 'First name is required',
+      'Last name is required': 'Last name is required',
+      'Invalid email address': 'Invalid email address',
+      'Password must be at least 6 characters long': 'Password must be at least 6 characters long',
+      'Phone must be a valid 11 digit (04127690000)':
+        'Phone must be a valid 11 digit (04127690000)',
+      'Birth date is required': 'Birth date is required',
+      'The date of birth cannot be later than today.':
+        'The date of birth cannot be later than today.',
+      'You must be at least 20 years old to register':
+        'You must be at least 20 years old to register',
+      'Years of experience must be a positive number':
+        'Years of experience must be a positive number',
     },
   },
   es: {
@@ -315,6 +330,23 @@ const resources = {
       Profile: 'Perfil',
       'Sign out': 'Cerrar sesión',
       'All rights reserved.': 'Todos los derechos reservados.',
+      'Complete all fields to continue.': 'Complete todos los campos para continuar.',
+      'Please enter a valid email address.':
+        'Por favor ingrese una dirección de correo electrónico válida.',
+      'First name is required': 'El primer nombre es obligatorio',
+      'Last name is required': 'El apellido es obligatorio',
+      'Invalid email address': 'Dirección de correo electrónico inválida',
+      'Password must be at least 6 characters long':
+        'La contraseña debe tener al menos 6 caracteres',
+      'Phone must be a valid 11 digit (04127690000)':
+        'El teléfono debe ser un número válido de 11 dígitos (04127690000)',
+      'Birth date is required': 'La fecha de nacimiento es obligatoria',
+      'The date of birth cannot be later than today.':
+        'La fecha de nacimiento no puede ser posterior a hoy.',
+      'You must be at least 20 years old to register':
+        'Debes tener al menos 20 años para registrarte',
+      'Years of experience must be a positive number':
+        'Los años de experiencia deben ser un número positivo',
     },
   },
 }
