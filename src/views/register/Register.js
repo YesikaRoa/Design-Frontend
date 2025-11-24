@@ -21,9 +21,9 @@ import {
   CLink,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilLockUnlocked, cilUser } from '@coreui/icons'
+import { cilLockLocked, cilLockUnlocked, cilUser, cilEnvelopeOpen } from '@coreui/icons'
 
-import { validateEmail, isStepValid } from './Validationes'
+import { validateEmail, isStepValid, validateField } from './Validationes'
 
 const Register = () => {
   const defaultAvatar = '/avatar.png'
@@ -49,6 +49,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const [errors, setErrors] = useState({})
 
   const [professionalTypes, setProfessionalTypes] = useState([])
 
@@ -105,13 +106,28 @@ const Register = () => {
       ...(name === 'professional_type' && { specialty: '', subspecialty: '' }),
       ...(name === 'specialty' && { subspecialty: '' }),
     }))
+
+    const errorMessage = validateField(name, value)
+    setErrors((prev) => ({ ...prev, [name]: errorMessage }))
   }
 
   const handleNext = () => {
+    if (alert?.visible) return
+
+    if (!formData.email) {
+      Notifications.showAlert(setAlert, t('Complete all fields to continue.'), 'warning')
+      return
+    }
+
+    if (!validateEmail(formData.email)) {
+      Notifications.showAlert(setAlert, t('Please enter a valid email address.'), 'danger')
+      return
+    }
+
     if (isStepValid(step, formData)) {
-      setStep((prevStep) => prevStep + 1)
+      setStep((prev) => prev + 1)
     } else {
-      Notifications.showAlert(setAlert, 'Complete all fields to continue.', 'warning')
+      Notifications.showAlert(setAlert, t('Complete all fields to continue.'), 'warning')
     }
   }
 
@@ -166,118 +182,196 @@ const Register = () => {
     }
   }
 
-  const handleBlur = () => {
-    if (formData.email && !validateEmail(formData.email)) {
-      Notifications.showAlert(setAlert, 'Please enter a valid email address.', 'danger')
-    }
-  }
-
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
           <>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText className="input-group-text">
-                <CIcon icon={cilUser} />
-              </CInputGroupText>
-              <CFormInput
-                className="form-input"
-                placeholder={t('First name')}
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText className="input-group-text">
-                <CIcon icon={cilUser} />
-              </CInputGroupText>
-              <CFormInput
-                className="form-input"
-                placeholder={t('Last name')}
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>@</CInputGroupText>
-              <CFormInput
-                className="form-input"
-                placeholder={t('Email')}
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                type="email"
-              />
-            </CInputGroup>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText
-                style={{ cursor: 'pointer' }}
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
-                <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
-              </CInputGroupText>
-              <CFormInput
-                className="form-input"
-                type={showPassword ? 'text' : 'password'}
-                placeholder={t('Password')}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText className="input-group-text">
+                  <CIcon icon={cilUser} />
+                </CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  placeholder={t('First name')}
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      first_name: validateField('first_name', formData.first_name, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+              {errors.first_name && <small className="text-danger">{errors.first_name}</small>}
+            </div>
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText className="input-group-text">
+                  <CIcon icon={cilUser} />
+                </CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  placeholder={t('Last name')}
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      last_name: validateField('last_name', formData.last_name, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+              {errors.last_name && <small className="text-danger">{errors.last_name}</small>}
+            </div>
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText className="input-group-text">
+                  <CIcon icon={cilEnvelopeOpen} />
+                </CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  placeholder={t('Email')}
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      email: validateField('email', formData.email, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+              {errors.email && <small className="text-danger">{errors.email}</small>}
+            </div>
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
+                </CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={t('Password')}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      password: validateField('password', formData.password, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+
+              {errors.password && <small className="text-danger">{errors.password}</small>}
+            </div>
           </>
         )
       case 2:
         return (
           <>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>📍</CInputGroupText>
-              <CFormInput
-                className="form-input"
-                placeholder={t('Address')}
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>📞</CInputGroupText>
-              <CFormInput
-                className="form-input"
-                placeholder={t('Phone')}
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>🎂</CInputGroupText>
-              <CFormInput
-                className="form-input"
-                type="date"
-                placeholder="Birth Date"
-                name="birth_date"
-                value={formData.birth_date}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>⚧</CInputGroupText>
-              <CFormSelect
-                className="form-select"
-                name="gender"
-                value={formData.gender}
-                onChange={handleInputChange}
-              >
-                <option value="">{t('Select Gender')}</option>
-                <option value="F">F</option>
-                <option value="M">M</option>
-              </CFormSelect>
-            </CInputGroup>
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText>📍</CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  placeholder={t('Address')}
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      address: validateField('address', formData.address, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+              {errors.address && <small className="text-danger">{errors.address}</small>}
+            </div>
+
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText>📞</CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  placeholder={t('Phone')}
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      phone: validateField('phone', formData.phone, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+              {errors.phone && <small className="text-danger">{errors.phone}</small>}
+            </div>
+
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText>🎂</CInputGroupText>
+
+                <CFormInput
+                  className="form-input"
+                  type="date"
+                  placeholder="Birth Date"
+                  name="birth_date"
+                  value={formData.birth_date}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      birth_date: validateField('birth_date', formData.birth_date, t),
+                    }))
+                  }
+                />
+              </CInputGroup>
+              {errors.birth_date && <small className="text-danger">{errors.birth_date}</small>}
+            </div>
+
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText>⚧</CInputGroupText>
+
+                <CFormSelect
+                  className="form-select"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      gender: validateField('gender', formData.gender, t),
+                    }))
+                  }
+                >
+                  <option value="">{t('Select Gender')}</option>
+                  <option value="F">F</option>
+                  <option value="M">M</option>
+                </CFormSelect>
+              </CInputGroup>
+              {errors.gender && <small className="text-danger">{errors.gender}</small>}
+            </div>
           </>
         )
       case 3:
@@ -349,17 +443,33 @@ const Register = () => {
                 </CInputGroup>
               </>
             )}
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>📅</CInputGroupText>
-              <CFormInput
-                className="form-input"
-                type="number"
-                placeholder={t('Years of Experience')}
-                name="years_experience"
-                value={formData.years_experience}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
+            <div className="mb-3 form-step">
+              <CInputGroup>
+                <CInputGroupText>📅</CInputGroupText>
+                <CFormInput
+                  className="form-input"
+                  type="number"
+                  placeholder={t('Years of Experience')}
+                  name="years_experience"
+                  value={formData.years_experience}
+                  onChange={handleInputChange}
+                  onBlur={() =>
+                    setErrors((prev) => ({
+                      ...prev,
+                      years_experience: validateField(
+                        'years_experience',
+                        formData.years_experience,
+                        t,
+                      ),
+                    }))
+                  }
+                />
+              </CInputGroup>
+
+              {errors.years_experience && (
+                <small className="text-danger">{errors.years_experience}</small>
+              )}
+            </div>
           </>
         )
       default:
