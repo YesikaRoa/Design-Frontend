@@ -580,7 +580,7 @@ const MedicalHistory = () => {
       }
       // Usar axios directamente para obtener el blob
       const response = await axios.get(`/pdf?patient_id=${selectedPatient.value}`, {
-        baseURL: 'https://aplication-backend-production-3435.up.railway.app/api',
+        baseURL: 'https://aplication-backend-production-7932.up.railway.app/api',
         responseType: 'blob',
         headers: { Authorization: `Bearer ${token}` },
       })
