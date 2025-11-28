@@ -1,17 +1,21 @@
 import React, { useEffect, useState } from 'react'
-import { CRow, CCol, CCard, CCardBody } from '@coreui/react'
+import { CCard, CCardBody } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilUser, cilUserFollow, cilListRich } from '@coreui/icons'
+import { cilUser, cilUserFollow, cilListRich, cilCalendar } from '@coreui/icons'
 import { useTranslation } from 'react-i18next'
 import useApi from '../../hooks/useApi'
 import styles from './Styles.css/Cards.module.css'
+import useRole from '../../hooks/useRole'
 
 const Cards = () => {
+  const role = useRole()
+
   const { t } = useTranslation()
   const [data, setData] = useState({
     attendedPatients: 0,
     newPatients: 0,
     topSpecialty: '',
+    todayAppointments: 0, // ← NUEVO
   })
   const [loading, setLoading] = useState(true)
 
@@ -24,6 +28,7 @@ const Cards = () => {
       ? 'dark'
       : 'light'
   })
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -32,12 +37,14 @@ const Cards = () => {
         const res = await request('get', '/dashboard', null, headers)
 
         if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+
         const result = res.data
 
         setData({
           attendedPatients: result.attendedPatients || 0,
           newPatients: result.newPatients || 0,
           topSpecialty: result.topSpecialty?.specialty || '',
+          todayAppointments: result.todayAppointments || 0, // ← NUEVO
         })
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -58,7 +65,6 @@ const Cards = () => {
         setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     }
 
-    // Listen for the app's custom event or media query changes
     document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
     const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
     mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
@@ -70,7 +76,6 @@ const Cards = () => {
   }, [])
 
   const getCardStyle = (variant) => {
-    // variants: 1,2,3 match the original cards
     if (colorScheme === 'dark') {
       switch (variant) {
         case 1:
@@ -100,7 +105,6 @@ const Cards = () => {
       }
     }
 
-    // light (default): keep original pastel tones
     switch (variant) {
       case 1:
         return { backgroundColor: '#d4edda', border: '2px solid #c3e6cb', color: '#000' }
@@ -115,10 +119,11 @@ const Cards = () => {
 
   return (
     <div className={`${styles['dashboard-cards-row']} space-component`}>
+      {/* CARD 1 */}
       <div className={styles['dashboard-card-col']}>
         <CCard
           className={`${colorScheme === 'dark' ? 'text-light' : 'text-dark'} mb-4 mb-sm-0`}
-          style={{ ...getCardStyle(1) }}
+          style={getCardStyle(1)}
         >
           <CCardBody>
             {loading ? (
@@ -138,6 +143,8 @@ const Cards = () => {
           <CIcon icon={cilUser} size="xl" className="m-3 text-success" />
         </CCard>
       </div>
+
+      {/* CARD 2 */}
       <div className={styles['dashboard-card-col']}>
         <CCard
           className={`${colorScheme === 'dark' ? 'text-light' : 'text-dark'} mb-4 mb-sm-0`}
@@ -161,6 +168,8 @@ const Cards = () => {
           <CIcon icon={cilUserFollow} size="xl" className="m-3 text-info" />
         </CCard>
       </div>
+
+      {/* CARD 3 — cambia según el rol */}
       <div className={styles['dashboard-card-col']}>
         <CCard
           className={`${colorScheme === 'dark' ? 'text-light' : 'text-dark'} mb-4 mb-sm-0`}
@@ -173,18 +182,36 @@ const Cards = () => {
               </div>
             ) : (
               <>
-                <div className="label" style={{ fontSize: '1.7rem', fontWeight: 'bold' }}>
-                  {data.topSpecialty || t('No data available')} {/* ← traducción aquí */}
-                </div>
-
-                <div className="text-uppercase">{t('Most Requested Specialty')}</div>
-                <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
-                  {t('Based on recent appointments')}
-                </small>
+                {role === 3 ? (
+                  // 🔹 PROFESSIONAL VIEW
+                  <>
+                    <div className="fs-3 fw-bold">{data.todayAppointments}</div>
+                    <div className="text-uppercase">{t('Confirmed Appointments Today')}</div>
+                    <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
+                      {t('Only for your assigned patients')}
+                    </small>
+                  </>
+                ) : (
+                  // 🔹 ADMIN / ASSISTANT VIEW
+                  <>
+                    <div className="label" style={{ fontSize: '1.7rem', fontWeight: 'bold' }}>
+                      {data.topSpecialty || t('No data available')}
+                    </div>
+                    <div className="text-uppercase">{t('Most Requested Specialty')}</div>
+                    <small className={colorScheme === 'dark' ? 'text-white-50' : 'text-muted'}>
+                      {t('Based on recent appointments')}
+                    </small>
+                  </>
+                )}
               </>
             )}
           </CCardBody>
-          <CIcon icon={cilListRich} size="xl" className="m-3 text-warning" />
+
+          <CIcon
+            icon={role === 3 ? cilCalendar : cilListRich}
+            size="xl"
+            className={`m-3 ${role === 3 ? 'text-primary' : 'text-warning'}`}
+          />
         </CCard>
       </div>
     </div>

@@ -175,6 +175,11 @@ const resources = {
         'You must be at least 20 years old to register',
       'Years of experience must be a positive number':
         'Years of experience must be a positive number',
+      'Appointments by weekday': 'Appointments by weekday',
+      'Confirmed Appointments Today': 'Confirmed Appointments Today',
+      'Only for your assigned patients': 'Only for your assigned patients',
+      'Recurrent patients': 'Recurrent patients',
+      'New vs. recurring patients': 'New vs. recurring patients',
     },
   },
   es: {
@@ -183,7 +188,7 @@ const resources = {
       changeLanguage: 'Cambiar Idioma',
       'Patients Attended': 'Pacientes Atendidos',
       'In the last month with completed status': 'En el último mes con estado completado',
-      'New Patients': 'Nuevos Pacientes',
+      'New Patients': 'Nuevos pacientes',
       'This week with confirmed status': 'Esta semana con estado confirmado',
       'The most requested category': 'La categoría más solicitada',
       'Based on recent appointments': 'Basado en citas recientes',
@@ -347,6 +352,11 @@ const resources = {
         'Debes tener al menos 20 años para registrarte',
       'Years of experience must be a positive number':
         'Los años de experiencia deben ser un número positivo',
+      'Appointments by weekday': 'Citas por día de la semana',
+      'Confirmed Appointments Today': 'Citas confirmadas para hoy',
+      'Only for your assigned patients': 'Solo para tus pacientes asignados',
+      'Recurrent patients': 'Pacientes recurrentes',
+      'New vs. recurring patients': 'Pacientes nuevos vs recurrentes',
     },
   },
 }
