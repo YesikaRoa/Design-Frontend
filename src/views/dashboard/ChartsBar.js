@@ -4,15 +4,18 @@ import { CCard, CCardBody, CCardHeader, CSpinner } from '@coreui/react'
 import './Styles.css/ChartBarExample.css'
 import { useTranslation } from 'react-i18next'
 import useApi from '../../hooks/useApi'
+import useRole from '../../hooks/useRole'
 
 const ChartBarExample = () => {
   const chartRef = useRef(null)
   const { t } = useTranslation()
   const { request } = useApi()
+  const role = useRole() // 👈 TU HOOK AQUÍ
 
-  // Estados para cada gráfico
+  // Estados
   const [loadingAppointments, setLoadingAppointments] = useState(true)
   const [loadingProfessionals, setLoadingProfessionals] = useState(true)
+
   const [hasAppointmentsData, setHasAppointmentsData] = useState(false)
   const [hasProfessionalsData, setHasProfessionalsData] = useState(false)
 
@@ -25,8 +28,10 @@ const ChartBarExample = () => {
     },
     professionals: [],
     professionalCounts: [],
+    appointmentsByWeekday: [], // 👈 NUEVO
   })
 
+  // Tema
   const [colorScheme, setColorScheme] = useState(() => {
     if (typeof window === 'undefined') return 'light'
     const ds = document.documentElement.dataset.coreuiTheme
@@ -41,14 +46,15 @@ const ChartBarExample = () => {
       try {
         const token = localStorage.getItem('authToken')
         const headers = token ? { Authorization: `Bearer ${token}` } : {}
-        const res = await request('get', '/dashboard', null, headers)
 
+        const res = await request('get', '/dashboard', null, headers)
         if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
 
         const data = res.data
 
-        // Procesar citas
+        // Procesar citas por mes
         const months = Array.from({ length: 12 }, (_, i) => i + 1)
+
         const getCount = (month, status) =>
           data.appointmentsByMonth.find(
             (entry) =>
@@ -70,23 +76,28 @@ const ChartBarExample = () => {
           setHasAppointmentsData(true)
         }
 
+        // Actualizar chartData (citas por mes)
         setChartData((prev) => ({
           ...prev,
           appointmentsByMonth: { pending, confirmed, completed, canceled },
         }))
+
         setLoadingAppointments(false)
 
-        // Procesar profesionales
+        // --- PROFESIONALES (solo admin)
         const professionals = data.topProfessionals.map((e) => e.professional)
         const professionalCounts = data.topProfessionals.map((e) => e.patient_count)
 
-        if (professionals.length > 0) setHasProfessionalsData(true)
+        if (professionals.length > 0 && role === 1) setHasProfessionalsData(true)
 
+        // Guardar info
         setChartData((prev) => ({
           ...prev,
           professionals,
           professionalCounts,
+          appointmentsByWeekday: data.appointmentsByWeekday || [], // 👈 citas por día de la semana
         }))
+
         setLoadingProfessionals(false)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -96,9 +107,9 @@ const ChartBarExample = () => {
     }
 
     fetchDashboardData()
-  }, [])
+  }, [role])
 
-  // Detectar cambio de tema
+  // Detect tema
   useEffect(() => {
     if (typeof window === 'undefined') return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
@@ -116,36 +127,61 @@ const ChartBarExample = () => {
     }
   }, [])
 
-  // Datos de los gráficos
+  // Datos del primer gráfico (citas por mes)
   const data1 = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
-      { label: 'Pending', backgroundColor: '#ff9800', data: chartData.appointmentsByMonth.pending },
       {
-        label: 'Confirmed',
-        backgroundColor: '#4caf50',
+        label: t('Pending'),
+        backgroundColor: '#ff990080',
+        data: chartData.appointmentsByMonth.pending,
+      },
+      {
+        label: t('Confirmed'),
+        backgroundColor: '#2195f36e',
         data: chartData.appointmentsByMonth.confirmed,
       },
       {
-        label: 'Completed',
-        backgroundColor: '#2196f3',
+        label: t('Completed'),
+        backgroundColor: '#4caf4f98',
         data: chartData.appointmentsByMonth.completed,
       },
       {
-        label: 'Canceled',
-        backgroundColor: '#f44336',
+        label: t('Canceled'),
+        backgroundColor: '#f44336b7',
         data: chartData.appointmentsByMonth.canceled,
       },
     ],
   }
 
-  const data2 = {
+  // Gráfico 2 — ADMIN
+  const dataProfessionals = {
     labels: chartData.professionals,
     datasets: [
       {
         label: 'Patients Attended',
-        backgroundColor: '#4caf50',
+        backgroundColor: '#1eb2f74b',
         data: chartData.professionalCounts,
+      },
+    ],
+  }
+
+  // Gráfico 2 — PROFESSIONAL (citas por día)
+  const weekdayChartData = {
+    // Los labels del eje X siguen siendo los días de la semana
+    labels: chartData.appointmentsByWeekday.map((e) => e.day),
+    datasets: [
+      {
+        label: t('Confirmed'),
+        backgroundColor: '#2195f35d',
+
+        data: chartData.appointmentsByWeekday.map((e) => e.confirmed),
+      },
+      {
+        label: t('Completed'),
+        backgroundColor: '#4caf4f6e',
+
+        data: chartData.appointmentsByWeekday.map((e) => e.completed),
       },
     ],
   }
@@ -170,8 +206,32 @@ const ChartBarExample = () => {
       },
     },
   }
-
-  // --- Renderizado ---
+  const weekdayOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : '#000',
+        },
+      },
+    },
+    scales: {
+      x: {
+        // CLAVE: Habilitar el apilamiento
+        stacked: true,
+        ticks: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : '#000' },
+      },
+      y: {
+        // CLAVE: Habilitar el apilamiento
+        stacked: true,
+        beginAtZero: true,
+        ticks: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : '#000' },
+      },
+    },
+  }
   return (
     <CCardBody className="space-component">
       <div className="row">
@@ -195,7 +255,7 @@ const ChartBarExample = () => {
                     key={`chart1-${colorScheme}`}
                     type="bar"
                     data={data1}
-                    options={options}
+                    options={options} // Usa opciones NO apiladas
                     ref={chartRef}
                   />
                 </div>
@@ -214,8 +274,11 @@ const ChartBarExample = () => {
         <div className="col-sm-6">
           <CCard className="mb-4 mb-sm-0">
             <CCardHeader className="chart-card-header">
-              {t('Professionals with most patients attended')}
+              {role === 3
+                ? t('Appointments by weekday')
+                : t('Professionals with most patients attended')}
             </CCardHeader>
+
             <CCardBody className="position-relative chart-card-body">
               {loadingAppointments && (
                 <div className="chart-loading-overlay">
@@ -225,19 +288,30 @@ const ChartBarExample = () => {
                   />
                 </div>
               )}
-
-              {hasProfessionalsData ? (
+              {role === 3 ? (
+                // === PROFESSIONAL (Barras Apiladas) ===
+                <div className="chart-wrapper">
+                  <CChart
+                    key={`chart-weekday-${colorScheme}`}
+                    type="bar"
+                    data={weekdayChartData}
+                    // APLICAR LAS OPCIONES APILADAS AQUÍ
+                    options={weekdayOptions}
+                  />
+                </div>
+              ) : // === ADMIN (Barras NO Apiladas) ===
+              hasProfessionalsData ? (
                 <div className="chart-wrapper">
                   <CChart
                     key={`chart2-${colorScheme}`}
                     type="bar"
-                    data={data2}
+                    data={dataProfessionals}
+                    // APLICAR LAS OPCIONES GENERALES AQUÍ
                     options={options}
-                    ref={chartRef}
                   />
                 </div>
               ) : (
-                !loadingAppointments && (
+                !loadingProfessionals && (
                   <div className="no-data-container">
                     <p className="no-data-text">{t('No data available')}</p>
                   </div>
