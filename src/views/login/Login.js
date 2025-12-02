@@ -125,7 +125,12 @@ const Login = () => {
                       {alert.message}
                     </CAlert>
                   )}
-                  <CForm>
+                  <CForm
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      handleLogin()
+                    }}
+                  >
                     <h1>{t('Login')}</h1>
                     <p className="text-body-secondary">{t('Sign In to your account')}</p>
                     <CInputGroup className="mb-3">
@@ -158,12 +163,7 @@ const Login = () => {
                     </CInputGroup>
                     <CRow>
                       <CCol xs={6}>
-                        <CButton
-                          color="primary"
-                          className="px-4"
-                          onClick={handleLogin}
-                          disabled={loading}
-                        >
+                        <CButton type="submit" color="primary" className="px-4" disabled={loading}>
                           {t('Login')}
                         </CButton>
                       </CCol>
