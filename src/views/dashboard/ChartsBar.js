@@ -18,6 +18,7 @@ const ChartBarExample = () => {
 
   const [hasAppointmentsData, setHasAppointmentsData] = useState(false)
   const [hasProfessionalsData, setHasProfessionalsData] = useState(false)
+  const [hasWeekdayData, setHasWeekdayData] = useState(false)
 
   const [chartData, setChartData] = useState({
     appointmentsByMonth: {
@@ -90,13 +91,23 @@ const ChartBarExample = () => {
 
         if (professionals.length > 0 && role === 1) setHasProfessionalsData(true)
 
-        // Guardar info
+        // Guardar info (profesionales y citas por día de la semana)
+        const appointmentsByWeekday = data.appointmentsByWeekday || []
+
+        // Detectar si hay datos reales en appointmentsByWeekday
+        const weekdayHasData = appointmentsByWeekday.some(
+          (e) => (e.confirmed || 0) > 0 || (e.completed || 0) > 0,
+        )
+
         setChartData((prev) => ({
           ...prev,
           professionals,
           professionalCounts,
-          appointmentsByWeekday: data.appointmentsByWeekday || [], // 👈 citas por día de la semana
+          appointmentsByWeekday,
         }))
+
+        // solo marcar que hay datos si se detectan
+        setHasWeekdayData(weekdayHasData)
 
         setLoadingProfessionals(false)
       } catch (error) {
@@ -280,7 +291,7 @@ const ChartBarExample = () => {
             </CCardHeader>
 
             <CCardBody className="position-relative chart-card-body">
-              {loadingAppointments && (
+              {(role === 3 ? loadingAppointments : loadingProfessionals) && (
                 <div className="chart-loading-overlay">
                   <CSpinner
                     color={colorScheme === 'dark' ? 'light' : 'dark'}
@@ -290,17 +301,27 @@ const ChartBarExample = () => {
               )}
               {role === 3 ? (
                 // === PROFESSIONAL (Barras Apiladas) ===
-                <div className="chart-wrapper">
-                  <CChart
-                    key={`chart-weekday-${colorScheme}`}
-                    type="bar"
-                    data={weekdayChartData}
-                    // APLICAR LAS OPCIONES APILADAS AQUÍ
-                    options={weekdayOptions}
-                  />
-                </div>
+                // Mostrar spinner mientras cargan las citas (loadingAppointments). Una vez cargado,
+                // si hay datos mostramos el chart, si no mostramos mensaje "No data available".
+                !loadingAppointments && hasWeekdayData ? (
+                  <div className="chart-wrapper">
+                    <CChart
+                      key={`chart-weekday-${colorScheme}`}
+                      type="bar"
+                      data={weekdayChartData}
+                      // APLICAR LAS OPCIONES APILADAS AQUÍ
+                      options={weekdayOptions}
+                    />
+                  </div>
+                ) : (
+                  !loadingAppointments && (
+                    <div className="no-data-container">
+                      <p className="no-data-text">{t('No data available')}</p>
+                    </div>
+                  )
+                )
               ) : // === ADMIN (Barras NO Apiladas) ===
-              hasProfessionalsData ? (
+              loadingProfessionals ? null : hasProfessionalsData ? (
                 <div className="chart-wrapper">
                   <CChart
                     key={`chart2-${colorScheme}`}
