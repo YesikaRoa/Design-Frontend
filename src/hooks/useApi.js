@@ -8,7 +8,13 @@ const useApi = (baseURL = 'https://aplication-backend-production-7932.up.railway
   const request = async (method, url, body = null, headers = {}) => {
     setLoading(true)
     try {
-      const res = await axios({ method, url: `${baseURL}${url}`, data: body, headers })
+      const res = await axios({
+        method,
+        url: `${baseURL}${url}`,
+        data: body,
+        headers,
+        responseType: headers.responseType || 'json',
+      })
 
       // Si el backend envía la entidad en res.data.data mantenemos compatibilidad,
       // en caso contrario devolvemos res.data directamente.
