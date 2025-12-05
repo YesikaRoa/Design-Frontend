@@ -565,10 +565,12 @@ const MedicalHistory = () => {
 
   const handleDownloadPDF = async () => {
     if (!selectedPatient) return
+
     try {
       const hasHistory = medicalHistory.some(
         (record) => record.patient_full_name === selectedPatient.label,
       )
+
       if (!hasHistory) {
         Notifications.showAlert(
           setAlert,
@@ -578,13 +580,25 @@ const MedicalHistory = () => {
         )
         return
       }
-      // Usar axios directamente para obtener el blob
-      const response = await axios.get(`/pdf?patient_id=${selectedPatient.value}`, {
-        baseURL: 'https://aplication-backend-production-7932.up.railway.app/api',
-        responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const blob = response.data
+
+      // Usando el hook en lugar de axios:
+      const { data, success } = await request(
+        'GET',
+        `/pdf?patient_id=${selectedPatient.value}`,
+        null,
+        {
+          Authorization: `Bearer ${token}`,
+          responseType: 'blob', // <<--- clave para PDF
+        },
+      )
+
+      if (!success) {
+        Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 5000)
+        return
+      }
+
+      // Crear el archivo descargable
+      const blob = data
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -593,6 +607,7 @@ const MedicalHistory = () => {
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
+
       setDownloadModalVisible(false)
     } catch (error) {
       Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 5000)
@@ -762,7 +777,10 @@ const MedicalHistory = () => {
 
       <ModalDownloadPDF
         visible={downloadModalVisible}
-        onClose={() => setDownloadModalVisible(false)}
+        onClose={() => {
+          setDownloadModalVisible(false)
+          setSelectedPatient(null)
+        }}
         selectedPatient={selectedPatient}
         setSelectedPatient={setSelectedPatient}
         loadPatients={loadPatients}

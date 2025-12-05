@@ -34,6 +34,13 @@ const ModalDownloadPDF = ({
     return () => observer.disconnect()
   }, [colorScheme])
 
+  // Limpiar el paciente seleccionado cuando la modal se cierra
+  useEffect(() => {
+    if (!visible) {
+      setSelectedPatient(null)
+    }
+  }, [visible, setSelectedPatient])
+
   // Estilos del selector para modo claro / oscuro
   const selectStyles = {
     control: (provided) => ({
