@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import useApi from '../../hooks/useApi'
 import {
   CButton,
@@ -29,7 +30,7 @@ const Login = () => {
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const { t } = useTranslation()
-
+  const navigate = useNavigate()
   // Estados controlados para inputs
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -103,9 +104,30 @@ const Login = () => {
         return
       }
 
-      localStorage.setItem('authToken', response.data.token)
-      window.location.href = '/#/dashboard'
-      window.location.reload()
+      const token = response.data.token
+      localStorage.setItem('authToken', token)
+
+      // Precargar datos del dashboard antes de redirigir para evitar loader largo
+      try {
+        const headers = { Authorization: `Bearer ${token}` }
+        const dashRes = await request('get', '/dashboard', null, headers)
+        if (dashRes && dashRes.success && dashRes.data) {
+          try {
+            sessionStorage.setItem('dashboardData', JSON.stringify(dashRes.data))
+            // Indicar que la siguiente vez que se cargue el dashboard
+            // queremos mostrar la animación inicial (una sola vez)
+            try {
+              sessionStorage.setItem('dashboardShowInitialAnimation', '1')
+            } catch (e) {}
+          } catch (e) {}
+        } else {
+          // si falla no hacemos nada; el hook useDashboard hará el fetch en el dashboard
+        }
+      } catch (e) {
+        console.warn('Preload dashboard failed', e)
+      }
+
+      navigate('/dashboard')
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
       Notifications.showAlert(setAlert, 'Hubo un error al iniciar sesión.', 'danger')

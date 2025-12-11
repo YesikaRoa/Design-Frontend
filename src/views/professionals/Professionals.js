@@ -34,8 +34,9 @@ import { formatDate } from '../../utils/dateUtils'
 export const Professionls = () => {
   const { request, loading } = useApi()
   const navigate = useNavigate()
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState(null)
   const [filteredUsers, setFilteredUsers] = useState([])
+  const [showEmptyMessage, setShowEmptyMessage] = useState(false)
   const [filters, setFilters] = useState({
     first_name: '',
     last_name: '',
@@ -46,6 +47,7 @@ export const Professionls = () => {
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedProfessional, setselectedProfessional] = useState(null)
   const ModalAddRef = useRef()
+  const emptyTimerRef = useRef(null)
   const [alert, setAlert] = useState(null)
   const [userToDelete, setUserToDelete] = useState(null)
   const [professionalTypes, setProfessionalTypes] = useState([])
@@ -70,6 +72,12 @@ export const Professionls = () => {
           ...user,
           id: String(user.professional_id),
         }))
+        // Ordenar por fecha de creación (más reciente primero)
+        normalizedUsers.sort((a, b) => {
+          const ta = a.created_at ? new Date(a.created_at).getTime() : 0
+          const tb = b.created_at ? new Date(b.created_at).getTime() : 0
+          return tb - ta
+        })
         setUsers(normalizedUsers)
         setFilteredUsers(normalizedUsers)
       } else {
@@ -177,8 +185,8 @@ export const Professionls = () => {
           return
         }
         Notifications.showAlert(setAlert, 'Professional created successfully!', 'success')
+        // Reconsultar y mostrar la lista ordenada por fecha (fetchProfessionals ya ordena)
         await fetchProfessionals()
-        setUsers((prev) => [...prev, data])
         // Cerrar la modal después de crear el profesional
         try {
           ModalAddRef.current && ModalAddRef.current.close && ModalAddRef.current.close()
@@ -417,7 +425,7 @@ export const Professionls = () => {
   const handleFilter = () => {
     const activeFilters = Object.keys(filters).filter((key) => filters[key].trim() !== '')
 
-    const filtered = users.filter((user) =>
+    const filtered = (users || []).filter((user) =>
       activeFilters.every((key) => {
         const userValue = user[key] ? normalizeText(user[key]) : ''
         const filterValue = normalizeText(filters[key])
@@ -434,13 +442,33 @@ export const Professionls = () => {
       return acc
     }, {})
     setFilters(resetValues)
-    setFilteredUsers(users)
+    setFilteredUsers(users || [])
   }
 
   // Llamar a fetchProfessionals al montar el componente
   useEffect(() => {
     fetchProfessionals()
   }, [])
+
+  // Evita parpadeo: muestra el mensaje "No users available" sólo
+  // después de un pequeño retraso cuando la lista está vacía.
+  useEffect(() => {
+    if (emptyTimerRef.current) {
+      clearTimeout(emptyTimerRef.current)
+      emptyTimerRef.current = null
+    }
+    if (!loading && users !== null && users.length === 0) {
+      emptyTimerRef.current = setTimeout(() => setShowEmptyMessage(true), 300)
+    } else {
+      setShowEmptyMessage(false)
+    }
+    return () => {
+      if (emptyTimerRef.current) {
+        clearTimeout(emptyTimerRef.current)
+        emptyTimerRef.current = null
+      }
+    }
+  }, [loading, users])
   return (
     <>
       <div className="d-flex justify-content-end mb-3">
@@ -476,7 +504,9 @@ export const Professionls = () => {
             </CTableHead>
             <CTableBody>
               {/* 1. Muestra el Skeleton Loader si loading es true */}
-              {loading ? (
+              {users === null ||
+              (loading && (!users || users.length === 0)) ||
+              (!showEmptyMessage && filteredUsers.length === 0) ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>

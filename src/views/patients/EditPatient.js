@@ -13,6 +13,7 @@ import {
   CCol,
   CRow,
   CFormInput,
+  CSpinner,
   CAlert,
 } from '@coreui/react'
 import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle } from '@coreui/icons'
@@ -124,7 +125,13 @@ const UserDetails = () => {
     if (id) fetchPatient(id)
   }, [id])
 
-  if (loading) return <p>Cargando usuario...</p>
+  if (loading)
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
+        <CSpinner color="primary" />
+        <span className="ms-2">{t('Loading user...')}</span>
+      </div>
+    )
   if (!user) return <p>No se encontró el usuario.</p>
 
   const handleToggleStatus = async (patientId) => {

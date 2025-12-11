@@ -36,8 +36,9 @@ export const Users = () => {
   const token = localStorage.getItem('authToken')
   const defaultAvatar = '/avatar.png'
 
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState(null)
   const [filteredUsers, setFilteredUsers] = useState([])
+  const [showEmptyMessage, setShowEmptyMessage] = useState(false)
   const [filters, setFilters] = useState({
     first_name: '',
     last_name: '',
@@ -49,6 +50,7 @@ export const Users = () => {
   const [infoVisible, setInfoVisible] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const ModalAddRef = useRef()
+  const emptyTimerRef = useRef(null)
   const [alert, setAlert] = useState(null)
   const [userToDelete, setUserToDelete] = useState(null)
 
@@ -490,7 +492,7 @@ export const Users = () => {
   const handleFilter = () => {
     const activeFilters = Object.keys(filters).filter((key) => filters[key].trim() !== '')
 
-    const filtered = users.filter((user) =>
+    const filtered = (users || []).filter((user) =>
       activeFilters.every((key) => {
         const userValue = user[key] ? normalizeText(user[key]) : ''
         const filterValue = normalizeText(filters[key])
@@ -507,7 +509,7 @@ export const Users = () => {
       return acc
     }, {})
     setFilters(resetValues)
-    setFilteredUsers(users)
+    setFilteredUsers(users || [])
   }
   useEffect(() => {
     request('get', '/users', null, {
@@ -531,6 +533,27 @@ export const Users = () => {
         navigate('/404')
       })
   }, [navigate, token])
+
+  // Evita el parpadeo: muestra el mensaje "No hay usuarios" sólo
+  // después de un pequeño retraso cuando la lista está vacía.
+  useEffect(() => {
+    if (emptyTimerRef.current) {
+      clearTimeout(emptyTimerRef.current)
+      emptyTimerRef.current = null
+    }
+    if (!loading && users !== null && users.length === 0) {
+      // espera 300ms antes de mostrar el mensaje vacío
+      emptyTimerRef.current = setTimeout(() => setShowEmptyMessage(true), 300)
+    } else {
+      setShowEmptyMessage(false)
+    }
+    return () => {
+      if (emptyTimerRef.current) {
+        clearTimeout(emptyTimerRef.current)
+        emptyTimerRef.current = null
+      }
+    }
+  }, [loading, users])
 
   return (
     <>
@@ -566,7 +589,9 @@ export const Users = () => {
             </CTableHead>
             <CTableBody>
               {/* 1. Muestra el Skeleton Loader si loading es true */}
-              {loading ? (
+              {users === null ||
+              (loading && (!users || users.length === 0)) ||
+              (!showEmptyMessage && filteredUsers.length === 0) ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>

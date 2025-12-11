@@ -48,8 +48,36 @@
 }
 
 .update-button {
-  width: 200px;
-  margin: auto;
+  min-width: 140px;
+}
+
+/* Contenedor para los botones de acción en el perfil */
+.profile-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Asegurar que los botones no ocupen todo el ancho en pantallas pequeñas */
+.profile-actions .c-btn,
+.profile-actions .btn,
+.profile-actions .update-button,
+.profile-actions .change-password-btn {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 420px) {
+  /* Si realmente quieres que ocupen toda la fila en móviles muy pequeños,
+     cambia a flex: 1 1 100%; pero por defecto mantenemos inline */
+  .profile-actions .c-btn,
+  .profile-actions .btn,
+  .profile-actions .update-button,
+  .profile-actions .change-password-btn {
+    min-width: 120px;
+  }
 }
 .inner-card,
 .edit-card {

@@ -15,6 +15,7 @@ import '../users/styles/filter.css'
 import '../users/styles/users.css'
 import { formatDate } from '../../utils/dateUtils'
 import useApi from '../../hooks/useApi'
+import useDashboard from '../../hooks/useDashboard'
 
 import {
   CTable,
@@ -66,8 +67,10 @@ const Appointments = () => {
   }, [])
 
   const [alert, setAlert] = useState(null)
-  const [appointments, setAppointments] = useState([])
+  const [appointments, setAppointments] = useState(null)
   const [filteredAppointments, setFilteredAppointments] = useState([])
+  const [showEmptyMessage, setShowEmptyMessage] = useState(false)
+  const emptyTimerRef = useRef(null)
   const [filters, setFilters] = useState({
     patient: '',
     professional: '',
@@ -83,6 +86,7 @@ const Appointments = () => {
   const token = localStorage.getItem('authToken')
   const user = token ? jwtDecode(token) : null
   const { request, loading } = useApi()
+  const { refresh: refreshDashboard } = useDashboard()
 
   const fetchAppointments = async () => {
     try {
@@ -109,6 +113,27 @@ const Appointments = () => {
   useEffect(() => {
     fetchAppointments()
   }, [])
+
+  // Evita parpadeo: muestra el mensaje "No appointments available" sólo
+  // después de un pequeño retraso cuando la lista está vacía.
+  useEffect(() => {
+    if (emptyTimerRef.current) {
+      clearTimeout(emptyTimerRef.current)
+      emptyTimerRef.current = null
+    }
+    if (!loading && appointments !== null && appointments.length === 0) {
+      // espera 300ms antes de mostrar el mensaje vacío
+      emptyTimerRef.current = setTimeout(() => setShowEmptyMessage(true), 300)
+    } else {
+      setShowEmptyMessage(false)
+    }
+    return () => {
+      if (emptyTimerRef.current) {
+        clearTimeout(emptyTimerRef.current)
+        emptyTimerRef.current = null
+      }
+    }
+  }, [loading, appointments])
 
   const loadOptions = async (entity, inputValue) => {
     try {
@@ -520,8 +545,23 @@ const Appointments = () => {
             return { success: false, message }
           }
         }
-        await fetchAppointments()
+        // Cerrar la modal y mostrar la notificación inmediatamente
+        try {
+          ModalAddRef.current && ModalAddRef.current.close && ModalAddRef.current.close()
+        } catch (e) {
+          console.warn('Could not close ModalAdd via ref:', e)
+        }
         Notifications.showAlert(setAlert, 'Appointment created successfully.', 'success')
+
+        // Actualizar la lista y el dashboard en segundo plano (no bloquear el cierre de la modal)
+        fetchAppointments().catch((e) => console.warn('fetchAppointments failed', e))
+        try {
+          // refreshDashboard puede ser async; llamamos y no esperamos para no demorar la UI
+          refreshDashboard().catch((e) => console.warn('dashboard refresh failed', e))
+        } catch (e) {
+          console.warn('dashboard refresh invocation failed', e)
+        }
+
         return { success: true }
       } catch (error) {
         console.error('Error al crear la cita:', error)
@@ -540,9 +580,14 @@ const Appointments = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
+        Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 3500)
         setAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
         setFilteredAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
+        try {
+          await refreshDashboard()
+        } catch (e) {
+          console.warn('dashboard refresh failed after delete', e)
+        }
       } else {
         throw new Error(res.message || 'Failed to delete the appointment.')
       }
@@ -650,7 +695,7 @@ const Appointments = () => {
 
     const activeFilters = Object.keys(otherFilters).filter((key) => otherFilters[key].trim() !== '')
 
-    const filtered = appointments.filter((appointment) => {
+    const filtered = (appointments || []).filter((appointment) => {
       const appointmentDate = new Date(appointment.scheduled_at)
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
       const normalizedAppointmentDate = normalizeDate(appointmentDate)
@@ -681,7 +726,7 @@ const Appointments = () => {
       return acc
     }, {})
     setFilters(resetValues)
-    setFilteredAppointments(appointments)
+    setFilteredAppointments(appointments || [])
   }
 
   const getStatusBadgeColor = (status) => {
@@ -734,7 +779,9 @@ const Appointments = () => {
             </CTableHead>
             <CTableBody>
               {/* 1. Muestra el Skeleton Loader si loading es true */}
-              {loading ? (
+              {appointments === null ||
+              (loading && (!appointments || appointments.length === 0)) ||
+              (!showEmptyMessage && filteredAppointments.length === 0) ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
