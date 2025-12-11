@@ -459,25 +459,27 @@ const Profile = () => {
                 </CCard>
               </CCol>
             </CRow>
-            <CRow className="space-component d-flex justify-content-center">
-              <CButton
-                color="primary"
-                className="update-button mx-2"
-                style={{ width: 'auto' }}
-                onClick={handleEditInformation}
-              >
-                <CIcon icon={cilPencil} className="me-2" />
-                {t('Edit Information')}
-              </CButton>
-              <CButton
-                color="primary"
-                className="change-password-btn mx-2"
-                style={{ width: 'auto' }}
-                onClick={handleChangePassword}
-              >
-                <CIcon icon={cilLockLocked} className="me-2" width={17} height={17} />
-                {t('Change Password')}
-              </CButton>
+            <CRow className="space-component">
+              <div className="profile-actions">
+                <CButton
+                  color="primary"
+                  className="update-button mx-2"
+                  style={{ width: 'auto' }}
+                  onClick={handleEditInformation}
+                >
+                  <CIcon icon={cilPencil} className="me-2" />
+                  {t('Edit Information')}
+                </CButton>
+                <CButton
+                  color="primary"
+                  className="change-password-btn mx-2"
+                  style={{ width: 'auto' }}
+                  onClick={handleChangePassword}
+                >
+                  <CIcon icon={cilLockLocked} className="me-2" width={17} height={17} />
+                  {t('Change Password')}
+                </CButton>
+              </div>
             </CRow>
           </CContainer>
 

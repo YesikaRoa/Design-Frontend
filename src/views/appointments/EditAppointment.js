@@ -18,6 +18,7 @@ import {
   CFormInput,
   CFormTextarea,
   CFormSelect,
+  CSpinner,
   CAlert,
   CModal,
   CModalBody,
@@ -29,6 +30,7 @@ import CIcon from '@coreui/icons-react'
 import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
 import useApi from '../../hooks/useApi'
+import useDashboard from '../../hooks/useDashboard'
 
 const EditAppointment = () => {
   const location = useLocation()
@@ -71,6 +73,7 @@ const EditAppointment = () => {
   const [citiesLoading, setCitiesLoading] = useState(true)
   const token = localStorage.getItem('authToken')
   const { request, loading: apiLoading } = useApi()
+  const { refresh: refreshDashboard } = useDashboard()
 
   useEffect(() => {
     setLoading(true)
@@ -174,6 +177,12 @@ const EditAppointment = () => {
           setEditedAppointment({ ...fullData })
           localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
         }
+        // Actualizar cache del dashboard para reflejar cambios en la cita
+        try {
+          await refreshDashboard()
+        } catch (e) {
+          console.warn('dashboard refresh failed after saveChanges', e)
+        }
         Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
       } else {
         throw new Error(res.message || 'Error al guardar los cambios.')
@@ -190,7 +199,12 @@ const EditAppointment = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 5000)
+        Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 3500)
+        try {
+          await refreshDashboard()
+        } catch (e) {
+          console.warn('dashboard refresh failed after delete in edit view', e)
+        }
         setTimeout(() => {
           navigate('/appointments')
         }, 5000)
@@ -204,7 +218,13 @@ const EditAppointment = () => {
     setDeleteModalVisible(false)
   }
 
-  if (loading) return <p>Loading appointment...</p>
+  if (loading || apiLoading)
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
+        <CSpinner color="primary" />
+        <span className="ms-2">{t('Loading appointment...')}</span>
+      </div>
+    )
   if (!appointment) return <p>Appointment not found.</p>
 
   return (
@@ -272,6 +292,12 @@ const EditAppointment = () => {
                         setAppointment(fullData)
                         setEditedAppointment({ ...fullData })
                         localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
+                      }
+                      // Actualizar cache del dashboard luego de cambio de estado
+                      try {
+                        await refreshDashboard()
+                      } catch (e) {
+                        console.warn('dashboard refresh failed after status change', e)
                       }
                       Notifications.showAlert(
                         setAlert,

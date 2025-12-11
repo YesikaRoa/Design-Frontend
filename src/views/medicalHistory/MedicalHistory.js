@@ -76,8 +76,11 @@ const MedicalHistory = () => {
     }
   }, [])
   const [alert, setAlert] = useState(null)
-  const [medicalHistory, setMedicalHistory] = useState([])
+
+  const [medicalHistory, setMedicalHistory] = useState(null)
   const [FilteredMedicalHistory, setFilteredMedicalHistory] = useState([])
+  const [showEmptyMessage, setShowEmptyMessage] = useState(false)
+  const emptyTimerRef = useRef(null)
   const [filters, setFilters] = useState({
     patient: '',
     professional: '',
@@ -111,6 +114,26 @@ const MedicalHistory = () => {
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Evita parpadeo: muestra el mensaje "No hay registros" sólo
+  // después de un pequeño retraso cuando la lista está vacía.
+  useEffect(() => {
+    if (emptyTimerRef.current) {
+      clearTimeout(emptyTimerRef.current)
+      emptyTimerRef.current = null
+    }
+    if (!loading && medicalHistory !== null && medicalHistory.length === 0) {
+      emptyTimerRef.current = setTimeout(() => setShowEmptyMessage(true), 300)
+    } else {
+      setShowEmptyMessage(false)
+    }
+    return () => {
+      if (emptyTimerRef.current) {
+        clearTimeout(emptyTimerRef.current)
+        emptyTimerRef.current = null
+      }
+    }
+  }, [loading, medicalHistory])
 
   const handleFinish = async (purpose, formData) => {
     if (purpose === 'MedicalHistory') {
@@ -169,7 +192,7 @@ const MedicalHistory = () => {
         const { success } = await request('post', '/medical_record', newMedicalHistory, headers)
         if (!success) throw new Error('Failed to save medical history.')
 
-        Notifications.showAlert(setAlert, 'Medical history added successfully.', 'success', 5000)
+        Notifications.showAlert(setAlert, 'Medical history added successfully.', 'success', 3500)
         ModalAddRef.current.close()
         await fetchData()
       } catch (error) {
@@ -401,7 +424,7 @@ const MedicalHistory = () => {
     try {
       const res = await request('delete', `/medical_record/${medicalHistory.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'medicalHistory deleted successfully.', 'success', 5000)
+        Notifications.showAlert(setAlert, 'medicalHistory deleted successfully.', 'success', 3500)
         setMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
         setFilteredMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
       } else {
@@ -495,7 +518,7 @@ const MedicalHistory = () => {
 
     const activeFilters = Object.keys(otherFilters).filter((key) => otherFilters[key].trim() !== '')
 
-    const filtered = medicalHistory.filter((medicalHistory) => {
+    const filtered = (medicalHistory || []).filter((medicalHistory) => {
       const medicalHistoryDate = new Date(medicalHistory.created_at)
       const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
       const normalizedMedicalHistoryDate = normalizeDate(medicalHistoryDate)
@@ -531,7 +554,7 @@ const MedicalHistory = () => {
       return acc
     }, {})
     setFilters(resetValues)
-    setFilteredMedicalHistory(medicalHistory)
+    setFilteredMedicalHistory(medicalHistory || [])
   }
 
   // AsyncSelect para pacientes asociados al profesional logueado, usando nueva URL del backend
@@ -576,7 +599,7 @@ const MedicalHistory = () => {
           setAlert,
           'El paciente no tiene registro en historial médico.',
           'warning',
-          5000,
+          3500,
         )
         return
       }
@@ -593,7 +616,7 @@ const MedicalHistory = () => {
       )
 
       if (!success) {
-        Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 5000)
+        Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 3500)
         return
       }
 
@@ -610,7 +633,7 @@ const MedicalHistory = () => {
 
       setDownloadModalVisible(false)
     } catch (error) {
-      Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 5000)
+      Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 3500)
     }
   }
 
@@ -653,7 +676,9 @@ const MedicalHistory = () => {
             </CTableHead>
             <CTableBody>
               {/* 1. Muestra el Skeleton Loader si loading es true */}
-              {loading ? (
+              {medicalHistory === null ||
+              (loading && (!medicalHistory || medicalHistory.length === 0)) ||
+              (!showEmptyMessage && FilteredMedicalHistory.length === 0) ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>

@@ -4,7 +4,7 @@ import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader } from '@coreui/react'
 import './Styles.css/ChartsSection.css'
 import { useTranslation } from 'react-i18next'
-import useApi from '../../hooks/useApi'
+import useDashboard from '../../hooks/useDashboard'
 import useRole from '../../hooks/useRole'
 
 const generateColors = (count, theme) => {
@@ -43,37 +43,32 @@ const ChartsSection = () => {
       : 'light'
   })
 
-  const { request } = useApi()
+  const { dashboard, loading: dashLoading } = useDashboard()
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('authToken')
-        const headers = token ? { Authorization: `Bearer ${token}` } : {}
-        const res = await request('get', '/dashboard', null, headers)
-        if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+    if (!dashboard) return
 
-        const data = res.data
-        const cityLabels = data.patientsByCity.map((entry) => entry.city)
-        const cityValues = data.patientsByCity.map((entry) => entry.patient_count)
-        const specialtyLabels = data.specialtiesByRequest.map((entry) => entry.specialty)
-        const specialtyValues = data.specialtiesByRequest.map((entry) => entry.patient_count)
+    try {
+      const data = dashboard
+      const cityLabels = (data.patientsByCity || []).map((entry) => entry.city)
+      const cityValues = (data.patientsByCity || []).map((entry) => entry.patient_count)
+      const specialtyLabels = (data.specialtiesByRequest || []).map((entry) => entry.specialty)
+      const specialtyValues = (data.specialtiesByRequest || []).map((entry) => entry.patient_count)
 
-        setCityData({ labels: cityLabels, data: cityValues })
-        setSpecialtyData({ labels: specialtyLabels, data: specialtyValues })
-        const newVsLabels = data.patientsNewVsReturning.map((entry) =>
-          entry.type === 'new' ? t('New Patients') : t('Recurrent patients'),
-        )
-        const newVsValues = data.patientsNewVsReturning.map((entry) => entry.count)
+      setCityData({ labels: cityLabels, data: cityValues })
+      setSpecialtyData({ labels: specialtyLabels, data: specialtyValues })
+      const newVsLabels = (data.patientsNewVsReturning || []).map((entry) =>
+        entry.type === 'new' ? t('New Patients') : t('Recurrent patients'),
+      )
+      const newVsValues = (data.patientsNewVsReturning || []).map((entry) => entry.count)
 
-        setNewReturningData({ labels: newVsLabels, data: newVsValues })
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
+      setNewReturningData({ labels: newVsLabels, data: newVsValues })
+    } catch (error) {
+      console.error('Error processing dashboard data:', error)
+    } finally {
+      setLoading(false)
     }
-    fetchDashboardData()
-  }, [t])
+  }, [t, dashboard])
 
   // Helper to return a placeholder donut when there's no data
   const buildDoughnut = (dataObj, emptyLabel) => {

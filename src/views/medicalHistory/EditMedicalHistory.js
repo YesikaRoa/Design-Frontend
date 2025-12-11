@@ -11,6 +11,7 @@ import {
   CRow,
   CFormInput,
   CFormTextarea,
+  CSpinner,
   CAlert,
   CModal,
   CModalBody,
@@ -142,7 +143,7 @@ const EditMedicalHistory = () => {
       Authorization: `Bearer ${getToken()}`,
     })
     if (success) {
-      Notifications.showAlert(setAlert, 'Medical history deleted successfully.', 'success', 5000)
+      Notifications.showAlert(setAlert, 'Medical history deleted successfully.', 'success', 3500)
       setTimeout(() => {
         navigate('/medicalHistory')
       }, 5000)
@@ -160,7 +161,13 @@ const EditMedicalHistory = () => {
     setFieldsDisabled((prev) => !prev)
   }
 
-  if (loading || apiLoading) return <p>Loading medical history...</p>
+  if (loading || apiLoading)
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
+        <CSpinner color="primary" />
+        <span className="ms-2">{t('Loading history...')}</span>
+      </div>
+    )
   if (!medicalHistory) return <p>Medical history not found.</p>
 
   return (

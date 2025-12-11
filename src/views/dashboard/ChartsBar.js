@@ -3,8 +3,9 @@ import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader, CSpinner } from '@coreui/react'
 import './Styles.css/ChartBarExample.css'
 import { useTranslation } from 'react-i18next'
-import useApi from '../../hooks/useApi'
+import useDashboard from '../../hooks/useDashboard'
 import useRole from '../../hooks/useRole'
+import useApi from '../../hooks/useApi'
 
 const ChartBarExample = () => {
   const chartRef = useRef(null)
@@ -42,83 +43,76 @@ const ChartBarExample = () => {
       : 'light'
   })
 
+  const { dashboard, loading: dashLoading } = useDashboard()
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('authToken')
-        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    if (!dashboard) return
 
-        const res = await request('get', '/dashboard', null, headers)
-        if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+    try {
+      const data = dashboard
 
-        const data = res.data
+      // Procesar citas por mes
+      const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
-        // Procesar citas por mes
-        const months = Array.from({ length: 12 }, (_, i) => i + 1)
+      const getCount = (month, status) =>
+        data.appointmentsByMonth.find(
+          (entry) =>
+            entry.month === `2025-${month.toString().padStart(2, '0')}` && entry.status === status,
+        )?.count || 0
 
-        const getCount = (month, status) =>
-          data.appointmentsByMonth.find(
-            (entry) =>
-              entry.month === `2025-${month.toString().padStart(2, '0')}` &&
-              entry.status === status,
-          )?.count || 0
+      const pending = months.map((m) => getCount(m, 'pending'))
+      const confirmed = months.map((m) => getCount(m, 'confirmed'))
+      const completed = months.map((m) => getCount(m, 'completed'))
+      const canceled = months.map((m) => getCount(m, 'canceled'))
 
-        const pending = months.map((m) => getCount(m, 'pending'))
-        const confirmed = months.map((m) => getCount(m, 'confirmed'))
-        const completed = months.map((m) => getCount(m, 'completed'))
-        const canceled = months.map((m) => getCount(m, 'canceled'))
-
-        if (
-          pending.some((v) => v > 0) ||
-          confirmed.some((v) => v > 0) ||
-          completed.some((v) => v > 0) ||
-          canceled.some((v) => v > 0)
-        ) {
-          setHasAppointmentsData(true)
-        }
-
-        // Actualizar chartData (citas por mes)
-        setChartData((prev) => ({
-          ...prev,
-          appointmentsByMonth: { pending, confirmed, completed, canceled },
-        }))
-
-        setLoadingAppointments(false)
-
-        // --- PROFESIONALES (solo admin)
-        const professionals = data.topProfessionals.map((e) => e.professional)
-        const professionalCounts = data.topProfessionals.map((e) => e.patient_count)
-
-        if (professionals.length > 0 && role === 1) setHasProfessionalsData(true)
-
-        // Guardar info (profesionales y citas por día de la semana)
-        const appointmentsByWeekday = data.appointmentsByWeekday || []
-
-        // Detectar si hay datos reales en appointmentsByWeekday
-        const weekdayHasData = appointmentsByWeekday.some(
-          (e) => (e.confirmed || 0) > 0 || (e.completed || 0) > 0,
-        )
-
-        setChartData((prev) => ({
-          ...prev,
-          professionals,
-          professionalCounts,
-          appointmentsByWeekday,
-        }))
-
-        // solo marcar que hay datos si se detectan
-        setHasWeekdayData(weekdayHasData)
-
-        setLoadingProfessionals(false)
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-        setLoadingAppointments(false)
-        setLoadingProfessionals(false)
+      if (
+        pending.some((v) => v > 0) ||
+        confirmed.some((v) => v > 0) ||
+        completed.some((v) => v > 0) ||
+        canceled.some((v) => v > 0)
+      ) {
+        setHasAppointmentsData(true)
       }
-    }
 
-    fetchDashboardData()
-  }, [role])
+      // Actualizar chartData (citas por mes)
+      setChartData((prev) => ({
+        ...prev,
+        appointmentsByMonth: { pending, confirmed, completed, canceled },
+      }))
+
+      setLoadingAppointments(false)
+
+      // --- PROFESIONALES (solo admin)
+      const professionals = (data.topProfessionals || []).map((e) => e.professional)
+      const professionalCounts = (data.topProfessionals || []).map((e) => e.patient_count)
+
+      if (professionals.length > 0 && role === 1) setHasProfessionalsData(true)
+
+      // Guardar info (profesionales y citas por día de la semana)
+      const appointmentsByWeekday = data.appointmentsByWeekday || []
+
+      // Detectar si hay datos reales en appointmentsByWeekday
+      const weekdayHasData = appointmentsByWeekday.some(
+        (e) => (e.confirmed || 0) > 0 || (e.completed || 0) > 0,
+      )
+
+      setChartData((prev) => ({
+        ...prev,
+        professionals,
+        professionalCounts,
+        appointmentsByWeekday,
+      }))
+
+      // solo marcar que hay datos si se detectan
+      setHasWeekdayData(weekdayHasData)
+
+      setLoadingProfessionals(false)
+    } catch (error) {
+      console.error('Error processing dashboard data:', error)
+      setLoadingAppointments(false)
+      setLoadingProfessionals(false)
+    }
+  }, [role, dashboard])
 
   // Detect tema
   useEffect(() => {

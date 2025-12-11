@@ -127,13 +127,15 @@ const AppHeaderDropdown = () => {
           </CToastHeader>
           <CToastBody>
             <div className="toast-content">
-              <p>Your session will expire in {counter} seconds.</p>
+              <p>
+                {t('Your session will expire in')} {counter} {t('seconds')}.
+              </p>
               <CButton
                 color="primary"
                 onClick={handleTokenRenewal}
                 className="renew-session-button"
               >
-                Keep Session Active
+                {t('Keep Session Active')}
               </CButton>
             </div>
           </CToastBody>
