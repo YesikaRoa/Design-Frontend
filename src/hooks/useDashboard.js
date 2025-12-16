@@ -1,121 +1,130 @@
 import { useState, useEffect } from 'react'
 import useApi from './useApi'
 
-/* ---------- Cache en RAM por rol ---------- */
-const memoryCache = {}
+/* ---------- Cache en RAM por usuario ---------- */
+const memoryCacheByUser = {}
 
-/* ---------- Helpers ---------- */
+/* ---------- Helpers JWT ---------- */
 
-const getRoleFromToken = () => {
+const getUserIdFromToken = () => {
   try {
     const token = localStorage.getItem('authToken')
     if (!token) return null
     const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.role || null
+    return payload?.id ?? null
   } catch {
     return null
   }
 }
 
-const loadFromSession = (role) => {
+/* ---------- SessionStorage ---------- */
+
+const loadFromSession = (userId) => {
   try {
-    const s = sessionStorage.getItem(`dashboardData_role_${role}`)
-    return s ? JSON.parse(s) : null
+    const raw = sessionStorage.getItem(`dashboardData_user_${userId}`)
+    return raw ? JSON.parse(raw) : null
   } catch {
     return null
   }
 }
 
-const saveToSession = (role, data) => {
+const saveToSession = (userId, data) => {
   try {
-    sessionStorage.setItem(`dashboardData_role_${role}`, JSON.stringify(data))
+    sessionStorage.setItem(`dashboardData_user_${userId}`, JSON.stringify(data))
   } catch {}
 }
 
-const isValidDashboard = (d) => {
-  if (!d || typeof d !== 'object') return false
-  if (d.attendedPatients !== undefined) return true
-  if (d.appointmentsByMonth !== undefined) return true
-  if (Array.isArray(d.recentPatients)) return true
-  if (Array.isArray(d.patientsByCity)) return true
-  return false
+const isValidDashboard = (data) => {
+  return (
+    data &&
+    typeof data === 'object' &&
+    (data.attendedPatients !== undefined ||
+      Array.isArray(data.recentPatients) ||
+      Array.isArray(data.appointmentsByMonth))
+  )
 }
+
+/* ---------- Hook ---------- */
 
 export default function useDashboard() {
   const { request } = useApi()
-  const role = getRoleFromToken()
+  const userId = getUserIdFromToken()
 
   const [dashboard, setDashboard] = useState(() => {
-    if (!role) return null
+    if (!userId) return null
 
-    // 1) RAM cache (instantáneo)
-    if (memoryCache[role] && isValidDashboard(memoryCache[role])) {
-      return memoryCache[role]
-    }
+    // 1️⃣ RAM
+    const ram = memoryCacheByUser[userId]
+    if (isValidDashboard(ram)) return ram
 
-    // 2) sessionStorage
-    const s = loadFromSession(role)
-    if (s && isValidDashboard(s)) {
-      memoryCache[role] = s
-      return s
+    // 2️⃣ SessionStorage
+    const session = loadFromSession(userId)
+    if (isValidDashboard(session)) {
+      memoryCacheByUser[userId] = session
+      return session
     }
 
     return null
   })
 
-  const [loading, setLoading] = useState(() => (dashboard ? false : true))
+  const [loading, setLoading] = useState(!dashboard)
 
   useEffect(() => {
-    let mounted = true
+    if (!userId || dashboard) {
+      setLoading(false)
+      return
+    }
 
-    const fetchData = async (force = false) => {
-      const token = localStorage.getItem('authToken')
-      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    let cancelled = false
 
-      if (!force) {
-        if (memoryCache[role] && isValidDashboard(memoryCache[role])) {
-          setDashboard(memoryCache[role])
-          setLoading(false)
-          return
-        }
-      }
-
+    const fetchDashboard = async () => {
       setLoading(true)
 
       try {
+        const token = localStorage.getItem('authToken')
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+
         const res = await request('get', '/dashboard', null, headers)
-        if (res?.success && res.data && mounted) {
-          memoryCache[role] = res.data
-          saveToSession(role, res.data)
+
+        if (!cancelled && res?.success && res.data) {
+          memoryCacheByUser[userId] = res.data
+          saveToSession(userId, res.data)
           setDashboard(res.data)
         }
+      } catch (err) {
+        console.error('Error loading dashboard:', err)
       } finally {
-        if (mounted) setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
-    if (role) {
-      fetchData(false)
-    }
+    fetchDashboard()
 
     return () => {
-      mounted = false
+      cancelled = true
     }
-  }, [request, role])
+  }, [userId, request]) // ❗ NO dashboard aquí
 
   const refresh = async () => {
+    if (!userId) return
+
+    delete memoryCacheByUser[userId]
+    sessionStorage.removeItem(`dashboardData_user_${userId}`)
+
     setLoading(true)
+
     try {
       const token = localStorage.getItem('authToken')
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('get', '/dashboard', null, headers)
+
       if (res?.success && res.data) {
-        memoryCache[role] = res.data
-        saveToSession(role, res.data)
+        memoryCacheByUser[userId] = res.data
+        saveToSession(userId, res.data)
         setDashboard(res.data)
       }
     } catch (err) {
-      console.error(err)
+      console.error('Error refreshing dashboard:', err)
     } finally {
       setLoading(false)
     }

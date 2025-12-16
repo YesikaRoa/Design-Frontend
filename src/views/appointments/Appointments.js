@@ -15,7 +15,6 @@ import '../users/styles/filter.css'
 import '../users/styles/users.css'
 import { formatDate } from '../../utils/dateUtils'
 import useApi from '../../hooks/useApi'
-import useDashboard from '../../hooks/useDashboard'
 
 import {
   CTable,
@@ -86,7 +85,6 @@ const Appointments = () => {
   const token = localStorage.getItem('authToken')
   const user = token ? jwtDecode(token) : null
   const { request, loading } = useApi()
-  const { refresh: refreshDashboard } = useDashboard()
 
   const fetchAppointments = async () => {
     try {

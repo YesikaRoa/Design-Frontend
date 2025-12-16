@@ -30,7 +30,6 @@ import CIcon from '@coreui/icons-react'
 import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
 import useApi from '../../hooks/useApi'
-import useDashboard from '../../hooks/useDashboard'
 
 const EditAppointment = () => {
   const location = useLocation()
@@ -73,7 +72,6 @@ const EditAppointment = () => {
   const [citiesLoading, setCitiesLoading] = useState(true)
   const token = localStorage.getItem('authToken')
   const { request, loading: apiLoading } = useApi()
-  const { refresh: refreshDashboard } = useDashboard()
 
   useEffect(() => {
     setLoading(true)
