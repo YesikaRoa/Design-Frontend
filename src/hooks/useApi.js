@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import axios from 'axios'
 //url local: http://localhost:3000/api
-//url producción: https://aplication-backend-production-7932.up.railway.app/api
-const useApi = (baseURL = 'https://aplication-backend-production-7932.up.railway.app/api') => {
+//url producción: https://aplication-backend-production-f363.up.railway.app/api
+const useApi = (baseURL = 'https://aplication-backend-production-f363.up.railway.app/api') => {
   const [loading, setLoading] = useState(false)
 
   const request = async (method, url, body = null, headers = {}) => {

@@ -19,13 +19,13 @@ import logoImage from 'src/assets/images/logo/1.png'
 import { sygnet } from 'src/assets/brand/sygnet'
 
 // sidebar nav config
-import getNavConfig from '../_nav'
+import navigation from '../_nav'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
-  const navigation = getNavConfig()
+
   return (
     <CSidebar
       className="border-end"

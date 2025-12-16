@@ -13,17 +13,28 @@ import {
 } from '@coreui/react'
 import './../../scss/style.scss'
 import { useTranslation } from 'react-i18next'
-import useDashboard from '../../hooks/useDashboard'
+import useApi from '../../hooks/useApi'
 
 const RecentPatientsTable = () => {
   const [recentPatients, setRecentPatients] = useState([])
   const { t } = useTranslation()
-  const { dashboard, loading: dashLoading } = useDashboard()
+  const { request, loading } = useApi()
 
   useEffect(() => {
-    if (!dashboard) return
-    if (dashboard.recentPatients) setRecentPatients(dashboard.recentPatients)
-  }, [dashboard])
+    const fetchRecentPatients = async () => {
+      const token = localStorage.getItem('authToken')
+
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('get', '/dashboard', null, headers)
+
+      if (res.success && res.data && res.data.recentPatients) {
+        setRecentPatients(res.data.recentPatients)
+      } else {
+        console.error('Error fetching recent patients:', res.message)
+      }
+    }
+    fetchRecentPatients()
+  }, [])
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -41,7 +52,7 @@ const RecentPatientsTable = () => {
   }
 
   return (
-    <CCard className="mb-4 mb-sm-0">
+    <CCard className="mb-4 ">
       <CCardHeader>
         <h5>{t('Recent patients')}</h5>
         <small className="text-muted">
@@ -60,7 +71,7 @@ const RecentPatientsTable = () => {
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {dashLoading ? (
+            {loading ? (
               // === Skeleton Loader ===
               Array.from({ length: 5 }).map((_, index) => (
                 <CTableRow key={index}>

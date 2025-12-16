@@ -90,14 +90,24 @@ const AppHeaderDropdown = () => {
   useEffect(() => {
     if (counter <= 0 && tokenExpiring) {
       clearInterval(timerId) // Detén el intervalo si el contador llega a 0
-      localStorage.removeItem('authToken')
+
+      localStorage.clear()
       navigate('/login')
     }
   }, [counter, tokenExpiring, timerId, navigate])
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken')
-    navigate('/login')
+    if (timerId) {
+      clearInterval(timerId)
+      setTimerId(null)
+    }
+
+    // Limpiar todo el localStorage
+    localStorage.clear()
+
+    dispatch({ type: 'resetAvatar' })
+
+    navigate('/login', { replace: true })
   }
 
   const handleProfileClick = () => {

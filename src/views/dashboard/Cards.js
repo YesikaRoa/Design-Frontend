@@ -3,10 +3,9 @@ import { CCard, CCardBody } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilUser, cilUserFollow, cilListRich, cilCalendar } from '@coreui/icons'
 import { useTranslation } from 'react-i18next'
-import useDashboard from '../../hooks/useDashboard'
 import styles from './Styles.css/Cards.module.css'
 import useRole from '../../hooks/useRole'
-
+import useApi from '../../hooks/useApi'
 const Cards = () => {
   const role = useRole()
 
@@ -17,7 +16,10 @@ const Cards = () => {
     topSpecialty: '',
     todayAppointments: 0, // ← NUEVO
   })
-  const { dashboard, loading: dashLoading } = useDashboard()
+  const [loading, setLoading] = useState(true)
+
+  const { request } = useApi()
+
   const [colorScheme, setColorScheme] = useState(() => {
     if (typeof window === 'undefined') return 'light'
     const ds = document.documentElement.dataset.coreuiTheme
@@ -28,15 +30,30 @@ const Cards = () => {
   })
 
   useEffect(() => {
-    if (!dashboard) return
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('authToken')
+        const headers = token ? { Authorization: `Bearer ${token}` } : {}
+        const res = await request('get', '/dashboard', null, headers)
 
-    setData({
-      attendedPatients: dashboard.attendedPatients || 0,
-      newPatients: dashboard.newPatients || 0,
-      topSpecialty: dashboard.topSpecialty?.specialty || '',
-      todayAppointments: dashboard.todayAppointments || 0,
-    })
-  }, [dashboard])
+        if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
+
+        const result = res.data
+
+        setData({
+          attendedPatients: result.attendedPatients || 0,
+          newPatients: result.newPatients || 0,
+          topSpecialty: result.topSpecialty?.specialty || '',
+          todayAppointments: result.todayAppointments || 0, // ← NUEVO
+        })
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboardData()
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -109,7 +126,7 @@ const Cards = () => {
           style={getCardStyle(1)}
         >
           <CCardBody>
-            {dashLoading ? (
+            {loading ? (
               <div className="spinner-border" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
@@ -134,7 +151,7 @@ const Cards = () => {
           style={getCardStyle(2)}
         >
           <CCardBody>
-            {dashLoading ? (
+            {loading ? (
               <div className="spinner-border" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
@@ -159,7 +176,7 @@ const Cards = () => {
           style={getCardStyle(3)}
         >
           <CCardBody>
-            {dashLoading ? (
+            {loading ? (
               <div className="spinner-border" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>

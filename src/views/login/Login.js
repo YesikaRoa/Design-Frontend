@@ -82,6 +82,17 @@ const Login = () => {
     }
   }
 
+  // Helper para obtener el ID del token (puedes moverlo a un archivo de helpers si lo necesitas en más sitios)
+  const getUserIdFromToken = (token) => {
+    try {
+      if (!token) return null
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      return payload.id || null
+    } catch {
+      return null
+    }
+  }
+
   const handleLogin = async () => {
     if (!email || !password) {
       Notifications.showAlert(setAlert, 'Por favor, complete todos los campos.', 'danger')
@@ -106,28 +117,10 @@ const Login = () => {
 
       const token = response.data.token
       localStorage.setItem('authToken', token)
+      sessionStorage.clear()
 
-      // Precargar datos del dashboard antes de redirigir para evitar loader largo
-      try {
-        const headers = { Authorization: `Bearer ${token}` }
-        const dashRes = await request('get', '/dashboard', null, headers)
-        if (dashRes && dashRes.success && dashRes.data) {
-          try {
-            sessionStorage.setItem('dashboardData', JSON.stringify(dashRes.data))
-            // Indicar que la siguiente vez que se cargue el dashboard
-            // queremos mostrar la animación inicial (una sola vez)
-            try {
-              sessionStorage.setItem('dashboardShowInitialAnimation', '1')
-            } catch (e) {}
-          } catch (e) {}
-        } else {
-          // si falla no hacemos nada; el hook useDashboard hará el fetch en el dashboard
-        }
-      } catch (e) {
-        console.warn('Preload dashboard failed', e)
-      }
-
-      navigate('/dashboard')
+      window.location.href = '/#/dashboard'
+      window.location.reload()
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
       Notifications.showAlert(setAlert, 'Hubo un error al iniciar sesión.', 'danger')
