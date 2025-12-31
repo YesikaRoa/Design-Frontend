@@ -175,12 +175,6 @@ const EditAppointment = () => {
           setEditedAppointment({ ...fullData })
           localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
         }
-        // Actualizar cache del dashboard para reflejar cambios en la cita
-        try {
-          await refreshDashboard()
-        } catch (e) {
-          console.warn('dashboard refresh failed after saveChanges', e)
-        }
         Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
       } else {
         throw new Error(res.message || 'Error al guardar los cambios.')
@@ -198,11 +192,7 @@ const EditAppointment = () => {
       const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
       if (res.success) {
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 3500)
-        try {
-          await refreshDashboard()
-        } catch (e) {
-          console.warn('dashboard refresh failed after delete in edit view', e)
-        }
+
         setTimeout(() => {
           navigate('/appointments')
         }, 5000)
@@ -292,11 +282,7 @@ const EditAppointment = () => {
                         localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
                       }
                       // Actualizar cache del dashboard luego de cambio de estado
-                      try {
-                        await refreshDashboard()
-                      } catch (e) {
-                        console.warn('dashboard refresh failed after status change', e)
-                      }
+
                       Notifications.showAlert(
                         setAlert,
                         `Status changed to ${updatedStatus}.`,
