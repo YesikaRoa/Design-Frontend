@@ -58,13 +58,18 @@ export const NotificationPopover = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       const token = localStorage.getItem('authToken')
-      const res = await request('GET', '/notifications', null, { Authorization: `Bearer ${token}` })
+      if (!token) return // Seguridad adicional
+      const res = await request('GET', '/notifications', null, {
+        Authorization: `Bearer ${token}`,
+      })
       setNotifications(res?.data ?? [])
     }
+
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 30000)
+    const interval = setInterval(fetchNotifications, 20000)
+
     return () => clearInterval(interval)
-  }, [request])
+  }, []) // Arreglo vacío: solo se ejecuta una vez al montar
 
   const removeNotification = async (id) => {
     const token = localStorage.getItem('authToken')
@@ -88,6 +93,7 @@ export const NotificationPopover = () => {
 
   const deleteAllNotifications = async () => {
     const token = localStorage.getItem('authToken')
+
     const res = await request('DELETE', '/notifications/all', null, {
       Authorization: `Bearer ${token}`,
     })
