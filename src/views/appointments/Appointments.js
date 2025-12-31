@@ -344,10 +344,17 @@ const Appointments = () => {
           format="dd/MM/yyyy HH:mm"
           slotProps={{
             popper: {
-              disablePortal: true, // ✅ fuerza que el popper viva DENTRO del modal
+              disablePortal: true,
               modifiers: [{ name: 'preventOverflow', enabled: true }],
             },
+            openPickerButton: {
+              'aria-hidden': false,
+              tabIndex: 0,
+            },
             textField: {
+              onKeyDown: (e) => {
+                if (e.key === 'Enter') e.stopPropagation()
+              },
               variant: 'standard',
               fullWidth: true,
               error: !!error,
@@ -372,7 +379,6 @@ const Appointments = () => {
         />
       </LocalizationProvider>
     ),
-
     has_medical_record: ({ value, onChange, placeholder }) => (
       <select
         className="form-select"
@@ -553,12 +559,6 @@ const Appointments = () => {
 
         // Actualizar la lista y el dashboard en segundo plano (no bloquear el cierre de la modal)
         fetchAppointments().catch((e) => console.warn('fetchAppointments failed', e))
-        try {
-          // refreshDashboard puede ser async; llamamos y no esperamos para no demorar la UI
-          refreshDashboard().catch((e) => console.warn('dashboard refresh failed', e))
-        } catch (e) {
-          console.warn('dashboard refresh invocation failed', e)
-        }
 
         return { success: true }
       } catch (error) {
@@ -581,11 +581,6 @@ const Appointments = () => {
         Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 3500)
         setAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
         setFilteredAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
-        try {
-          await refreshDashboard()
-        } catch (e) {
-          console.warn('dashboard refresh failed after delete', e)
-        }
       } else {
         throw new Error(res.message || 'Failed to delete the appointment.')
       }

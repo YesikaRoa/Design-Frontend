@@ -326,13 +326,49 @@ const ModalAdd = forwardRef(
       })
     }
 
+    useEffect(() => {
+      const root = document.getElementById('root')
+      if (!root) return
+
+      // Función limpiadora reutilizable
+      const clearAria = () => {
+        root.removeAttribute('aria-hidden')
+        root.removeAttribute('inert')
+      }
+
+      if (visible) {
+        clearAria() // Limpiar al abrir
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes') {
+              clearAria()
+            }
+          })
+        })
+
+        observer.observe(root, { attributes: true, attributeFilter: ['aria-hidden', 'inert'] })
+
+        return () => {
+          observer.disconnect()
+          // 👈 IMPORTANTE: Limpiar también al desmontar/cerrar
+          // para que el foco regrese a un ambiente limpio
+          setTimeout(clearAria, 0)
+        }
+      } else {
+        // Si la modal deja de ser visible, ejecutamos una limpieza rápida
+        clearAria()
+      }
+    }, [visible])
     return (
       <CModal
         alignment="center"
         visible={visible}
         onClose={() => setVisible(false)}
-        backdrop="static"
+        focus={false}
         portal={false}
+        backdrop="static"
+        aria-hidden="false"
       >
         <CModalHeader className="custom-modal-header">
           <CModalTitle className="custom-modal-title">{title}</CModalTitle>
