@@ -227,7 +227,7 @@ const EditMedicalHistory = () => {
             <CFormInput
               type="file"
               id="attachment_image"
-              label={t('Attachment Image')}
+              label={t('Attachment Image:')}
               onChange={(e) =>
                 seteditedMedicalHistory({
                   ...editedMedicalHistory,

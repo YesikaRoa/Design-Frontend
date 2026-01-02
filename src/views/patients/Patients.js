@@ -323,20 +323,20 @@ export const Patients = () => {
 
     switch (key) {
       case 'first_name':
-        label = 'Primer nombre'
+        label = t('First name')
         break
       case 'last_name':
-        label = 'Apellido'
+        label = t('Last name')
         break
       case 'Email':
-        label = 'Correo Electrónico'
+        label = t('Email')
         break
       case 'status':
-        label = 'Estado'
+        label = t('Status')
         type = 'select' // Cambiar a tipo select
         options = [
-          { label: 'Activo', value: 'Active' },
-          { label: 'Inactivo', value: 'Inactive' },
+          { label: t('Active'), value: 'Active' },
+          { label: t('Inactive'), value: 'Inactive' },
         ]
         break
       default:

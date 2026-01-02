@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { CModal, CModalHeader, CModalBody, CModalFooter, CButton } from '@coreui/react'
 import AsyncSelect from 'react-select/async'
+import { useTranslation } from 'react-i18next'
 
 const ModalDownloadPDF = ({
   visible,
@@ -17,6 +18,7 @@ const ModalDownloadPDF = ({
     if (ds) return ds
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
+  const { t } = useTranslation()
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -85,10 +87,10 @@ const ModalDownloadPDF = ({
 
   return (
     <CModal visible={visible} onClose={onClose} backdrop="static">
-      <CModalHeader closeButton>Descargar Historial Médico en PDF</CModalHeader>
+      <CModalHeader closeButton>{t('Download Medical History in PDF format')}</CModalHeader>
       <CModalBody>
         <label style={{ fontWeight: 'bold' }}>
-          Seleccione un paciente que esté registrado en citas:
+          {t('Select a patient who is registered for appointments:')}
         </label>
 
         <AsyncSelect
@@ -97,7 +99,7 @@ const ModalDownloadPDF = ({
           defaultOptions
           value={selectedPatient}
           onChange={setSelectedPatient}
-          placeholder="Buscar paciente..."
+          placeholder={t('Search patient...')}
           isClearable
           styles={selectStyles}
         />
@@ -105,11 +107,11 @@ const ModalDownloadPDF = ({
 
       <CModalFooter>
         <CButton color="secondary" onClick={onClose}>
-          Cancelar
+          {t('Cancel')}
         </CButton>
 
         <CButton color="primary" onClick={onDownload} disabled={!selectedPatient}>
-          Descargar
+          {t('Download')}
         </CButton>
       </CModalFooter>
     </CModal>

@@ -53,14 +53,14 @@ const ChartBarExample = () => {
         if (!res.success || !res.data) throw new Error('Failed to fetch dashboard data')
 
         const data = res.data
-
         // Procesar citas por mes
+        const currentYear = new Date().getFullYear()
         const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
         const getCount = (month, status) =>
           data.appointmentsByMonth.find(
             (entry) =>
-              entry.month === `2025-${month.toString().padStart(2, '0')}` &&
+              entry.month === `${currentYear}-${month.toString().padStart(2, '0')}` &&
               entry.status === status,
           )?.count || 0
 

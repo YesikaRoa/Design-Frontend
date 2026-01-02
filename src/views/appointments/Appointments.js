@@ -192,7 +192,7 @@ const Appointments = () => {
         loadOptions={(inputValue) => loadPatients(inputValue)} // Sin token
         defaultOptions
         onChange={onChange}
-        placeholder={placeholder || 'Buscar paciente...'}
+        placeholder={placeholder || t('searchPatient')}
         isClearable
         styles={{
           control: (provided) => ({
@@ -241,7 +241,7 @@ const Appointments = () => {
         loadOptions={(inputValue) => loadProfessionals(inputValue)} // Sin token
         defaultOptions
         onChange={onChange}
-        placeholder={placeholder || 'Buscar profesional...'}
+        placeholder={placeholder || t('searchProfessional')}
         isClearable
         styles={{
           control: (provided) => ({
@@ -290,7 +290,7 @@ const Appointments = () => {
         loadOptions={(inputValue) => loadCities(inputValue)} // Sin token
         defaultOptions
         onChange={onChange}
-        placeholder={placeholder || 'Buscar ciudad...'}
+        placeholder={placeholder || t('searchCity')}
         isClearable
         styles={{
           control: (provided) => ({
@@ -336,7 +336,7 @@ const Appointments = () => {
     scheduled_at: ({ value, onChange, error, helperText, placeholder }) => (
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <DateTimePicker
-          label="Scheduled At"
+          label={t('Scheduled At')}
           value={value ? new Date(value) : null}
           onChange={(newValue) => {
             onChange(newValue ? newValue.toISOString() : '')
@@ -397,7 +397,7 @@ const Appointments = () => {
         }}
         required
       >
-        <option value="">{placeholder || 'Do you have a medical history?'}</option>
+        <option value="">{placeholder || t('hasMedicalRecord')}</option>
         <option value="true">Sí</option>
         <option value="false">No</option>
       </select>
@@ -411,20 +411,20 @@ const Appointments = () => {
       fields: [
         {
           name: 'patient',
-          label: 'Paciente',
+          label: t('Patient'),
           type: 'select',
           required: true,
-          placeholder: 'Seleccione al paciente',
+          placeholder: t('selectPatient'),
           options: [], // Usado por customFields con AsyncSelect
         },
         ...(isAdmin
           ? [
               {
                 name: 'professional',
-                label: 'Profesional',
+                label: t('Professional'),
                 type: 'select',
                 required: true,
-                placeholder: 'Seleccione al profesional',
+                placeholder: t('selectProfessional'),
                 options: [],
               },
             ]
@@ -437,29 +437,29 @@ const Appointments = () => {
         {
           name: 'scheduled_at',
           type: 'text', // o simplemente omite el type
-          label: 'Fecha Programada',
+          label: t('scheduledDate'),
           required: true,
-          placeholder: 'Seleccione la fecha y hora',
+          placeholder: t('selectDateTime'),
         },
         {
           name: 'status',
-          label: 'Estado',
+          label: t('Status'),
           type: 'select',
           required: true,
           options: [
-            { label: 'Pendiente', value: 'pending' },
-            { label: 'Confirmada', value: 'confirmed' },
-            { label: 'Completada', value: 'completed' },
-            { label: 'Cancelada', value: 'canceled' },
+            { label: t('Pending'), value: 'pending' },
+            { label: t('Confirmed'), value: 'confirmed' },
+            { label: t('Completed'), value: 'completed' },
+            { label: t('Canceled'), value: 'canceled' },
           ],
         },
         {
           name: 'city_id',
-          label: 'Ciudad',
+          label: t('City'),
           type: 'select',
           required: true,
           options: [], // Usado por customFields con AsyncSelect
-          placeholder: 'Seleccione la ciudad',
+          placeholder: t('selectCity'),
         },
       ],
     },
@@ -468,26 +468,26 @@ const Appointments = () => {
       fields: [
         {
           name: 'notes',
-          label: 'Notas',
+          label: t('Notes'),
           type: 'textarea',
-          placeholder: 'Ingrese las notas',
+          placeholder: t('enterNotes'),
         },
         {
           name: 'reason_for_visit',
-          label: 'Motivo de la visita',
+          label: t('Reason for visit'),
           type: 'text',
-          placeholder: 'Ingrese el motivo de la visita',
+          placeholder: t('enterReasonForVisit'),
         },
         {
           name: 'has_medical_record',
-          label: '¿Tiene un historial médico?',
+          label: t('hasMedicalRecord'),
           type: 'select',
           required: true,
           options: [
-            { label: 'Sí', value: 'true' },
-            { label: 'No', value: 'false' },
+            { label: t('yes'), value: 'true' },
+            { label: t('no'), value: 'false' },
           ],
-          placeholder: '¿Tiene un historial médico?',
+          placeholder: t('hasMedicalRecord'),
         },
       ],
     },
@@ -555,7 +555,7 @@ const Appointments = () => {
         } catch (e) {
           console.warn('Could not close ModalAdd via ref:', e)
         }
-        Notifications.showAlert(setAlert, 'Appointment created successfully.', 'success')
+        Notifications.showAlert(setAlert, t('appointmentCreatedSuccessfully'), 'success')
 
         // Actualizar la lista y el dashboard en segundo plano (no bloquear el cierre de la modal)
         fetchAppointments().catch((e) => console.warn('fetchAppointments failed', e))
@@ -563,7 +563,7 @@ const Appointments = () => {
         return { success: true }
       } catch (error) {
         console.error('Error al crear la cita:', error)
-        Notifications.showAlert(setAlert, 'Appointment not created.', 'danger')
+        Notifications.showAlert(setAlert, t('appointmentNotCreated'), 'danger')
         return { success: false, message: error?.message || 'Appointment not created.' }
       }
     }
@@ -616,31 +616,31 @@ const Appointments = () => {
 
     switch (key) {
       case 'startDate':
-        label = 'Fecha de Inicio'
+        label = t('Start Date')
         type = 'date' // Cambiar el tipo a 'date'
         break
       case 'endDate':
-        label = 'Fecha de Fin'
+        label = t('End Date')
         type = 'date' // Cambiar el tipo a 'date'
         break
       case 'patient':
-        label = 'Paciente'
+        label = t('Patient')
         break
       case 'professional':
-        label = 'Profesional'
+        label = t('Professional')
         break
       case 'status':
-        label = 'Estado'
+        label = t('Status')
         type = 'select'
         options = [
-          { label: 'Pendiente', value: 'pending' },
-          { label: 'Confirmada', value: 'confirmed' },
-          { label: 'Completada', value: 'completed' },
-          { label: 'Cancelada', value: 'canceled' },
+          { label: t('Pending'), value: 'pending' },
+          { label: t('Confirmed'), value: 'confirmed' },
+          { label: t('Completed'), value: 'completed' },
+          { label: t('Canceled'), value: 'canceled' },
         ]
         break
       case 'city':
-        label = 'Ciudad'
+        label = t('City')
         break
       default:
         label = key.charAt(0).toUpperCase() + key.slice(1) // Capitalizar el primer carácter
@@ -649,7 +649,7 @@ const Appointments = () => {
     return {
       name: key,
       label,
-      placeholder: `Buscar por ${label}`,
+      placeholder: `${t('Search by')} ${label}`,
       type,
       options,
       value:

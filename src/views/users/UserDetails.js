@@ -276,7 +276,7 @@ const UserDetails = () => {
   return (
     <CRow>
       <CCol md={12}>
-        <h3 className="mb-4">User Details</h3>
+        <h3 className="mb-4">{t('User Details')}</h3>
         {alert && (
           <CAlert color={alert.type} className="text-center alert-fixed">
             {alert.message}

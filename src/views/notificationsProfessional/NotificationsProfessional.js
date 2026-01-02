@@ -3,12 +3,14 @@ import { CButton, CPopover, CToast, CToastBody, CToastHeader } from '@coreui/rea
 import { cilBell, cilCheckCircle, cilXCircle, cilUser, cilInfo } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import useApi from '../../hooks/useApi'
+import { useTranslation } from 'react-i18next'
 
 export const NotificationPopover = () => {
   const [visible, setVisible] = useState(false)
   const [notifications, setNotifications] = useState([])
   const { request } = useApi()
   const buttonRef = useRef(null)
+  const { t } = useTranslation()
 
   // Manejo de tema
   const [colorScheme, setColorScheme] = useState(() => {
@@ -236,7 +238,7 @@ export const NotificationPopover = () => {
                             className="me-2"
                             style={{ color: status.color }}
                           />
-                          Notificación
+                          {t('notification')}
                         </div>
                       </CToastHeader>
                       <CToastBody style={{ padding: '0 12px 10px 12px' }}>
@@ -251,10 +253,10 @@ export const NotificationPopover = () => {
                             }}
                             onClick={() => toggleReadStatus(n.id, n.status)}
                           >
-                            {n.status === 'read' ? 'Pendiente' : 'Leído'}
+                            {n.status === 'read' ? t('pending') : t('read')}
                           </span>
                           <span style={{ fontSize: '10px', opacity: 0.5 }}>
-                            {n.status === 'read' ? '✓ Leído' : 'Pendiente'}
+                            {n.status === 'read' ? t('readStatus') : t('pending')}
                           </span>
                         </div>
                       </CToastBody>
@@ -268,14 +270,14 @@ export const NotificationPopover = () => {
                   style={{ fontSize: '12px', fontWeight: '500' }}
                   onClick={deleteAllNotifications}
                 >
-                  Limpiar todas las notificaciones
+                  {t('clear All Notifications')}
                 </CButton>
               </>
             ) : (
               <div className="text-center py-4 opacity-50">
                 <CIcon icon={cilBell} size="xl" className="mb-2" />
                 <p className="mb-0" style={{ fontSize: '13px' }}>
-                  Bandeja vacía
+                  {t('empty Inbox')}
                 </p>
               </div>
             )}
