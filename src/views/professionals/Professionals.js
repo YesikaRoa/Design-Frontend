@@ -222,13 +222,13 @@ export const Professionls = () => {
         {
           name: 'birth_date',
           type: 'date', // Cambiar a texto
-          label: 'Fecha de Nacimiento',
-          placeholder: 'Ingrese su fecha de nacimiento', // Placeholder para guiar al usuario
+          label: t('Birth Date'),
+          placeholder: t('Enter your birth date'), // Placeholder para guiar al usuario
           required: true,
         },
         {
           name: 'gender',
-          label: 'Género',
+          label: t('Gender'),
           type: 'select',
           required: true,
           options: [
@@ -242,9 +242,9 @@ export const Professionls = () => {
       fields: [
         {
           name: 'email',
-          label: 'Correo Electrónico',
+          label: t('Email'),
           type: 'email',
-          placeholder: 'Ingrese su correo electrónico',
+          placeholder: t('Enter your email'),
           required: true,
         },
         {
@@ -254,8 +254,8 @@ export const Professionls = () => {
           required: true,
           placeholder: 'Ingrese una contraseña mínima 6 caracteres',
         },
-        { name: 'phone', label: 'Teléfono', placeholder: 'Ingrese su número de teléfono' },
-        { name: 'address', label: 'Dirección', placeholder: 'Ingrese su dirección' },
+        { name: 'phone', label: t('Phone'), placeholder: t('Enter your phone number') },
+        { name: 'address', label: t('Address'), placeholder: t('Enter your address') },
       ],
     },
     {
@@ -330,18 +330,18 @@ export const Professionls = () => {
         const res = await request('DELETE', `/professionals/${userToDelete.id}`, null, headers)
         if (res.success) {
           await fetchProfessionals()
-          Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
+          Notifications.showAlert(setAlert, t('User deleted successfully'), 'success')
         } else {
           const errorData = res.data || {}
           Notifications.showAlert(
             setAlert,
-            errorData.message || 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+            errorData.message || t('Failed to delete user. Please try again.'),
             'danger',
           )
         }
       } catch (error) {
-        console.error('Error eliminando usuario:', error)
-        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'danger')
+        console.error(t('Error deleting user:'), error)
+        Notifications.showAlert(setAlert, t('An error occurred while deleting the user.'), 'danger')
       } finally {
         setVisible(false)
         setUserToDelete(null)
@@ -407,7 +407,7 @@ export const Professionls = () => {
     return {
       name: key,
       label,
-      placeholder: `Buscar por ${label}`,
+      placeholder: `${t('Search by')} ${label}`,
       type,
       options, // Agregar las opciones si es un select
       value: filters[key],
@@ -478,7 +478,7 @@ export const Professionls = () => {
       </div>
 
       <CCard className="mb-4">
-        <CCardHeader>{t('Professional')}</CCardHeader>
+        <CCardHeader>{t('Professionals')}</CCardHeader>
         <div className="filter-container">
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>

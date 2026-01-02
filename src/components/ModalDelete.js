@@ -6,7 +6,13 @@ const ModalDelete = ({ visible, onClose, onConfirm, title, message }) => {
   const { t } = useTranslation()
 
   return (
-    <CModal visible={visible} onClose={onClose} alignment="center" aria-labelledby="modalDelete">
+    <CModal
+      visible={visible}
+      onClose={onClose}
+      alignment="center"
+      aria-labelledby="modalDelete"
+      focus={visible}
+    >
       <CModalHeader>
         <CModalTitle id="modalDelete">{title || 'Confirmar eliminación'}</CModalTitle>
       </CModalHeader>

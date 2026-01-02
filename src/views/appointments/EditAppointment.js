@@ -310,7 +310,7 @@ const EditAppointment = () => {
             </div>
             <CButton color="danger" onClick={() => setDeleteModalVisible(true)} className="mt-2">
               <CIcon icon={cilTrash} className="me-2" />
-              Delete Appointment
+              {t('Delete Appointment')}
             </CButton>
           </CCardBody>
         </CCard>

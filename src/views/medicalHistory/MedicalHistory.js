@@ -216,16 +216,16 @@ const MedicalHistory = () => {
       fields: [
         {
           name: 'appointment_id',
-          label: 'ID de la Cita',
+          label: t('Appointment Id'),
           type: 'custom',
-          placeholder: 'Seleccione la cita',
+          placeholder: t('Select Appointment'),
           options: [], // Mapeo a customFields
         },
         {
           name: 'created_at',
           type: 'custom',
-          label: 'Fecha de Creación',
-          placeholder: 'Seleccione la fecha y hora',
+          label: t('Creation Date'),
+          placeholder: t('select Date Time'),
           custom: 'created_at', // Mapeo a customFields
         },
       ],
@@ -234,9 +234,9 @@ const MedicalHistory = () => {
       fields: [
         {
           name: 'general_notes',
-          label: 'Notas Generales',
+          label: t('General Notes'),
           type: 'textarea',
-          placeholder: 'Ingrese notas adicionales',
+          placeholder: t('Enter Additional Notes'),
         },
       ],
     },
@@ -244,9 +244,9 @@ const MedicalHistory = () => {
       fields: [
         {
           name: 'attachment_image',
-          label: 'Adjuntar Imagen',
+          label: t('Attach Image'),
           type: 'file',
-          placeholder: 'Cargar una imagen',
+          placeholder: t('Upload Image'),
           accept: 'image/*',
         },
       ],
@@ -382,7 +382,7 @@ const MedicalHistory = () => {
     created_at: ({ value, onChange, placeholder }) => (
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <DateTimePicker
-          label="Created At"
+          label={t('Created at')}
           value={value ? new Date(value) : null}
           onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
           format="dd/MM/yyyy HH:mm"
@@ -424,15 +424,20 @@ const MedicalHistory = () => {
     try {
       const res = await request('delete', `/medical_record/${medicalHistory.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'medicalHistory deleted successfully.', 'success', 3500)
+        Notifications.showAlert(
+          setAlert,
+          t('Medical History Deleted Successfully'),
+          'success',
+          3500,
+        )
         setMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
         setFilteredMedicalHistory((prev) => prev.filter((a) => a.id !== medicalHistory.id))
       } else {
-        throw new Error('Failed to delete the medicalHistory.')
+        throw new Error(t('Failed To Delete Medical History'))
       }
     } catch (error) {
       console.error('Error deleting medicalHistory:', error)
-      Notifications.showAlert(setAlert, 'There was an error deleting the medicalHistory.', 'danger')
+      Notifications.showAlert(setAlert, t('Error Deleting Medical History'), 'danger')
     }
   }
   const handleInfo = (medicalHistory) => {
@@ -461,18 +466,18 @@ const MedicalHistory = () => {
 
     switch (key) {
       case 'startDate':
-        label = 'Fecha de Inicio'
+        label = t('Start Date')
         type = 'date' // Cambiar el tipo a 'date'
         break
       case 'endDate':
-        label = 'Fecha de Fin'
+        label = t('End Date')
         type = 'date' // Cambiar el tipo a 'date'
         break
       case 'patient':
-        label = 'Paciente'
+        label = t('Patient')
         break
       case 'professional':
-        label = 'Profesional'
+        label = t('Professional')
         break
       default:
         label = key.charAt(0).toUpperCase() + key.slice(1) // Capitalizar el primer carácter
@@ -595,12 +600,7 @@ const MedicalHistory = () => {
       )
 
       if (!hasHistory) {
-        Notifications.showAlert(
-          setAlert,
-          'El paciente no tiene registro en historial médico.',
-          'warning',
-          3500,
-        )
+        Notifications.showAlert(setAlert, t('Patient Has No Medical Record'), 'warning', 3500)
         return
       }
 
@@ -616,7 +616,7 @@ const MedicalHistory = () => {
       )
 
       if (!success) {
-        Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 3500)
+        Notifications.showAlert(setAlert, t('error Downloading PDF'), 'danger', 3500)
         return
       }
 
@@ -641,12 +641,12 @@ const MedicalHistory = () => {
     <>
       <div className="d-flex justify-content-end mb-3">
         <CButton color="primary" onClick={() => addMedicalHistory()}>
-          <CIcon icon={cilPlus} className="me-2" /> Add Medical History
+          <CIcon icon={cilPlus} className="me-2" /> {t('Add Medical History')}
         </CButton>
         {/* Mostrar botón de descargar solo si el rol NO es 1 (no admin) */}
         {tokenPayload.role !== 1 && (
           <CButton color="secondary" className="ms-2" onClick={() => setDownloadModalVisible(true)}>
-            Descargar PDF
+            {t('Download PDF')}
           </CButton>
         )}
       </div>
@@ -692,7 +692,7 @@ const MedicalHistory = () => {
                 // 2. Muestra "No appointments available" si no hay datos
                 <CTableRow>
                   <CTableDataCell colSpan={5} className="text-center">
-                    No appointments available
+                    {t('No Medical History Available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
@@ -768,11 +768,11 @@ const MedicalHistory = () => {
               </p>
               <p>
                 <strong>{t('General notes')}:</strong>{' '}
-                {selectedMedicalHistory.general_notes || 'No notes available'}
+                {selectedMedicalHistory.general_notes || t('No Notes Available')}
               </p>
               {selectedMedicalHistory.image ? (
                 <div>
-                  <strong>{t('Attached Image: ')}</strong>
+                  <strong>{t('Attached Image:')}</strong>
                   <div>
                     <img
                       src={selectedMedicalHistory.image}

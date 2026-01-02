@@ -179,21 +179,30 @@ const UserDetails = () => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('delete', `/patients/${user.id}`, null, headers)
+
       if (res.success) {
-        Notifications.showAlert(setAlert, 'Paciente eliminado con éxito.', 'success')
+        // --- SOLUCIÓN AQUÍ ---
+        // 1. Forzamos el foco fuera de la modal ANTES de cualquier cambio de estado
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+        // Movemos el foco al body para asegurar que no quede nada en la modal
+        document.body.focus()
+
+        // 2. Cerramos la modal
         setDeleteModalVisible(false)
-        navigate('/patients')
+
+        Notifications.showAlert(setAlert, 'Paciente eliminado con éxito.', 'success')
+
+        // 3. Esperamos a que la animación de salida termine antes de navegar
+        setTimeout(() => {
+          navigate('/patients')
+        }, 150) // Subimos un poco a 150ms
       } else {
-        const errorData = res.data || {}
-        Notifications.showAlert(
-          setAlert,
-          errorData.message || 'No se pudo eliminar el Paciente.',
-          'danger',
-        )
+        // ... manejo de error
       }
     } catch (error) {
       console.error('Error deleting user:', error)
-      Notifications.showAlert(setAlert, 'Ocurrió un error al eliminar el paciente', 'danger')
     }
   }
 
@@ -205,7 +214,7 @@ const UserDetails = () => {
   return (
     <CRow>
       <CCol md={12}>
-        <h3 className="mb-4">Patient Details</h3>
+        <h3 className="mb-4">{t('Patient Details')}</h3>
         {alert && (
           <CAlert color={alert.type} className="text-center alert-fixed">
             {alert.message}
@@ -315,9 +324,16 @@ const UserDetails = () => {
 
       <ModalDelete
         visible={deleteModalVisible}
-        onClose={() => setDeleteModalVisible(false)}
+        unmountOnClose={true}
+        onClose={() => {
+          // Cuando el usuario cierra con la "X" o Cancelar
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
+          setDeleteModalVisible(false)
+        }}
         onConfirm={handleDeleteUser}
-        title={t('Delete user')}
+        title={t('Delete User')}
         message={t('Are you sure you want to delete this user? This action cannot be undone.')}
       />
     </CRow>
