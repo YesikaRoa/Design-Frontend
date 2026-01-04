@@ -11,6 +11,7 @@ export const NotificationPopover = () => {
   const { request } = useApi()
   const buttonRef = useRef(null)
   const { t } = useTranslation()
+  const popoverRef = useRef(null)
 
   // Manejo de tema
   const [colorScheme, setColorScheme] = useState(() => {
@@ -37,41 +38,38 @@ export const NotificationPopover = () => {
     const handleClickOutside = (event) => {
       if (!visible) return
 
-      const popoverEl = document.querySelector('.popover')
       const buttonEl = buttonRef.current
+      const popoverEl = popoverRef.current
 
-      // Si el clic no es en el botón y no es en el popover, cerramos
-      if (
-        buttonEl &&
-        !buttonEl.contains(event.target) &&
-        popoverEl &&
-        !popoverEl.contains(event.target)
-      ) {
-        setVisible(false)
+      if (buttonEl?.contains(event.target) || popoverEl?.contains(event.target)) {
+        return // clic interno → NO cerrar
       }
+
+      setVisible(false) // clic externo real
     }
 
-    // Cambiamos 'click' por 'mousedown' para mayor precisión
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [visible])
 
+  const fetchNotifications = async () => {
+    const token = localStorage.getItem('authToken')
+    if (!token) return
+
+    const res = await request('GET', '/notifications', null, {
+      Authorization: `Bearer ${token}`,
+    })
+
+    setNotifications(res?.data ?? [])
+  }
+
   // Carga de notificaciones
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const token = localStorage.getItem('authToken')
-      if (!token) return // Seguridad adicional
-      const res = await request('GET', '/notifications', null, {
-        Authorization: `Bearer ${token}`,
-      })
-      setNotifications(res?.data ?? [])
-    }
-
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 20000)
 
+    const interval = setInterval(fetchNotifications, 10000)
     return () => clearInterval(interval)
-  }, []) // Arreglo vacío: solo se ejecuta una vez al montar
+  }, [])
 
   const removeNotification = async (id) => {
     const token = localStorage.getItem('authToken')
@@ -81,16 +79,20 @@ export const NotificationPopover = () => {
     if (res.success) setNotifications((prev) => prev.filter((n) => n.id !== id))
   }
 
-  const toggleReadStatus = async (id, currentStatus) => {
+  // Dentro de NotificationPopover.jsx
+  const toggleReadStatus = async (id) => {
     const token = localStorage.getItem('authToken')
-    const newStatus = currentStatus === 'read' ? 'unread' : 'read'
-    await request(
+
+    const res = await request(
       'PUT',
       `/notifications/${id}/status`,
-      { status: newStatus },
+      { status: 'read' },
       { Authorization: `Bearer ${token}` },
     )
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: newStatus } : n)))
+
+    if (res?.success) {
+      setNotifications((prev) => prev.filter((n) => n.id !== id))
+    }
   }
 
   const deleteAllNotifications = async () => {
@@ -105,6 +107,16 @@ export const NotificationPopover = () => {
   // --- Lógica de Estilos Mejorados ---
   const getStatusData = (content) => {
     const text = content.toLowerCase()
+
+    // 0. Recordatorio de cita (Naranja distintivo)
+    if (text.includes('recordatorio') && text.includes('cita confirmada')) {
+      return {
+        color: '#ff6b35', // Naranja vibrante
+        darkBg: '#3d241a', // Fondo oscuro anaranjado
+        icon: cilBell,
+        label: 'RECORDATORIO',
+      }
+    }
 
     // 1. Administrador (Púrpura para denotar autoridad/sistema)
     if (text.includes('admin')) {
@@ -158,7 +170,7 @@ export const NotificationPopover = () => {
   return (
     <div className="position-relative">
       <CPopover
-        trigger="focus"
+        trigger="manual"
         placement="bottom"
         visible={visible}
         onHide={() => setVisible(false)}
@@ -166,6 +178,7 @@ export const NotificationPopover = () => {
         offset={[0, 8]}
         content={
           <div
+            ref={popoverRef}
             className="custom-scrollbar"
             style={{
               width: '280px',
@@ -207,6 +220,8 @@ export const NotificationPopover = () => {
                       visible
                       autohide={false}
                       style={{
+                        opacity: n.status === 'read' ? 0.6 : 1, // Se vuelve un poco transparente al ser leída
+                        transition: 'opacity 0.5s ease',
                         backgroundColor: colorScheme === 'dark' ? status.darkBg : '#fdfdfd',
                         borderLeft: `4px solid ${status.color}`,
                         color: colorScheme === 'dark' ? '#eee' : '#333',
