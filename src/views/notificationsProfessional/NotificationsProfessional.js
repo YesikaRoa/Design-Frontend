@@ -93,7 +93,7 @@ export const NotificationPopover = () => {
     if (!res?.success) return
 
     // 1️⃣ Marcar VISUALMENTE como leída
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: true } : n)))
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, _visuallyRead: true } : n)))
 
     // 2️⃣ Eliminarla luego de 3 segundos
     setTimeout(() => {
@@ -226,7 +226,8 @@ export const NotificationPopover = () => {
                       visible
                       autohide={false}
                       style={{
-                        opacity: n.status === 'read' ? 0.6 : 1, // Se vuelve un poco transparente al ser leída
+                        opacity: n._visuallyRead ? 0.4 : 1,
+                        transform: n._visuallyRead ? 'scale(0.97)' : 'scale(1)',
                         transition: 'opacity 0.5s ease',
                         backgroundColor: colorScheme === 'dark' ? status.darkBg : '#fdfdfd',
                         borderLeft: `4px solid ${status.color}`,
@@ -274,10 +275,10 @@ export const NotificationPopover = () => {
                             }}
                             onClick={() => toggleReadStatus(n.id, n.status)}
                           >
-                            {n.status === 'read' ? t('pending') : t('read')}
+                            {n._visuallyRead ? t('readStatus') : t('read')}
                           </span>
                           <span style={{ fontSize: '10px', opacity: 0.5 }}>
-                            {n.status === 'read' ? t('readStatus') : t('pending')}
+                            {n._visuallyRead ? t('readStatus') : t('pending')}
                           </span>
                         </div>
                       </CToastBody>
