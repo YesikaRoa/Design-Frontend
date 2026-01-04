@@ -90,9 +90,15 @@ export const NotificationPopover = () => {
       { Authorization: `Bearer ${token}` },
     )
 
-    if (res?.success) {
+    if (!res?.success) return
+
+    // 1️⃣ Marcar VISUALMENTE como leída
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: true } : n)))
+
+    // 2️⃣ Eliminarla luego de 3 segundos
+    setTimeout(() => {
       setNotifications((prev) => prev.filter((n) => n.id !== id))
-    }
+    }, 3000)
   }
 
   const deleteAllNotifications = async () => {
