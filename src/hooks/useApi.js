@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react'
 import axios from 'axios'
 //url local: http://localhost:3000/api
-//url producción: https://aplication-backend-production-f363.up.railway.app/api
-const useApi = (baseURL = 'https://aplication-backend-production-f363.up.railway.app/api') => {
+//url producción: aplication-backend-production-fb88.up.railway.app/api
+const useApi = (baseURL = 'https://aplication-backend-production-fb88.up.railway.app/api') => {
   const [loading, setLoading] = useState(false)
 
   // 2. Envuelve la función en useCallback
