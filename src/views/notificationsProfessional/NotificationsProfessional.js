@@ -65,9 +65,14 @@ export const NotificationPopover = () => {
 
   // Carga de notificaciones
   useEffect(() => {
-    fetchNotifications()
+    const fetchIfVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications()
+      }
+    }
 
-    const interval = setInterval(fetchNotifications, 10000)
+    fetchIfVisible()
+    const interval = setInterval(fetchIfVisible, 60000) // 1 minuto y solo si se ve la página
     return () => clearInterval(interval)
   }, [])
 
