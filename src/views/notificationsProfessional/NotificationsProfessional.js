@@ -120,22 +120,25 @@ export const NotificationPopover = () => {
     const text = content.toLowerCase()
 
     // 0. Recordatorio de cita (Naranja distintivo)
-    if (text.includes('recordatorio') && text.includes('cita confirmada')) {
+    if (
+      (text.includes('recordatorio') && text.includes('cita confirmada')) ||
+      text.includes('scheduled appointment')
+    ) {
       return {
         color: '#ff6b35', // Naranja vibrante
         darkBg: '#3d241a', // Fondo oscuro anaranjado
         icon: cilBell,
-        label: 'RECORDATORIO',
+        label: t('recordatorio'),
       }
     }
 
     // 1. Administrador (Púrpura para denotar autoridad/sistema)
-    if (text.includes('admin')) {
+    if (text.includes('admin') || text.includes('created by admin')) {
       return {
         color: '#6f42c1', // Púrpura elegante
         darkBg: '#2a1a3d', // Fondo oscuro violáceo
         icon: cilUser,
-        label: 'ADMIN',
+        label: t('admin'),
       }
     }
 
@@ -174,8 +177,49 @@ export const NotificationPopover = () => {
       color: '#3399ff',
       darkBg: '#1a2a3d',
       icon: cilInfo,
-      label: 'INFO',
+      label: t('info'),
     }
+  }
+
+  // --- Lógica de Traducción de Mensajes del Backend ---
+  const getTranslatedContent = (content) => {
+    // 1. Scheduled Appointment
+    const scheduledMatch = content.match(
+      /You have a scheduled appointment \(ID #(\d+)\) on (.*?) at (.*?)\. Please ensure you are available at the indicated time\./i,
+    )
+    if (scheduledMatch) {
+      return t(
+        'You have a scheduled appointment (ID #{{id}}) on {{date}} at {{time}}. Please ensure you are available at the indicated time.',
+        {
+          id: scheduledMatch[1],
+          date: scheduledMatch[2],
+          time: scheduledMatch[3],
+        },
+      )
+    }
+
+    // 2. System Notification
+    const systemMatch = content.match(/System notification: (.*)/i)
+    if (systemMatch) {
+      return t('System notification: {{action}}', { action: systemMatch[1] })
+    }
+
+    // 3. Appointment status changed
+    const statusMatch = content.match(/Appointment #(\d+) changed to status: (.*)/i)
+    if (statusMatch) {
+      return t('Appointment #{{id}} changed to status: {{status}}', {
+        id: statusMatch[1],
+        status: statusMatch[2],
+      })
+    }
+
+    // 4. Appointment created by admin
+    const adminMatch = content.match(/Appointment #(\d+) created by admin/i)
+    if (adminMatch) {
+      return t('Appointment #{{id}} created by admin', { id: adminMatch[1] })
+    }
+
+    return content // Default
   }
 
   return (
@@ -269,7 +313,9 @@ export const NotificationPopover = () => {
                         </div>
                       </CToastHeader>
                       <CToastBody style={{ padding: '0 12px 10px 12px' }}>
-                        <div style={{ fontSize: '13px', lineHeight: '1.4' }}>{n.content}</div>
+                        <div style={{ fontSize: '13px', lineHeight: '1.4' }}>
+                          {getTranslatedContent(n.content)}
+                        </div>
                         <div className="d-flex justify-content-between align-items-center mt-2">
                           <span
                             style={{
