@@ -580,7 +580,7 @@ const MedicalHistory = () => {
         )
         .slice(0, 5)
         .map((patient) => ({
-          label: patient.full_name,
+          label: `${patient.full_name}`,
           value: patient.id,
           fullName: patient.full_name,
         }))
@@ -596,7 +596,7 @@ const MedicalHistory = () => {
 
     try {
       const hasHistory = medicalHistory.some(
-        (record) => record.patient_full_name === selectedPatient.label,
+        (record) => record.patient_id === selectedPatient.value,
       )
 
       if (!hasHistory) {
@@ -677,8 +677,8 @@ const MedicalHistory = () => {
             <CTableBody>
               {/* 1. Muestra el Skeleton Loader si loading es true */}
               {medicalHistory === null ||
-              (loading && (!medicalHistory || medicalHistory.length === 0)) ||
-              (!showEmptyMessage && FilteredMedicalHistory.length === 0) ? (
+                (loading && (!medicalHistory || medicalHistory.length === 0)) ||
+                (!showEmptyMessage && FilteredMedicalHistory.length === 0) ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
