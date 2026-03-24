@@ -187,6 +187,7 @@ const resources = {
       seconds: 'seconds',
       'Keep Session Active': 'Keep Session Active',
       notification: 'Notification',
+      recordatorio: 'REMINDER',
       pending: 'Pending',
       read: 'Read',
       readStatus: '✓ Read',
@@ -267,6 +268,12 @@ const resources = {
       'Error loading patients:': 'Error loading patients:',
       'Could not load appointments': 'Could not load appointments',
       'Error loading appointments:': 'Error loading appointments:',
+      'You have a scheduled appointment (ID #{{id}}) on {{date}} at {{time}}. Please ensure you are available at the indicated time.':
+        'You have a scheduled appointment (ID #{{id}}) on {{date}} at {{time}}. Please ensure you are available at the indicated time.',
+      'System notification: {{action}}': 'System notification: {{action}}',
+      'Appointment #{{id}} changed to status: {{status}}':
+        'Appointment #{{id}} changed to status: {{status}}',
+      'Appointment #{{id}} created by admin': 'Appointment #{{id}} created by admin',
     },
   },
   es: {
@@ -451,6 +458,7 @@ const resources = {
       seconds: 'segundos',
       'Keep Session Active': 'Mantener la sesión activa',
       notification: 'Notificación',
+      recordatorio: 'RECORDATORIO',
       pending: 'Pendiente',
       read: 'Leído',
       readStatus: '✓ Leído',
@@ -532,6 +540,12 @@ const resources = {
       'Error loading patients:': 'Error cargando pacientes:',
       'Could not load appointments': 'No se pudieron cargar las citas',
       'Error loading appointments:': 'Error cargando citas:',
+      'You have a scheduled appointment (ID #{{id}}) on {{date}} at {{time}}. Please ensure you are available at the indicated time.':
+        'Tienes una cita programada (ID #{{id}}) el {{date}} a las {{time}}. Por favor, asegúrate de estar disponible a la hora indicada.',
+      'System notification: {{action}}': 'Notificación del sistema: {{action}}',
+      'Appointment #{{id}} changed to status: {{status}}':
+        'La cita #{{id}} ha cambiado al estado: {{status}}',
+      'Appointment #{{id}} created by admin': 'Cita #{{id}} creada por el administrador',
     },
   },
 }
