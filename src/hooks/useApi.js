@@ -10,12 +10,13 @@ const useApi = (baseURL = 'https://aplication-backend-production-628d.up.railway
     async (method, url, body = null, headers = {}) => {
       setLoading(true)
       try {
+        const { responseType: responseTypeOption, ...httpHeaders } = headers
         const res = await axios({
           method,
           url: `${baseURL}${url}`,
           data: body,
           headers,
-          responseType: headers.responseType || 'json',
+          responseType: responseTypeOption || 'json',
         })
 
         const payload = res.data && res.data.data ? res.data.data : res.data
