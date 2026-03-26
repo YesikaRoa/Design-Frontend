@@ -138,7 +138,7 @@ export const Patients = () => {
             return { success: false, message }
           }
         }
-        Notifications.showAlert(setAlert, 'Patient created successfully!', 'success')
+        Notifications.showAlert(setAlert, t('Patient created successfully!'), 'success')
         await fetchPatients()
         return { success: true }
       } catch (error) {
@@ -256,7 +256,7 @@ export const Patients = () => {
         const res = await request('DELETE', `/patients/${userToDelete.id}`, null, headers)
         if (res.success) {
           await fetchPatients()
-          Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
+          Notifications.showAlert(setAlert, t('User deleted successfully.'), 'warning')
         } else {
           const errorData = res.error || {}
           Notifications.showAlert(
@@ -267,7 +267,7 @@ export const Patients = () => {
         }
       } catch (error) {
         console.error('Error eliminando usuario:', error)
-        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'danger')
+        Notifications.showAlert(setAlert, t('Error deleting user.'), 'danger')
       } finally {
         setVisible(false)
         setUserToDelete(null)
@@ -443,7 +443,7 @@ export const Patients = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}

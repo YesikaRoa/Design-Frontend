@@ -114,7 +114,7 @@ const Profile = () => {
           )
         }
       } catch (error) {
-        Notifications.showAlert(setAlert, 'Error loading profile', 'danger')
+        Notifications.showAlert(setAlert, t('Error updating profile.'), 'danger')
       }
     }
     fetchProfile()
@@ -226,7 +226,7 @@ const Profile = () => {
       if (professionalData) payload.professionalData = professionalData
 
       if (Object.keys(payload).length === 0) {
-        Notifications.showAlert(setAlert, 'No hay cambios para guardar', 'info')
+        Notifications.showAlert(setAlert, t('No changes to save.'), 'info')
         return
       }
 
@@ -238,7 +238,7 @@ const Profile = () => {
         console.error('Error updating profile:', res.data) // Opcional: loguea los datos del error si existen
         return
       }
-      Notifications.showAlert(setAlert, 'Perfil actualizado con éxito', 'success')
+      Notifications.showAlert(setAlert, t('Profile updated successfully.'), 'info')
       setModalVisible(false)
       const profileRes = await request('get', '/profile', null, headers)
       if (!profileRes.success || !profileRes.data) {
@@ -288,7 +288,7 @@ const Profile = () => {
       })
       setSelectedImage(null) // Limpia preview de avatar
     } catch (error) {
-      Notifications.showAlert(setAlert, 'Error al actualizar perfil', 'danger')
+      Notifications.showAlert(setAlert, t('Error updating profile.'), 'danger')
       console.error(error)
     }
   }
@@ -313,10 +313,10 @@ const Profile = () => {
         if (!updatedUser.avatar) {
           console.error('Avatar no encontrado en la respuesta del backend')
         }
-        Notifications.showAlert(setAlert, 'Avatar actualizado con éxito', 'success')
+        Notifications.showAlert(setAlert, t('Avatar updated successfully.'), 'info')
       } catch (error) {
         console.error('Error al actualizar avatar:', error)
-        Notifications.showAlert(setAlert, 'Error al actualizar avatar', 'danger')
+        Notifications.showAlert(setAlert, t('Error updating avatar.'), 'danger')
       }
     }
 
@@ -346,24 +346,17 @@ const Profile = () => {
         Notifications.showAlert(setAlert, errorMessage, 'danger')
         return
       }
-      Notifications.showAlert(setAlert, 'Contraseña actualizada con éxito', 'success')
+      Notifications.showAlert(setAlert, t('Password updated successfully.'), 'info')
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (error) {
       console.error('Error inesperado:', error)
-      Notifications.showAlert(setAlert, 'Error al cambiar contraseña', 'danger')
+      Notifications.showAlert(setAlert, t('Error updating password.'), 'danger')
     }
   }
-  if (!user) {
-    return (
-      <div className="contain">
-        <div className="spinner"></div>
-        <p className="text">Cargando perfil</p>
-      </div>
-    )
-  }
+  if (!user) return null
 
   return (
     <CCard className="space-component">
@@ -385,7 +378,7 @@ const Profile = () => {
                   <CIcon icon={cilPencil} />
                 </CButton>
                 {alert && (
-                  <CAlert color={alert.type} className="text-center alert-fixed">
+                  <CAlert color={alert.type} className="alert-fixed">
                     {alert.message}
                   </CAlert>
                 )}

@@ -98,7 +98,7 @@ const UserDetails = () => {
         return
       }
       setUser(result.user)
-      Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
+      Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
     } catch (error) {
       console.error('Error al guardar cambios:', error)
       Notifications.showAlert(
@@ -158,13 +158,7 @@ const UserDetails = () => {
       })
   }, [location, navigate, token, params])
 
-  if (loading)
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
-        <CSpinner color="primary" />
-        <span className="ms-2">{t('Loading user...')}</span>
-      </div>
-    )
+  if (!user && (loading || apiLoading)) return null
   if (!user) return <p>No se encontró el usuario.</p>
 
   const handleChangePassword = () => {
@@ -173,7 +167,7 @@ const UserDetails = () => {
 
   const handlePasswordChangeSubmit = async () => {
     if (!currentPassword || !newPassword) {
-      return Notifications.showAlert(setAlert, 'Todos los campos son obligatorios.', 'danger')
+      return Notifications.showAlert(setAlert, t('All fields are required.'), 'danger')
     }
 
     try {
@@ -196,13 +190,13 @@ const UserDetails = () => {
         }
         return
       }
-      Notifications.showAlert(setAlert, 'La contraseña se ha actualizado correctamente.', 'success')
+      Notifications.showAlert(setAlert, t('Password updated successfully.'), 'info')
       setShowChangePasswordModal(false)
       setCurrentPassword('')
       setNewPassword('')
     } catch (err) {
       console.error('Error al cambiar la contraseña:', err)
-      Notifications.showAlert(setAlert, 'Hubo un error al cambiar la contraseña.', 'danger')
+      Notifications.showAlert(setAlert, t('Error updating password.'), 'danger')
     }
   }
 
@@ -224,7 +218,7 @@ const UserDetails = () => {
         Notifications.showAlert(
           setAlert,
           `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
-          'success',
+          'info',
         )
       } else {
         const errorMessage = (apiError && apiError.message) || 'Failed to update user status.'
@@ -232,7 +226,7 @@ const UserDetails = () => {
       }
     } catch (error) {
       console.error('Error toggling user status:', error)
-      Notifications.showAlert(setAlert, 'An error occurred while updating user status.', 'danger')
+      Notifications.showAlert(setAlert, t('Error updating status.'), 'danger')
     }
   }
 
@@ -247,7 +241,7 @@ const UserDetails = () => {
         Notifications.showAlert(
           setAlert,
           (result && result.message) || 'User deleted successfully.',
-          'success',
+          'warning',
         )
         setDeleteModalVisible(false)
         navigate('/users')
@@ -278,7 +272,7 @@ const UserDetails = () => {
       <CCol md={12}>
         <h3 className="mb-4">{t('User Details')}</h3>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}

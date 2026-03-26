@@ -175,13 +175,13 @@ const EditAppointment = () => {
           setEditedAppointment({ ...fullData })
           localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
         }
-        Notifications.showAlert(setAlert, '¡Cambios guardados con éxito!', 'success')
+        Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
       } else {
         throw new Error(res.message || 'Error al guardar los cambios.')
       }
     } catch (error) {
       console.error(error)
-      Notifications.showAlert(setAlert, 'Hubo un error al guardar los cambios.', 'danger')
+      Notifications.showAlert(setAlert, t('Error saving changes.'), 'danger')
     }
     handleFieldsDisabled()
   }
@@ -191,7 +191,7 @@ const EditAppointment = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 3500)
+        Notifications.showAlert(setAlert, t('Appointment deleted successfully.'), 'warning', 3500)
 
         setTimeout(() => {
           navigate('/appointments')
@@ -206,13 +206,7 @@ const EditAppointment = () => {
     setDeleteModalVisible(false)
   }
 
-  if (loading || apiLoading)
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
-        <CSpinner color="primary" />
-        <span className="ms-2">{t('Loading appointment...')}</span>
-      </div>
-    )
+  if (!appointment && (loading || apiLoading)) return null
   if (!appointment) return <p>Appointment not found.</p>
 
   return (
@@ -220,7 +214,7 @@ const EditAppointment = () => {
       <CCol md={12}>
         <h3 className="mb-4">{t('Edit Appointment')}</h3>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}
