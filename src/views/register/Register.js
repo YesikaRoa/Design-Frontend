@@ -138,7 +138,7 @@ const Register = () => {
   const handleRegister = async () => {
     try {
       if (!formData.avatar.startsWith('data:image/')) {
-        Notifications.showAlert(setAlert, 'Invalid avatar format.', 'danger')
+        Notifications.showAlert(setAlert, t('Invalid avatar format.'), 'danger')
         return
       }
       const payload = {
@@ -168,17 +168,17 @@ const Register = () => {
         } else {
           Notifications.showAlert(
             setAlert,
-            (apiError && apiError.message) || 'Registration failed.',
+            (apiError && apiError.message) || t('An unexpected error occurred.'),
             'danger',
           )
         }
         return
       }
-      Notifications.showAlert(setAlert, 'Registration successful!', 'success')
+      Notifications.showAlert(setAlert, t('Registration successful!'), 'success')
       setTimeout(() => navigate('/login'), 1000)
     } catch (error) {
       console.error('Error:', error)
-      Notifications.showAlert(setAlert, 'An error occurred. Please try again later.', 'danger')
+      Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger')
     }
   }
 
@@ -497,7 +497,7 @@ const Register = () => {
                   </div>
 
                   {alert && (
-                    <CAlert color={alert.type} className="text-center alert-fixed">
+                    <CAlert color={alert.type} className="alert-fixed">
                       {alert.message}
                     </CAlert>
                   )}
@@ -506,7 +506,7 @@ const Register = () => {
                   <div className="d-flex justify-content-between mt-3">
                     {step > 1 && (
                       <CButton color="secondary" onClick={handlePrevious}>
-                        Previous
+                        {t('Previous')}
                       </CButton>
                     )}
                     {step === 1 && (

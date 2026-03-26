@@ -30,6 +30,8 @@ import {
   CButton,
   CBadge,
   CAlert,
+  CCol,
+  CRow,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPencil, cilInfo, cilTrash, cilPlus } from '@coreui/icons'
@@ -43,6 +45,124 @@ function parseJwt(token) {
   } catch (e) {
     return {}
   }
+}
+
+// Utilidad para convertir File a base64
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+const AppointmentAsyncSelect = ({ value, onChange, placeholder, colorScheme, t, request }) => {
+  const [selectValue, setSelectValue] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  const loadAppointments = async (inputValue = '') => {
+    const token = localStorage.getItem('authToken')
+
+    if (!token) {
+      console.error('Error: No se encontró el token de autenticación.')
+      return []
+    }
+
+    setLoading(true)
+    try {
+      const res = await request(
+        'get',
+        `/appointments?search=${encodeURIComponent(inputValue)}`,
+        null,
+        { Authorization: `Bearer ${token}` },
+      )
+
+      if (!res.success) {
+        throw new Error(res.message || t('Could not load appointments'))
+      }
+
+      const data = res.data
+
+      return data.map((appt) => ({
+        label: `${appt.id} - Paciente: ${appt.patient_full_name} - Profesional: ${appt.professional_full_name} (${appt.reason_for_visit || 'Motivo no especificado'})`,
+        value: appt,
+      }))
+    } catch (error) {
+      console.error('Error cargando citas:', error)
+      return []
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (value && typeof value === 'object') {
+      setSelectValue({
+        label: `${value.id} - Paciente: ${value.patient_full_name} - Profesional: ${value.professional_full_name} (${value.reason_for_visit || 'Motivo no especificado'})`,
+        value: value,
+      })
+    } else {
+      setSelectValue(null)
+    }
+  }, [value])
+
+  const handleOnChange = (option) => {
+    setSelectValue(option)
+    onChange(option ? option.value : null)
+  }
+
+  return (
+    <AsyncSelect
+      cacheOptions
+      loadOptions={loadAppointments}
+      defaultOptions
+      value={selectValue}
+      onChange={handleOnChange}
+      placeholder={placeholder || t('Select Appointment')}
+      isClearable
+      isLoading={loading}
+      styles={{
+        control: (provided) => ({
+          ...provided,
+          background: colorScheme === 'dark' ? '#23262b' : provided.background,
+          color: colorScheme === 'dark' ? '#fff' : provided.color,
+        }),
+        singleValue: (provided) => ({
+          ...provided,
+          color: colorScheme === 'dark' ? '#fff' : provided.color,
+        }),
+        input: (provided) => ({
+          ...provided,
+          color: colorScheme === 'dark' ? '#fff' : provided.color,
+        }),
+        placeholder: (provided) => ({
+          ...provided,
+          color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
+        }),
+        menu: (provided) => ({
+          ...provided,
+          zIndex: 9999,
+          background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+        }),
+        menuList: (provided) => ({
+          ...provided,
+          background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
+        }),
+        option: (provided, state) => ({
+          ...provided,
+          background: state.isFocused
+            ? colorScheme === 'dark'
+              ? '#3a3f44'
+              : provided.background
+            : colorScheme === 'dark'
+              ? '#2b2f33'
+              : provided.background,
+          color: colorScheme === 'dark' ? '#fff' : provided.color,
+        }),
+      }}
+    />
+  )
 }
 
 const MedicalHistory = () => {
@@ -103,7 +223,7 @@ const MedicalHistory = () => {
     try {
       const { data, success } = await request('get', '/medical_record', null, headers)
 
-      if (!success || !data) throw new Error('Failed to fetch data')
+      if (!success || !data) throw new Error(t('An unexpected error occurred.'))
       setMedicalHistory(data)
       setFilteredMedicalHistory(data)
     } catch (error) {
@@ -185,14 +305,40 @@ const MedicalHistory = () => {
         professional_id: professionalId,
         appointment_id: appointmentId,
         general_notes: formData.general_notes || '',
+        reason_for_visit: formData.reason_for_visit || '',
+        current_illness_history: formData.current_illness_history || '',
+        symptoms: formData.symptoms || '',
+        physical_exam: formData.physical_exam || '',
+        weight: formData.weight ? Number(formData.weight) : null,
+        height: formData.height ? Number(formData.height) : null,
+        body_mass_index: formData.body_mass_index ? Number(formData.body_mass_index) : null,
+        blood_pressure: formData.blood_pressure || '',
+        heart_rate: formData.heart_rate ? Number(formData.heart_rate) : null,
+        respiratory_rate: formData.respiratory_rate ? Number(formData.respiratory_rate) : null,
+        temperature: formData.temperature ? Number(formData.temperature) : null,
+        oxygen_saturation: formData.oxygen_saturation ? Number(formData.oxygen_saturation) : null,
+        diagnosis: formData.diagnosis || '',
+        differential_diagnosis: formData.differential_diagnosis || '',
+        treatment: formData.treatment || '',
+        treatment_plan: formData.treatment_plan || '',
+        medications_prescribed: formData.medications_prescribed || '',
+        laboratory_tests_requested: formData.laboratory_tests_requested || '',
+        imaging_tests_requested: formData.imaging_tests_requested || '',
+        test_instructions: formData.test_instructions || '',
+        follow_up_date: formData.follow_up_date || null,
+        evolution_notes: formData.evolution_notes || '',
         image: base64Image ? base64Image : null,
       }
 
-      try {
-        const { success } = await request('post', '/medical_record', newMedicalHistory, headers)
-        if (!success) throw new Error('Failed to save medical history.')
 
-        Notifications.showAlert(setAlert, 'Medical history added successfully.', 'success', 3500)
+      try {
+        const result = await request('post', '/medical_record', newMedicalHistory, headers)
+        if (!result.success) {
+          console.error('API Error details:', result.error || result.message)
+          throw new Error(result.message || t('Failed to save medical history.'))
+        }
+
+        Notifications.showAlert(setAlert, t('Medical history added successfully.'), 'success', 3500)
         ModalAddRef.current.close()
         await fetchData()
       } catch (error) {
@@ -211,7 +357,8 @@ const MedicalHistory = () => {
     })
   }
 
-  const medicalHistorySteps = [
+
+  const medicalHistorySteps = React.useMemo(() => [
     {
       fields: [
         {
@@ -219,29 +366,154 @@ const MedicalHistory = () => {
           label: t('Appointment Id'),
           type: 'custom',
           placeholder: t('Select Appointment'),
-          options: [], // Mapeo a customFields
+          options: [],
         },
         {
-          name: 'created_at',
-          type: 'custom',
-          label: t('Creation Date'),
-          placeholder: t('select Date Time'),
-          custom: 'created_at', // Mapeo a customFields
+          name: 'reason_for_visit',
+          label: t('Reason for visit'),
+          type: 'textarea',
+          placeholder: t('Reason for visit'),
+        },
+        {
+          name: 'weight',
+          label: t('Weight'),
+          type: 'number',
+          placeholder: 'kg',
+        },
+        {
+          name: 'height',
+          label: t('Height'),
+          type: 'number',
+          placeholder: 'cm',
+        },
+        {
+          name: 'body_mass_index',
+          label: t('Body mass index'),
+          type: 'number',
+          placeholder: 'BMI',
+        },
+        {
+          name: 'blood_pressure',
+          label: t('Blood pressure'),
+          type: 'text',
+          placeholder: '120/80',
+        },
+        {
+          name: 'heart_rate',
+          label: t('Heart rate'),
+          type: 'number',
+          placeholder: 'bpm',
+        },
+        {
+          name: 'respiratory_rate',
+          label: t('Respiratory rate'),
+          type: 'number',
+          placeholder: 'bpm',
+        },
+        {
+          name: 'temperature',
+          label: t('Temperature'),
+          type: 'number',
+          placeholder: '°C',
+        },
+        {
+          name: 'oxygen_saturation',
+          label: t('Oxygen saturation'),
+          type: 'number',
+          placeholder: '%',
         },
       ],
     },
     {
       fields: [
+        {
+          name: 'symptoms',
+          label: t('Symptoms'),
+          type: 'textarea',
+          placeholder: t('Symptoms'),
+        },
+        {
+          name: 'current_illness_history',
+          label: t('Current illness history'),
+          type: 'textarea',
+          placeholder: t('Current illness history'),
+        },
+        {
+          name: 'physical_exam',
+          label: t('Physical exam'),
+          type: 'textarea',
+          placeholder: t('Physical exam'),
+        },
+        {
+          name: 'diagnosis',
+          label: t('Diagnosis'),
+          type: 'textarea',
+          placeholder: t('Diagnosis'),
+        },
+        {
+          name: 'differential_diagnosis',
+          label: t('Differential diagnosis'),
+          type: 'textarea',
+          placeholder: t('Differential diagnosis'),
+        },
+        {
+          name: 'evolution_notes',
+          label: t('Evolution notes'),
+          type: 'textarea',
+          placeholder: t('Evolution notes'),
+        },
+      ],
+    },
+    {
+      fields: [
+        {
+          name: 'treatment',
+          label: t('Treatment'),
+          type: 'textarea',
+          placeholder: t('Treatment'),
+        },
+        {
+          name: 'treatment_plan',
+          label: t('Treatment plan'),
+          type: 'textarea',
+          placeholder: t('Treatment plan'),
+        },
+        {
+          name: 'medications_prescribed',
+          label: t('Medications prescribed'),
+          type: 'textarea',
+          placeholder: t('Medications prescribed'),
+        },
+        {
+          name: 'laboratory_tests_requested',
+          label: t('Laboratory tests requested'),
+          type: 'textarea',
+          placeholder: t('Laboratory tests requested'),
+        },
+        {
+          name: 'imaging_tests_requested',
+          label: t('Imaging tests requested'),
+          type: 'textarea',
+          placeholder: t('Imaging tests requested'),
+        },
+        {
+          name: 'test_instructions',
+          label: t('Test instructions'),
+          type: 'textarea',
+          placeholder: t('Test instructions'),
+        },
+        {
+          name: 'follow_up_date',
+          label: t('Follow up date'),
+          type: 'custom',
+          custom: 'follow_up_date',
+        },
         {
           name: 'general_notes',
           label: t('General Notes'),
           type: 'textarea',
           placeholder: t('Enter Additional Notes'),
         },
-      ],
-    },
-    {
-      fields: [
         {
           name: 'attachment_image',
           label: t('Attach Image'),
@@ -251,124 +523,17 @@ const MedicalHistory = () => {
         },
       ],
     },
-  ]
+  ], [t]);
 
-  const AppointmentAsyncSelect = ({ value, onChange, placeholder }) => {
-    const { request, loading } = useApi() // Llamamos al hook aquí
-    const [selectValue, setSelectValue] = useState(null)
-
-    const loadAppointments = async (inputValue = '') => {
-      const token = localStorage.getItem('authToken')
-
-      if (!token) {
-        console.error('Error: No se encontró el token de autenticación.')
-        return []
-      }
-
-      try {
-        const res = await request(
-          'get',
-          `/appointments?search=${encodeURIComponent(inputValue)}`,
-          null,
-          { Authorization: `Bearer ${token}` },
-        )
-
-        if (!res.success) {
-          throw new Error(res.message || 'No se pudieron cargar las citas')
-        }
-
-        const data = res.data
-
-        // Retornamos el formato esperado directamente
-        return data.map((appt) => ({
-          label: `${appt.id} - Paciente: ${appt.patient_full_name} - Profesional: ${appt.professional_full_name} (${appt.reason_for_visit || 'Motivo no especificado'})`,
-          value: appt, // value es el objeto completo, como querías
-        }))
-      } catch (error) {
-        console.error('Error cargando citas:', error)
-        return []
-      }
-    }
-
-    useEffect(() => {
-      if (value && typeof value === 'object') {
-        setSelectValue({
-          label: `${value.id} - Paciente: ${value.patient_full_name} - Profesional: ${value.professional_full_name} (${value.reason_for_visit || 'Motivo no especificado'})`,
-          value: value,
-        })
-      } else {
-        setSelectValue(null)
-      }
-    }, [value])
-
-    const handleOnChange = (option) => {
-      setSelectValue(option)
-      onChange(option ? option.value : null) // Devuelve el objeto completo
-    }
-
-    return (
-      <AsyncSelect
-        cacheOptions
-        loadOptions={loadAppointments}
-        defaultOptions
-        value={selectValue}
-        onChange={handleOnChange}
-        placeholder={placeholder || 'Seleccione una cita'}
-        isClearable
-        isLoading={loading} // Usas el estado de carga del hook para mostrar el spinner
-        styles={{
-          control: (provided) => ({
-            ...provided,
-            background: colorScheme === 'dark' ? '#23262b' : provided.background,
-            color: colorScheme === 'dark' ? '#fff' : provided.color,
-          }),
-          singleValue: (provided) => ({
-            ...provided,
-            color: colorScheme === 'dark' ? '#fff' : provided.color,
-          }),
-          input: (provided) => ({
-            ...provided,
-            color: colorScheme === 'dark' ? '#fff' : provided.color,
-          }),
-          placeholder: (provided) => ({
-            ...provided,
-            color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
-          }),
-          menu: (provided) => ({
-            ...provided,
-            zIndex: 9999,
-            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-          }),
-          menuList: (provided) => ({
-            ...provided,
-            background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-          }),
-          option: (provided, state) => ({
-            ...provided,
-            background: state.isFocused
-              ? colorScheme === 'dark'
-                ? '#3a3f44'
-                : provided.background
-              : colorScheme === 'dark'
-                ? '#2b2f33'
-                : provided.background,
-            color: colorScheme === 'dark' ? '#fff' : provided.color,
-          }),
-        }}
-      />
-    )
-  }
-
-  // Custom handlers for fields
-  const customFields = {
+  const customFields = React.useMemo(() => ({
     appointment_id: (props) => (
       <AppointmentAsyncSelect
         {...props}
-        value={
-          typeof props.value === 'object' ? props.value.id : props.value // Si ya es el id, úsalo directo
-        }
+        colorScheme={colorScheme}
+        t={t}
+        request={request}
+        value={typeof props.value === 'object' ? props.value.id : props.value}
         onChange={(option) => {
-          // option es el objeto completo de la cita o null
           props.onChange(option ? option.id : '')
           if (props.setFormData) {
             props.setFormData((prev) => ({
@@ -389,7 +554,7 @@ const MedicalHistory = () => {
           disablePortal
           slotProps={{
             popper: {
-              disablePortal: true, // ✅ fuerza que el popper viva DENTRO del modal
+              disablePortal: true,
               modifiers: [{ name: 'preventOverflow', enabled: true }],
             },
             textField: {
@@ -414,7 +579,42 @@ const MedicalHistory = () => {
         />
       </LocalizationProvider>
     ),
-  }
+    follow_up_date: ({ value, onChange, placeholder }) => (
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DateTimePicker
+          label={t('Follow up date')}
+          value={value ? new Date(value) : null}
+          onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
+          format="dd/MM/yyyy HH:mm"
+          disablePortal
+          slotProps={{
+            popper: {
+              disablePortal: true,
+              modifiers: [{ name: 'preventOverflow', enabled: true }],
+            },
+            textField: {
+              variant: 'standard',
+              fullWidth: true,
+              placeholder,
+              InputLabelProps: {
+                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+              },
+              InputProps: {
+                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              },
+              inputProps: {
+                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              },
+              FormHelperTextProps: {
+                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+              },
+            },
+          }}
+          reduceAnimations
+        />
+      </LocalizationProvider>
+    ),
+  }), [colorScheme, t, request]);
 
   const addMedicalHistory = () => {
     ModalAddRef.current.open()
@@ -571,7 +771,7 @@ const MedicalHistory = () => {
         null,
         headers,
       )
-      if (!success || !Array.isArray(data)) throw new Error('No se pudieron cargar los pacientes')
+      if (!success || !Array.isArray(data)) throw new Error(t('Could not load patients'))
       const filtered = data
         .filter((patient) =>
           inputValue
@@ -633,7 +833,7 @@ const MedicalHistory = () => {
 
       setDownloadModalVisible(false)
     } catch (error) {
-      Notifications.showAlert(setAlert, 'Error al descargar el PDF.', 'danger', 3500)
+      Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger', 3500)
     }
   }
 
@@ -657,7 +857,7 @@ const MedicalHistory = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}
@@ -751,43 +951,174 @@ const MedicalHistory = () => {
         title={t('Medical History Information')}
         content={
           selectedMedicalHistory ? (
-            <div>
-              <p>
-                <strong>{t('Patient')}:</strong> {selectedMedicalHistory.patient_full_name}
-              </p>
-              <p>
-                <strong>{t('Professional')}:</strong>{' '}
-                {selectedMedicalHistory.professional_full_name}
-              </p>
-              <p>
-                <strong>{t('Appointment')}:</strong> {selectedMedicalHistory.appointment_id}
-              </p>
-              <p>
-                <strong>{t('Created at')}:</strong>{' '}
-                {formatDate(selectedMedicalHistory.created_at, 'DATETIME')}
-              </p>
-              <p>
-                <strong>{t('General notes')}:</strong>{' '}
-                {selectedMedicalHistory.general_notes || t('No Notes Available')}
-              </p>
-              {selectedMedicalHistory.image ? (
-                <div>
-                  <strong>{t('Attached Image:')}</strong>
-                  <div>
-                    <img
-                      src={selectedMedicalHistory.image}
-                      alt="Attached"
-                      style={{ maxWidth: '100%', marginTop: '10px' }}
-                    />
-                  </div>
+            <div className={`medical-history-info-modal ${colorScheme === 'dark' ? 'text-light' : 'text-dark'}`}>
+              {/* Header Info Banner */}
+              <div
+                className="info-banner mb-4 p-3 rounded"
+                style={{
+                  backgroundColor: colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.15)' : 'rgba(56, 73, 219, 0.05)',
+                  border: `1px solid ${colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.3)' : 'rgba(56, 73, 219, 0.1)'}`,
+                }}
+              >
+                <CRow className="align-items-center">
+                  <CCol md={6}>
+                    <div className="mb-2">
+                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Patient')}</label>
+                      <span className="fs-5 fw-bold text-primary">{selectedMedicalHistory.patient_full_name}</span>
+                    </div>
+                    <div>
+                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Professional')}</label>
+                      <span className="fw-medium">{selectedMedicalHistory.professional_full_name}</span>
+                    </div>
+                  </CCol>
+                  <CCol md={6} className="text-md-end">
+                    <div className="mb-2">
+                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Appointment')}</label>
+                      <CBadge color="primary" shape="rounded-pill">#{selectedMedicalHistory.appointment_id}</CBadge>
+                    </div>
+                    <div>
+                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Date')}</label>
+                      <span className="small">{formatDate(selectedMedicalHistory.created_at, 'DATETIME')}</span>
+                    </div>
+                  </CCol>
+                </CRow>
+              </div>
+
+              {/* General Notes Section */}
+              {selectedMedicalHistory.general_notes && (
+                <div className="mb-4">
+                  <h6 className="text-primary border-bottom pb-2 mb-2 d-flex align-items-center">
+                    <CIcon icon={cilInfo} className="me-2" />
+                    {t('General notes')}
+                  </h6>
+                  <p className="px-2 text-muted" style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>
+                    {selectedMedicalHistory.general_notes}
+                  </p>
                 </div>
-              ) : (
-                <p>{t('No image attached')}.</p>
+              )}
+
+              {/* Clinical & Diagnosis Grid */}
+              <CRow className="mb-4 g-4">
+                <CCol md={6}>
+                  <div className="h-100 p-3 rounded" style={{ backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                    <h6 className="text-primary fw-bold mb-3">{t('Clinical History')}</h6>
+
+                    {[
+                      { label: t('Reason for visit'), value: selectedMedicalHistory.reason_for_visit },
+                      { label: t('Symptoms'), value: selectedMedicalHistory.symptoms },
+                      { label: t('Current illness history'), value: selectedMedicalHistory.current_illness_history, fullWidth: true },
+                      { label: t('Physical exam'), value: selectedMedicalHistory.physical_exam, fullWidth: true },
+                    ].map((item, idx) => (
+                      <div key={idx} className="mb-3 ps-1">
+                        <label className="d-block small text-muted text-uppercase fw-semibold mb-1">{item.label}</label>
+                        <div className="fw-medium">
+                          {item.value || '-'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CCol>
+                <CCol md={6}>
+                  <div className="h-100 p-3 rounded" style={{ backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                    <h6 className="text-primary fw-bold mb-3">{t('Diagnosis & Treatment')}</h6>
+
+                    {[
+                      { label: t('Diagnosis'), value: selectedMedicalHistory.diagnosis },
+                      { label: t('Differential diagnosis'), value: selectedMedicalHistory.differential_diagnosis },
+                      { label: t('Treatment'), value: selectedMedicalHistory.treatment },
+                      { label: t('Treatment plan'), value: selectedMedicalHistory.treatment_plan },
+                      { label: t('Medications prescribed'), value: selectedMedicalHistory.medications_prescribed },
+                    ].map((item, idx) => (
+                      <div key={idx} className="mb-3 ps-1">
+                        <label className="d-block small text-muted text-uppercase fw-semibold mb-1">{item.label}</label>
+                        <div className="fw-medium">
+                          {item.value || '-'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CCol>
+              </CRow>
+
+              {/* Vital Signs Grid - PREMIUM DESIGN */}
+              <div
+                className="vitals-container mb-4 p-4 rounded"
+                style={{
+                  backgroundColor: colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.1)' : 'rgba(56, 73, 219, 0.03)',
+                  border: `1px solid ${colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.2)' : 'rgba(56, 73, 219, 0.1)'}`,
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                }}
+              >
+                <h6 className="text-primary fw-bold mb-4 text-center text-uppercase ls-1">{t('Vital Signs')}</h6>
+                <CRow className="row-cols-2 row-cols-md-4 g-4">
+                  {[
+                    { label: t('Weight'), value: selectedMedicalHistory.weight, unit: 'kg' },
+                    { label: t('Height'), value: selectedMedicalHistory.height, unit: 'cm' },
+                    { label: t('BMI'), value: selectedMedicalHistory.body_mass_index },
+                    { label: t('BP'), value: selectedMedicalHistory.blood_pressure },
+                    { label: t('Heart Rate'), value: selectedMedicalHistory.heart_rate, unit: 'bpm' },
+                    { label: t('RR'), value: selectedMedicalHistory.respiratory_rate, unit: 'bpm' },
+                    { label: t('Temp'), value: selectedMedicalHistory.temperature, unit: '°C' },
+                    { label: t('O2 Sat'), value: selectedMedicalHistory.oxygen_saturation, unit: '%' },
+                  ].map((vital, idx) => (
+                    <CCol key={idx}>
+                      <div className="vital-card text-center">
+                        <div className="small text-uppercase fw-bold mb-1" style={{ fontSize: '0.66rem', color: colorScheme === 'dark' ? 'rgba(255,255,255,0.5)' : '#6c757d' }}>{vital.label}</div>
+                        <div className={`fs-5 fw-bold ${colorScheme === 'dark' ? 'text-white' : 'text-primary-emphasis'}`}>
+                          {vital.value ? `${vital.value}${vital.unit ? ` ${vital.unit}` : ''}` : '-'}
+                        </div>
+                      </div>
+                    </CCol>
+                  ))}
+                </CRow>
+              </div>
+
+              {/* Tests & Evolution */}
+              <div className="p-3 rounded border" style={{ borderColor: 'rgba(56, 73, 219, 0.1)' }}>
+                <h6 className="text-primary fw-bold mb-3">{t('Tests & Evolution')}</h6>
+                <CRow>
+                  <CCol md={7}>
+                    {[
+                      { label: t('Laboratory tests requested'), value: selectedMedicalHistory.laboratory_tests_requested },
+                      { label: t('Imaging tests requested'), value: selectedMedicalHistory.imaging_tests_requested },
+                      { label: t('Test instructions'), value: selectedMedicalHistory.test_instructions },
+                    ].map((item, idx) => (
+                      <div key={idx} className="mb-3">
+                        <label className="small fw-bold text-muted">{item.label}:</label>
+                        <div className="text-muted small ps-2">{item.value || t('None')}</div>
+                      </div>
+                    ))}
+                  </CCol>
+                  <CCol md={5} className="border-start">
+                    <div className="mb-3">
+                      <label className="small fw-bold text-muted">{t('Follow up date')}:</label>
+                      <div className="ps-2 fw-medium">{selectedMedicalHistory.follow_up_date ? formatDate(selectedMedicalHistory.follow_up_date, 'DATE') : 'N/A'}</div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="small fw-bold text-muted">{t('Evolution notes')}:</label>
+                      <div className="text-muted small ps-2">{selectedMedicalHistory.evolution_notes || t('None')}</div>
+                    </div>
+                    <div className="mt-4 pt-2 border-top small text-muted">
+                      <strong>{t('Updated at')}:</strong> {selectedMedicalHistory.updated_at ? formatDate(selectedMedicalHistory.updated_at, 'DATETIME') : 'N/A'}
+                    </div>
+                  </CCol>
+                </CRow>
+              </div>
+
+              {selectedMedicalHistory.image && (
+                <div className="mt-4 border-top pt-3 text-center">
+                  <h6 className="text-primary mb-3 text-start">{t('Attached Image')}:</h6>
+                  <img
+                    src={selectedMedicalHistory.image}
+                    alt="Medical Record"
+                    className="img-fluid rounded shadow-lg border"
+                    style={{ maxHeight: '350px', cursor: 'zoom-in', transition: 'transform 0.2s' }}
+                    onClick={() => window.open(selectedMedicalHistory.image, '_blank')}
+                  />
+                </div>
               )}
             </div>
-          ) : (
-            <p>{t('No information available')}.</p>
-          )
+          ) : null
         }
       />
 

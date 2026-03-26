@@ -221,7 +221,7 @@ export const Users = () => {
           setUsers((prev) => [...prev, normalized])
           setFilteredUsers((prev) => [...prev, normalized])
         }
-        Notifications.showAlert(setAlert, 'User created successfully', 'success')
+        Notifications.showAlert(setAlert, t('User created successfully!'), 'success')
         return { success: true }
       } catch (error) {
         console.error('Error saving user:', error)
@@ -408,7 +408,7 @@ export const Users = () => {
         if (res.success) {
           setUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
           setFilteredUsers((prev) => prev.filter((u) => String(u.id) !== String(userToDelete.id)))
-          Notifications.showAlert(setAlert, 'Usuario eliminado con éxito', 'success')
+          Notifications.showAlert(setAlert, t('User deleted successfully.'), 'warning')
         } else {
           Notifications.showAlert(
             setAlert,
@@ -417,7 +417,7 @@ export const Users = () => {
           )
         }
       } catch (error) {
-        Notifications.showAlert(setAlert, 'Ocurrió un error eliminando el usuario.', 'error')
+        Notifications.showAlert(setAlert, t('Error deleting user.'), 'danger')
       } finally {
         setVisible(false)
         setUserToDelete(null)
@@ -568,7 +568,7 @@ export const Users = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}

@@ -1,7 +1,10 @@
 import { useState, useCallback } from 'react'
 import axios from 'axios'
 //url local: http://localhost:3000/api
-//url producción: aplication-backend-production-628d.up.railway.app/api
+//url producción:https://aplication-backend-production-628d.up.railway.app/api
+
+let activeRequests = 0
+
 const useApi = (baseURL = 'https://aplication-backend-production-628d.up.railway.app/api') => {
   const [loading, setLoading] = useState(false)
 
@@ -9,6 +12,9 @@ const useApi = (baseURL = 'https://aplication-backend-production-628d.up.railway
   const request = useCallback(
     async (method, url, body = null, headers = {}) => {
       setLoading(true)
+      activeRequests++
+      document.body.classList.add('loading-global')
+
       try {
         const { responseType, ...httpHeaders } = headers
         const res = await axios({
@@ -30,6 +36,10 @@ const useApi = (baseURL = 'https://aplication-backend-production-628d.up.railway
         }
       } finally {
         setLoading(false)
+        activeRequests = Math.max(0, activeRequests - 1)
+        if (activeRequests === 0) {
+          document.body.classList.remove('loading-global')
+        }
       }
     },
     [baseURL],

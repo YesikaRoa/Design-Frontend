@@ -578,7 +578,7 @@ const Appointments = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'Appointment deleted successfully.', 'success', 3500)
+        Notifications.showAlert(setAlert, t('Appointment deleted successfully.'), 'warning', 3500)
         setAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
         setFilteredAppointments((prev) => prev.filter((a) => a.id !== appointment.id))
       } else {
@@ -586,7 +586,7 @@ const Appointments = () => {
       }
     } catch (error) {
       console.error('Error deleting appointment:', error)
-      Notifications.showAlert(setAlert, 'There was an error deleting the appointment.', 'danger')
+      Notifications.showAlert(setAlert, t('Error deleting appointment.'), 'danger')
     }
   }
 
@@ -752,7 +752,7 @@ const Appointments = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}

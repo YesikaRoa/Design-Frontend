@@ -214,11 +214,11 @@ const UserDetails = () => {
             : { label: `Unknown-${id}`, value: id }
         }),
       )
-      Notifications.showAlert(setAlert, 'Changes successfully saved!', 'success')
+      Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
       setFieldsDisabled(true)
     } catch (error) {
       console.error('Error saving changes:', error)
-      Notifications.showAlert(setAlert, 'There was an error saving the changes.', 'danger')
+      Notifications.showAlert(setAlert, t('Error saving changes.'), 'danger')
     }
   }
 
@@ -243,14 +243,8 @@ const UserDetails = () => {
     }
   }, [location, navigate])
 
-  if (loading || apiLoading)
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
-        <CSpinner color="primary" />
-        <span className="ms-2">{t('Loading user...')}</span>
-      </div>
-    )
-  if (!user) return <p>No se encontró el usuario.</p>
+  if (!professional && (loading || apiLoading)) return null
+  if (!professional) return <p>No se encontró el profesional.</p>
 
   const handleToggleStatus = async (userId) => {
     try {
@@ -270,7 +264,7 @@ const UserDetails = () => {
         Notifications.showAlert(
           setAlert,
           `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
-          'success',
+          'info',
         )
       } else {
         const errorMessage = (apiError && apiError.message) || 'Failed to update user status.'
@@ -278,7 +272,7 @@ const UserDetails = () => {
       }
     } catch (error) {
       console.error('Error toggling user status:', error)
-      Notifications.showAlert(setAlert, 'An error occurred while updating user status.', 'danger')
+      Notifications.showAlert(setAlert, t('Error updating status.'), 'danger')
     }
   }
 
@@ -287,7 +281,7 @@ const UserDetails = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('delete', `/professionals/${professional.id}`, null, headers)
       if (res.success) {
-        Notifications.showAlert(setAlert, 'Professional eliminado con éxito.', 'success')
+        Notifications.showAlert(setAlert, t('Professional deleted successfully.'), 'warning')
         setDeleteModalVisible(false)
         navigate('/professionals')
       } else {
@@ -300,7 +294,7 @@ const UserDetails = () => {
       }
     } catch (error) {
       console.error('Error deleting user:', error)
-      Notifications.showAlert(setAlert, 'Ocurrió un error al eliminar el professional', 'danger')
+      Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger')
     }
   }
 
@@ -313,7 +307,7 @@ const UserDetails = () => {
       <CCol md={12}>
         <h3 className="mb-4">{t('Professional Details')}</h3>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}

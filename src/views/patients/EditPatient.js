@@ -34,9 +34,16 @@ const UserDetails = () => {
   const token = localStorage.getItem('authToken')
   const { id } = useParams()
   const [patient, setPatient] = useState(null)
-  const [medicalData, setMedicalData] = useState('')
-
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    address: '',
+    phone: '',
+    medical_data: '',
+  })
   const { request } = useApi()
+
   const fetchPatient = async (profId) => {
     setLoading(true)
     try {
@@ -46,11 +53,24 @@ const UserDetails = () => {
       if (!res.success || !res.data) throw new Error('Error fetching patient')
       setPatient(res.data)
       setUser(res.data)
+      setFormData({
+        first_name: res.data.first_name || '',
+        last_name: res.data.last_name || '',
+        email: res.data.email || '',
+        address: res.data.address || '',
+        phone: res.data.phone || '',
+        medical_data: res.data.medical_data || '',
+      })
     } catch (error) {
       console.error(error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
   const handleFieldsDisabled = () => {
@@ -59,79 +79,58 @@ const UserDetails = () => {
 
   const save = async () => {
     try {
-      // Obtener los datos actuales del usuario
-      const resGet = await request('get', `/patients/${user.id}`, null, {
-        Authorization: `Bearer ${token}`,
-      })
-      if (!resGet.success || !resGet.data)
-        throw new Error('Error al obtener los datos actuales del usuario.')
-      const currentData = resGet.data
-      // Extraer valores del formulario
-      const updatedFields = {
-        first_name: document.getElementById('firstName').value || null,
-        last_name: document.getElementById('lastName').value || null,
-        email: document.getElementById('email').value || null,
-        address: document.getElementById('address').value || null,
-        phone: document.getElementById('phone').value || null,
-        medical_data: medicalData || null,
-      }
-      // Comparar campos actualizados con datos actuales para enviar solo los modificados
+      // Comparar campos para enviar solo los modificados (opcional, pero mejor enviar lo necesario)
       const changes = {}
-      for (const key in updatedFields) {
-        if (updatedFields[key] && updatedFields[key] !== currentData[key]) {
-          changes[key] = updatedFields[key]
+      for (const key in formData) {
+        if (formData[key] !== user[key]) {
+          changes[key] = formData[key]
         }
       }
-      // Validar si hay cambios
+
       if (Object.keys(changes).length === 0) {
-        Notifications.showAlert(setAlert, 'No se realizaron cambios.', 'info')
+        Notifications.showAlert(setAlert, t('No changes to save.'), 'info')
+        setFieldsDisabled(true)
         return
       }
-      // Enviar datos al backend
+
       const resPut = await request('put', `/patients/${user.id}`, changes, {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       })
+
       if (!resPut.success) {
-        const errorData = resPut.data || {}
+        const errorData = resPut.error || {}
         if (errorData.issues && Array.isArray(errorData.issues)) {
           const messages = errorData.issues
-            .map((issue) =>
-              Array.isArray(issue.path)
-                ? `${issue.path.join('.')} - ${issue.message}`
-                : `${issue.path || 'unknown'} - ${issue.message}`,
-            )
+            .map((issue) => issue.message)
             .join('\n')
           Notifications.showAlert(setAlert, messages, 'danger')
         } else {
           Notifications.showAlert(
             setAlert,
-            errorData.message || 'Error al guardar los cambios.',
+            resPut.message || t('Error saving changes.'),
             'danger',
           )
         }
         return
       }
-      setUser(resPut.data.user)
-      Notifications.showAlert(setAlert, 'Cambios guardados exitosamente.', 'success')
+
+      const updatedUser = resPut.data.user || resPut.data
+      setUser(updatedUser)
+      setPatient(updatedUser)
+      Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
+      setFieldsDisabled(true)
     } catch (error) {
       console.error('Error saving changes:', error)
-      Notifications.showAlert(setAlert, 'Hubo un error al guardar los cambios.', 'danger')
+      Notifications.showAlert(setAlert, t('Error saving changes.'), 'danger')
     }
-    handleFieldsDisabled()
   }
 
   useEffect(() => {
     if (id) fetchPatient(id)
   }, [id])
 
-  if (loading)
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
-        <CSpinner color="primary" />
-        <span className="ms-2">{t('Loading user...')}</span>
-      </div>
-    )
+  if (!user && (loading)) return null
   if (!user) return <p>No se encontró el usuario.</p>
 
   const handleToggleStatus = async (patientId) => {
@@ -167,7 +166,7 @@ const UserDetails = () => {
       Notifications.showAlert(
         setAlert,
         `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
-        'success',
+        'info',
       )
     } catch (error) {
       console.error('Error toggling user status:', error)
@@ -192,7 +191,7 @@ const UserDetails = () => {
         // 2. Cerramos la modal
         setDeleteModalVisible(false)
 
-        Notifications.showAlert(setAlert, 'Paciente eliminado con éxito.', 'success')
+        Notifications.showAlert(setAlert, t('Patient deleted successfully.'), 'warning')
 
         // 3. Esperamos a que la animación de salida termine antes de navegar
         setTimeout(() => {
@@ -216,7 +215,7 @@ const UserDetails = () => {
       <CCol md={12}>
         <h3 className="mb-4">{t('Patient Details')}</h3>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}
@@ -268,17 +267,19 @@ const UserDetails = () => {
             <CCardTitle>{t('Edit Patient')}</CCardTitle>
             <CFormInput
               type="text"
-              id="firstName"
+              id="first_name"
               floatingLabel={t('First name')}
-              defaultValue={user.first_name}
+              value={formData.first_name}
+              onChange={handleInputChange}
               className="mb-3"
               disabled={fieldsDisabled}
             />
             <CFormInput
               type="text"
-              id="lastName"
+              id="last_name"
               floatingLabel={t('Last name')}
-              defaultValue={user.last_name}
+              value={formData.last_name}
+              onChange={handleInputChange}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -286,7 +287,8 @@ const UserDetails = () => {
               type="email"
               id="email"
               floatingLabel={t('Email')}
-              defaultValue={user.email}
+              value={formData.email}
+              onChange={handleInputChange}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -294,7 +296,8 @@ const UserDetails = () => {
               type="text"
               id="address"
               floatingLabel={t('Address')}
-              defaultValue={user.address}
+              value={formData.address}
+              onChange={handleInputChange}
               className="mb-3"
               disabled={fieldsDisabled}
             />
@@ -302,15 +305,17 @@ const UserDetails = () => {
               type="text"
               id="phone"
               floatingLabel={t('Phone')}
-              defaultValue={user.phone}
+              value={formData.phone}
+              onChange={handleInputChange}
               className="mb-3"
               disabled={fieldsDisabled}
             />
             <CFormInput
               type="text"
-              id="medicalData"
+              id="medical_data"
               floatingLabel={t('Medical Data')}
-              defaultValue={user.medical_data}
+              value={formData.medical_data}
+              onChange={handleInputChange}
               className="mb-3"
               disabled={fieldsDisabled}
             />

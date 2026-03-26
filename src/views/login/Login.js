@@ -38,7 +38,7 @@ const Login = () => {
 
   const handleSendPassword = async () => {
     if (!recoveryEmail) {
-      Notifications.showAlert(setAlert, 'Por favor, ingrese su correo.', 'danger')
+      Notifications.showAlert(setAlert, t('Please enter your email.'), 'danger')
       return
     }
 
@@ -49,7 +49,7 @@ const Login = () => {
       if (!response.success) {
         Notifications.showAlert(
           setAlert,
-          response.message || 'Hubo un error al enviar el correo.',
+          response.message || t('Error sending email.'),
           'danger',
         )
         return
@@ -69,14 +69,14 @@ const Login = () => {
 
       Notifications.showAlert(
         setAlert,
-        'La contraseña temporal ha sido enviada a su correo.',
+        t('The temporary password has been sent to your email.'),
         'success',
       )
       setModalVisible(false)
     } catch (error) {
       Notifications.showAlert(
         setAlert,
-        error.message || 'Hubo un error al enviar el correo.',
+        error.message || t('Error sending email.'),
         'danger',
       )
     }
@@ -95,7 +95,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Notifications.showAlert(setAlert, 'Por favor, complete todos los campos.', 'danger')
+      Notifications.showAlert(setAlert, t('Complete all fields to continue.'), 'danger')
       return
     }
 
@@ -108,7 +108,7 @@ const Login = () => {
         } else {
           Notifications.showAlert(
             setAlert,
-            response.message || 'Error al iniciar sesión.',
+            response.message || t('An unexpected error occurred.'),
             'danger',
           )
         }
@@ -123,7 +123,7 @@ const Login = () => {
       window.location.reload()
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
-      Notifications.showAlert(setAlert, 'Hubo un error al iniciar sesión.', 'danger')
+      Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger')
     }
   }
 
@@ -136,7 +136,7 @@ const Login = () => {
               <CCard className="p-4">
                 <CCardBody>
                   {alert && (
-                    <CAlert color={alert.type} className="text-center alert-fixed">
+                    <CAlert color={alert.type} className="alert-fixed">
                       {alert.message}
                     </CAlert>
                   )}

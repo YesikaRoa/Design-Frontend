@@ -32,6 +32,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatDate } from '../../utils/dateUtils'
 
 export const Professionls = () => {
+  const { t } = useTranslation()
   const { request, loading } = useApi()
   const navigate = useNavigate()
   const [users, setUsers] = useState(null)
@@ -52,7 +53,6 @@ export const Professionls = () => {
   const [userToDelete, setUserToDelete] = useState(null)
   const [professionalTypes, setProfessionalTypes] = useState([])
   const [specialties, setSpecialties] = useState([])
-  const { t } = useTranslation()
   const [formDataState, setFormData] = useState({})
   const token = localStorage.getItem('authToken')
   const defaultAvatar = '/avatar.png'
@@ -184,7 +184,7 @@ export const Professionls = () => {
           }
           return
         }
-        Notifications.showAlert(setAlert, 'Professional created successfully!', 'success')
+        Notifications.showAlert(setAlert, t('Professional created successfully!'), 'success')
         // Reconsultar y mostrar la lista ordenada por fecha (fetchProfessionals ya ordena)
         await fetchProfessionals()
         // Cerrar la modal después de crear el profesional
@@ -330,7 +330,7 @@ export const Professionls = () => {
         const res = await request('DELETE', `/professionals/${userToDelete.id}`, null, headers)
         if (res.success) {
           await fetchProfessionals()
-          Notifications.showAlert(setAlert, t('User deleted successfully'), 'success')
+          Notifications.showAlert(setAlert, t('User deleted successfully'), 'warning')
         } else {
           const errorData = res.data || {}
           Notifications.showAlert(
@@ -341,7 +341,7 @@ export const Professionls = () => {
         }
       } catch (error) {
         console.error(t('Error deleting user:'), error)
-        Notifications.showAlert(setAlert, t('An error occurred while deleting the user.'), 'danger')
+        Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger')
       } finally {
         setVisible(false)
         setUserToDelete(null)
@@ -483,7 +483,7 @@ export const Professionls = () => {
           <UserFilter onFilter={handleFilter} resetFilters={resetFilters} dataFilter={dataFilter} />
         </div>
         {alert && (
-          <CAlert color={alert.type} className="text-center alert-fixed">
+          <CAlert color={alert.type} className="alert-fixed">
             {alert.message}
           </CAlert>
         )}
