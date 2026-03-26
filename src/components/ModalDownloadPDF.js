@@ -10,6 +10,7 @@ const ModalDownloadPDF = ({
   setSelectedPatient,
   loadPatients,
   onDownload,
+  isDownloading = false,
 }) => {
   // Detectar modo claro/oscuro del template CoreUI
   const [colorScheme, setColorScheme] = useState(() => {
@@ -110,7 +111,8 @@ const ModalDownloadPDF = ({
           {t('Cancel')}
         </CButton>
 
-        <CButton color="primary" onClick={onDownload} disabled={!selectedPatient}>
+        <CButton color="primary" onClick={onDownload} disabled={!selectedPatient || isDownloading}>
+          {isDownloading ? <span className="spinner-border spinner-border-sm me-2"></span> : null}
           {t('Download')}
         </CButton>
       </CModalFooter>

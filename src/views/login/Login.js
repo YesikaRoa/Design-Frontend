@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import useApi from '../../hooks/useApi'
@@ -6,29 +6,45 @@ import {
   CButton,
   CCard,
   CCardBody,
-  CCardGroup,
   CCol,
   CContainer,
   CForm,
   CFormInput,
-  CInputGroup,
-  CInputGroupText,
   CRow,
   CAlert,
+  useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
+import {
+  cilLockLocked,
+  cilUser,
+  cilSun,
+  cilMoon,
+  cilLanguage,
+} from '@coreui/icons'
 import ModalSendInformation from '../../components/ModalSendInformation'
 import Notifications from '../../components/Notifications'
 import emailjs from 'emailjs-com'
 import './styles/Login.css'
 import { useTranslation } from 'react-i18next'
 
+const eyeOpenIcon = [
+  '512 512',
+  "<path fill='var(--ci-primary-color, currentColor)' d='M256 112C132.3 112 48 256 48 256s84.3 144 208 144 208-144 208-144-84.3-144-208-144Zm0 256c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112Zm0-176a64 64 0 1 0 64 64 64 64 0 0 0-64-64Z'/>",
+]
+
+const eyeClosedIcon = [
+  '512 512',
+  "<path fill='var(--ci-primary-color, currentColor)' d='M40 80l-24 24 80.4 80.4C64.2 212.8 48 256 48 256s84.3 144 208 144c43.3 0 81.9-17.6 114.3-42.5L448 432l24-24ZM256 368c-61.9 0-112-50.1-112-112 0-17.3 3.9-33.6 10.9-48.2l149.3 149.3A111.5 111.5 0 0 1 256 368Zm0-256c-43.3 0-81.9 17.6-114.3 42.5L64 80 40 104l432 432 24-24-80.4-80.4C447.8 299.2 464 256 464 256S379.7 112 256 112Zm0 32c61.9 0 112 50.1 112 112 0 17.3-3.9 33.6-10.9 48.2L207.8 154.9A111.5 111.5 0 0 1 256 144Z'/>",
+]
+
 const Login = () => {
   const { request, loading } = useApi()
   const [modalVisible, setModalVisible] = useState(false)
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const alertRef = useRef(null)
   const { t } = useTranslation()
   const navigate = useNavigate()
   // Estados controlados para inputs
@@ -100,6 +116,7 @@ const Login = () => {
     }
 
     try {
+      setIsSubmitting(true)
       const response = await request('POST', '/auth/login', { email, password })
       if (!response.success) {
         if (response.data?.issues?.length) {
@@ -112,6 +129,9 @@ const Login = () => {
             'danger',
           )
         }
+        setEmail('')
+        setPassword('')
+        setShowPassword(false)
         return
       }
 
@@ -124,95 +144,160 @@ const Login = () => {
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
       Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const { i18n } = useTranslation()
+
+  const toggleTheme = () => {
+    const newMode = colorMode === 'dark' ? 'light' : 'dark'
+    setColorMode(newMode)
+  }
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'es' : 'en'
+    i18n.changeLanguage(newLang)
+  }
+
+  const currentYear = new Date().getFullYear()
+
+  useEffect(() => {
+    if (alert && alertRef.current) {
+      alertRef.current.focus()
+    }
+  }, [alert])
+
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center login-background">
+    <div className="login-page-wrapper min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="login-background-overlay"></div>
+      <div className="login-glow login-glow-left"></div>
+
       <CContainer>
-        <CRow className="justify-content-center">
-          <CCol md={8}>
-            <CCardGroup className="some-class">
-              <CCard className="p-4">
-                <CCardBody>
-                  {alert && (
-                    <CAlert color={alert.type} className="alert-fixed">
-                      {alert.message}
-                    </CAlert>
-                  )}
-                  <CForm
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      handleLogin()
-                    }}
-                  >
-                    <h1>{t('Login')}</h1>
-                    <p className="text-body-secondary">{t('Sign In to your account')}</p>
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilUser} />
-                      </CInputGroupText>
+        <CRow className="w-100 m-0">
+          <CCol className="d-flex justify-content-end">
+            <div className="login-controls d-flex justify-content-end gap-2">
+              <CButton
+                color="light"
+                variant="outline"
+                className="btn-toggle shadow-sm"
+                onClick={toggleLanguage}
+              >
+                <CIcon icon={cilLanguage} className="me-2" />
+                {i18n.language === 'en' ? 'ES' : 'EN'}
+              </CButton>
+              <CButton
+                color="light"
+                variant="outline"
+                className="btn-toggle shadow-sm"
+                onClick={toggleTheme}
+              >
+                <CIcon icon={colorMode === 'dark' ? cilSun : cilMoon} />
+              </CButton>
+            </div>
+          </CCol>
+        </CRow>
+        <CRow className="justify-content-center w-100 m-0">
+          <CCol md={6} lg={5} xl={4} className="login-card-col">
+            <CCard className="login-card border-0 shadow-lg blur-card">
+              <CCardBody className={`p-4 p-md-5 login-card-body}`}>
+                <div className="text-center mb-4 login-header">
+                  <div className="brand-pill mb-3">
+                    <span className="brand-dot"></span>
+                    <span className="brand-label">MediPanel</span>
+                  </div>
+                  <h2 className="fw-bold mb-1">{t('Login')}</h2>
+                  <p className="text-secondary mb-0">{t('Sign In to your account')}</p>
+                </div>
+
+                <CForm
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleLogin()
+                  }}
+                >
+                  <div className="mb-3">
+                    <div className="floating-input-group">
+                      <CIcon icon={cilUser} className="floating-input-icon" />
                       <CFormInput
                         id="username-input"
+                        className="floating-input floating-input-email"
                         placeholder={t('Email')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
-                    </CInputGroup>
-                    <CInputGroup className="mb-4">
-                      <CInputGroupText
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setShowPassword((prev) => !prev)}
-                      >
-                        <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
-                      </CInputGroupText>
+                    </div>
+                    <small className="login-input-hint">{t('Use your institutional email')}</small>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="floating-input-group">
+                      <CIcon icon={cilLockLocked} className="floating-input-icon" />
                       <CFormInput
                         id="password-input"
+                        className="floating-input floating-input-password pe-5"
                         type={showPassword ? 'text' : 'password'}
                         placeholder={t('Password')}
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
-                    </CInputGroup>
-                    <CRow>
-                      <CCol xs={6}>
-                        <CButton type="submit" color="primary" className="px-4" disabled={loading}>
-                          {t('Login')}
-                        </CButton>
-                      </CCol>
-                      <CCol xs={6} className="text-right">
-                        <CButton
-                          color="link"
-                          className="px-0"
-                          onClick={() => setModalVisible(true)}
-                        >
-                          {t('Forgot password?')}
-                        </CButton>
-                      </CCol>
-                    </CRow>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-              <CCard className="text-white bg-primary py-4">
-                <CCardBody className="text-center">
-                  <div>
-                    <h2>{t('Welcome to MediPanel')}</h2>
-                    <p className="whit">
-                      {t(
-                        '"Every appointment is an opportunity to change a life. This panel will help you do it with love and excellence."',
-                      )}
-                    </p>
+                      <button
+                        type="button"
+                        className="floating-input-toggle"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? t('Hide password') : t('Show password')}
+                      >
+                        <CIcon icon={showPassword ? eyeClosedIcon : eyeOpenIcon} />
+                      </button>
+                    </div>
+                    <small className="login-input-hint">{t('Minimum 8 characters recommended')}</small>
+                  </div>
+
+                  <div className="d-grid mb-3 login-primary-action">
+                    <CButton
+                      type="submit"
+                      color="primary"
+                      className="btn-login py-2 px-4 fw-semibold"
+                      disabled={loading || isSubmitting}
+                    >
+                      {loading || isSubmitting ? (
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                      ) : null}
+                      {t('Login')}
+                    </CButton>
+                  </div>
+
+                  <div className="text-center">
+                    <CButton
+                      color="link"
+                      className="text-decoration-none text-secondary p-0"
+                      onClick={() => setModalVisible(true)}
+                    >
+                      {t('Forgot password?')}
+                    </CButton>
+                  </div>
+
+                  <div className="text-center mt-3 login-secondary-action">
+                    <p className="text-secondary small mb-3">{t("Don't have an account?")}</p>
                     <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
+                      <CButton color="primary" variant="outline" className="btn-register w-100 py-2">
                         {t('Register Now!')}
                       </CButton>
                     </Link>
                   </div>
-                </CCardBody>
-              </CCard>
-            </CCardGroup>
+
+                  <p className="login-footer-note mb-0 mt-3">
+                    {t('Protected access')} - MediPanel {currentYear}
+                  </p>
+                </CForm>
+
+
+              </CCardBody>
+            </CCard>
           </CCol>
         </CRow>
       </CContainer>
@@ -233,6 +318,17 @@ const Login = () => {
           required
         />
       </ModalSendInformation>
+      {alert && (
+                  <CAlert
+                    ref={alertRef}
+                    color={alert.type}
+                    className="alert-fixed login-card-alert login-card-alert-attention mb-0"
+                    role="alert"
+                    tabIndex={-1}
+                  >
+                    {alert.message}
+                  </CAlert>
+                )}
     </div>
   )
 }

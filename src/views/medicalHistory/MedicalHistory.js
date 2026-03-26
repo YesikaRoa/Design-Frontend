@@ -213,6 +213,7 @@ const MedicalHistory = () => {
   const [selectedMedicalHistory, setselectedMedicalHistory] = useState(null)
   const [downloadModalVisible, setDownloadModalVisible] = useState(false)
   const [selectedPatient, setSelectedPatient] = useState(null)
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const ModalAddRef = useRef()
   // Obtener el rol del token
   const tokenPayload = token ? parseJwt(token) : {}
@@ -792,9 +793,10 @@ const MedicalHistory = () => {
   }
 
   const handleDownloadPDF = async () => {
-    if (!selectedPatient) return
+    if (!selectedPatient || isDownloadingPdf) return
 
     try {
+      setIsDownloadingPdf(true)
       const hasHistory = medicalHistory.some(
         (record) => record.patient_id === selectedPatient.value,
       )
@@ -834,6 +836,8 @@ const MedicalHistory = () => {
       setDownloadModalVisible(false)
     } catch (error) {
       Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger', 3500)
+    } finally {
+      setIsDownloadingPdf(false)
     }
   }
 
@@ -845,7 +849,12 @@ const MedicalHistory = () => {
         </CButton>
         {/* Mostrar botón de descargar solo si el rol NO es 1 (no admin) */}
         {tokenPayload.role !== 1 && (
-          <CButton color="secondary" className="ms-2" onClick={() => setDownloadModalVisible(true)}>
+          <CButton
+            color="secondary"
+            className="ms-2"
+            onClick={() => setDownloadModalVisible(true)}
+            disabled={isDownloadingPdf}
+          >
             {t('Download PDF')}
           </CButton>
         )}
@@ -1141,6 +1150,7 @@ const MedicalHistory = () => {
         setSelectedPatient={setSelectedPatient}
         loadPatients={loadPatients}
         onDownload={handleDownloadPDF}
+        isDownloading={isDownloadingPdf}
       />
     </>
   )
