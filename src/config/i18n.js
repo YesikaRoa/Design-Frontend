@@ -142,6 +142,11 @@ const resources = {
       Login: 'Login',
       'Sign In to your account': 'Sign In to your account',
       Password: 'Password',
+      'Use your institutional email': 'Use your institutional email',
+      'Minimum 8 characters recommended': 'Minimum 8 characters recommended',
+      'Protected access': 'Protected access',
+      'Show password': 'Show password',
+      'Hide password': 'Hide password',
       'Forgot password?': 'Forgot password?',
       'Recover Password': 'Recover Password',
       'Please enter your registered email to receive your password.':
@@ -475,6 +480,11 @@ const resources = {
       Login: 'Iniciar Sesión',
       'Sign In to your account': 'Inicie sesión en su cuenta',
       Password: 'Contraseña',
+      'Use your institutional email': 'Usa tu correo institucional',
+      'Minimum 8 characters recommended': 'Se recomiendan al menos 8 caracteres',
+      'Protected access': 'Acceso protegido',
+      'Show password': 'Mostrar contraseña',
+      'Hide password': 'Ocultar contraseña',
       'Forgot password?': '¿Olvidaste tu contraseña?',
       'Recover Password': 'Recuperar Contraseña',
       'Please enter your registered email to receive your password.':
