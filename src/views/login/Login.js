@@ -6,7 +6,6 @@ import {
   CButton,
   CCard,
   CCardBody,
-  CCardGroup,
   CCol,
   CContainer,
   CForm,
@@ -15,9 +14,10 @@ import {
   CInputGroupText,
   CRow,
   CAlert,
+  useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser, cilLockUnlocked } from '@coreui/icons'
+import { cilLockLocked, cilUser, cilLockUnlocked, cilSun, cilMoon, cilLanguage } from '@coreui/icons'
 import ModalSendInformation from '../../components/ModalSendInformation'
 import Notifications from '../../components/Notifications'
 import emailjs from 'emailjs-com'
@@ -127,41 +127,88 @@ const Login = () => {
     }
   }
 
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const { i18n } = useTranslation()
+
+  const toggleTheme = () => {
+    const newMode = colorMode === 'dark' ? 'light' : 'dark'
+    setColorMode(newMode)
+  }
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'es' : 'en'
+    i18n.changeLanguage(newLang)
+  }
+
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center login-background">
+    <div className="login-page-wrapper min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="login-background-overlay"></div>
+
+      <div className="login-controls top-0 end-0 p-3 position-absolute d-flex gap-2">
+        <CButton
+          color="light"
+          variant="outline"
+          className="btn-toggle shadow-sm"
+          onClick={toggleLanguage}
+        >
+          <CIcon icon={cilLanguage} className="me-2" />
+          {i18n.language === 'en' ? 'ES' : 'EN'}
+        </CButton>
+        <CButton
+          color="light"
+          variant="outline"
+          className="btn-toggle shadow-sm"
+          onClick={toggleTheme}
+        >
+          <CIcon icon={colorMode === 'dark' ? cilSun : cilMoon} />
+        </CButton>
+      </div>
+
       <CContainer>
-        <CRow className="justify-content-center">
-          <CCol md={8}>
-            <CCardGroup className="some-class">
-              <CCard className="p-4">
-                <CCardBody>
-                  {alert && (
-                    <CAlert color={alert.type} className="alert-fixed">
-                      {alert.message}
-                    </CAlert>
-                  )}
-                  <CForm
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      handleLogin()
-                    }}
-                  >
-                    <h1>{t('Login')}</h1>
-                    <p className="text-body-secondary">{t('Sign In to your account')}</p>
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
+        <CRow className="justify-content-center w-100 m-0">
+          <CCol md={5} lg={4} xl={4}>
+            <CCard className="login-card border-0 shadow-lg blur-card">
+              <CCardBody className="p-4 p-md-5">
+                <div className="text-center mb-4">
+                  <div className="mb-3">
+                    <span className="fs-1 fw-bold text-primary" style={{ letterSpacing: '-1px' }}>MediPanel</span>
+                  </div>
+                  <h2 className="fw-bold">{t('Login')}</h2>
+                  <p className="text-secondary">{t('Sign In to your account')}</p>
+                </div>
+
+                {alert && (
+                  <CAlert color={alert.type} className="mb-4">
+                    {alert.message}
+                  </CAlert>
+                )}
+
+                <CForm
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    handleLogin()
+                  }}
+                >
+                  <div className="mb-3">
+                    <CInputGroup className="custom-input-group">
+                      <CInputGroupText className="bg-transparent border-end-0">
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
                         id="username-input"
+                        className="border-start-0 ps-0"
                         placeholder={t('Email')}
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
                     </CInputGroup>
-                    <CInputGroup className="mb-4">
+                  </div>
+
+                  <div className="mb-4">
+                    <CInputGroup className="custom-input-group">
                       <CInputGroupText
+                        className="bg-transparent border-end-0"
                         style={{ cursor: 'pointer' }}
                         onClick={() => setShowPassword((prev) => !prev)}
                       >
@@ -169,6 +216,7 @@ const Login = () => {
                       </CInputGroupText>
                       <CFormInput
                         id="password-input"
+                        className="border-start-0 ps-0"
                         type={showPassword ? 'text' : 'password'}
                         placeholder={t('Password')}
                         autoComplete="current-password"
@@ -176,43 +224,43 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                       />
                     </CInputGroup>
-                    <CRow>
-                      <CCol xs={6}>
-                        <CButton type="submit" color="primary" className="px-4" disabled={loading}>
-                          {t('Login')}
-                        </CButton>
-                      </CCol>
-                      <CCol xs={6} className="text-right">
-                        <CButton
-                          color="link"
-                          className="px-0"
-                          onClick={() => setModalVisible(true)}
-                        >
-                          {t('Forgot password?')}
-                        </CButton>
-                      </CCol>
-                    </CRow>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-              <CCard className="text-white bg-primary py-4">
-                <CCardBody className="text-center">
-                  <div>
-                    <h2>{t('Welcome to MediPanel')}</h2>
-                    <p className="whit">
-                      {t(
-                        '"Every appointment is an opportunity to change a life. This panel will help you do it with love and excellence."',
-                      )}
-                    </p>
+                  </div>
+
+                  <div className="d-grid mb-3">
+                    <CButton
+                      type="submit"
+                      color="primary"
+                      className="btn-login py-2 px-4 fw-semibold"
+                      disabled={loading}
+                    >
+                      {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : null}
+                      {t('Login')}
+                    </CButton>
+                  </div>
+
+                  <div className="text-center">
+                    <CButton
+                      color="link"
+                      className="text-decoration-none text-secondary p-0"
+                      onClick={() => setModalVisible(true)}
+                    >
+                      {t('Forgot password?')}
+                    </CButton>
+                  </div>
+
+                  <hr className="my-4 opacity-25" />
+
+                  <div className="text-center mt-3">
+                    <p className="text-secondary small mb-3">{t("Don't have an account?")}</p>
                     <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
+                      <CButton color="primary" variant="outline" className="btn-register w-100 py-2">
                         {t('Register Now!')}
                       </CButton>
                     </Link>
                   </div>
-                </CCardBody>
-              </CCard>
-            </CCardGroup>
+                </CForm>
+              </CCardBody>
+            </CCard>
           </CCol>
         </CRow>
       </CContainer>
