@@ -59,12 +59,6 @@ html[data-coreui-theme='dark'] .login-page-wrapper {
   left: 0;
   right: 0;
   bottom: 0;
-  /* Usamos el mismo del Register */
-  background-image: radial-gradient(
-    circle at 20% 30%,
-    rgba(var(--cui-primary-rgb), 0.05) 0%,
-    transparent 50%
-  );
   z-index: 1;
   pointer-events: none; /* Importante para que no bloquee clics */
 }
