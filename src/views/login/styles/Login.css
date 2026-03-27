@@ -1,49 +1,55 @@
 ----------------------------------
 /* Modern Minimalist Login Styles */
-
+/* Controls (Theme/Lang) */
+.login-controls {
+  top: 1.5rem; /* Espaciado desde arriba */
+  right: 1rem !important; /* Espaciado desde la derecha (ajústalo para alinearlo como prefieras) */
+  z-index: 1000 !important;
+  display: flex;
+  margin-top: 15px !important;
+}
+.login-card,
+.blur-card {
+  position: relative;
+  z-index: 10;
+}
 .login-page-wrapper {
   position: relative;
   overflow: hidden;
-  background: var(--bg-gradient);
+  background: var(--bg-gradient); /* Esto aplicará el color de arriba */
   transition: background 0.5s ease;
-  padding: 2rem 0;
-  /* --- NUEVAS LÍNEAS AGREGADAS --- */
-  min-height: 100vh;       /* Asegura que ocupe el 100% del alto de la ventana */
-  display: flex;           /* Activa flexbox */
-  align-items: center;     /* Centra el card verticalmente */
-  justify-content: center; /* Centra el card horizontalmente */
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-/* Background Gradients */
+/* Background Gradients del Login actualizados para coincidir con Register */
 html[data-coreui-theme='light'] .login-page-wrapper {
-  --bg-gradient: linear-gradient(139deg, #d3dcf8b6 0%, #7fb4f0 100%);
+  background: linear-gradient(139deg, #d3dcf8b6 0%, #7fb4f0 100%) !important;
 }
 
 html[data-coreui-theme='dark'] .login-page-wrapper {
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
 }
-
-.login-glow {
-  position: absolute;
-  width: 24rem;
-  height: 24rem;
-  border-radius: 50%;
-  filter: blur(70px);
-  z-index: 0;
-  opacity: 0.45;
-  pointer-events: none;
+.btn-toggle {
+  border-radius: 2rem !important;
+  background: rgba(var(--cui-body-bg-rgb), 0.6) !important;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(var(--cui-body-color-rgb), 0.1) !important;
+  color: var(--cui-body-color) !important;
+  padding: 0.5rem 1rem !important;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
 }
-
-.login-glow-left {
-  top: -8rem;
-  left: -6rem;
-  background: rgba(var(--cui-primary-rgb), 0.55);
+.login-controls .btn-toggle {
+  background: rgba(var(--cui-body-bg-rgb), 0.8);
+  border: 1px solid rgba(var(--cui-body-color-rgb), 0.2);
+  color: var(--cui-body-color);
 }
-
-.login-glow-right {
-  bottom: -10rem;
-  right: -7rem;
-  background: rgba(var(--cui-info-rgb), 0.45);
+.login-controls .btn-toggle:hover {
+  background: rgba(var(--cui-body-bg-rgb), 0.9) !important;
+  color: var(--cui-primary);
 }
 
 /* Background Overlay for depth */
@@ -53,29 +59,38 @@ html[data-coreui-theme='dark'] .login-page-wrapper {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: radial-gradient(circle at 20% 30%, rgba(var(--cui-primary-rgb), 0.05) 0%, transparent 50%);
+  /* Usamos el mismo del Register */
+  background-image: radial-gradient(
+    circle at 20% 30%,
+    rgba(var(--cui-primary-rgb), 0.05) 0%,
+    transparent 50%
+  );
   z-index: 1;
+  pointer-events: none; /* Importante para que no bloquee clics */
 }
 
 /* Glassmorphism Card */
 .blur-card {
   background: linear-gradient(
-      150deg,
-      rgba(219, 230, 243, 0.9), /* Azul suave al 90% de opacidad */
-      rgba(227, 232, 243, 0.616)  /* Azul suave al 78% de opacidad */
-    )
-    !important;
+    150deg,
+    rgba(219, 230, 243, 0.9),
+    /* Azul suave al 90% de opacidad */ rgba(227, 232, 243, 0.616)
+      /* Azul suave al 78% de opacidad */
+  ) !important;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(var(--cui-body-color-rgb), 0.12) !important;
   z-index: 2;
   border-radius: 1.5rem !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   overflow: hidden;
 }
 
-.blur-card:hover {
-  transform: translateY(-4px);
+.blur-card:hover,
+.login-card:hover {
+  transform: translateY(-2px) !important; /* igual que register */
   box-shadow: 0 24px 50px rgba(0, 0, 0, 0.16) !important;
 }
 
@@ -163,7 +178,10 @@ html[data-coreui-theme='dark'] .blur-card {
   border-radius: 0.9rem;
   background: rgba(var(--cui-body-bg-rgb), 0.52);
   border: 1px solid rgba(var(--cui-body-color-rgb), 0.08);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .floating-input-group:focus-within {
@@ -181,6 +199,7 @@ html[data-coreui-theme='dark'] .blur-card {
   line-height: 1.2;
   min-height: 3.45rem;
   caret-color: var(--cui-primary);
+  width: 100%;
 }
 
 .floating-input-icon {
@@ -208,7 +227,9 @@ html[data-coreui-theme='dark'] .blur-card {
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }
 
 .floating-input-toggle:hover {
@@ -265,27 +286,6 @@ html[data-coreui-theme='dark'] .blur-card {
   transform: translateY(-1px);
 }
 
-/* Controls (Theme/Lang) */
-.login-controls {
-  position: absolute;
-  top: 1.5rem;    /* Espaciado desde arriba */
-  right: 2rem;    /* Espaciado desde la derecha (ajústalo para alinearlo como prefieras) */
-  z-index: 10;
-}
-
-.btn-toggle {
-  border-radius: 2rem !important;
-  background: rgba(var(--cui-body-bg-rgb), 0.6) !important;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(var(--cui-body-color-rgb), 0.1) !important;
-  color: var(--cui-body-color) !important;
-  padding: 0.5rem 1rem !important;
-}
-
-.btn-toggle:hover {
-  background: rgba(var(--cui-body-bg-rgb), 0.9) !important;
-}
-
 /* Animations */
 @keyframes fadeIn {
   from {
@@ -323,8 +323,8 @@ html[data-coreui-theme='dark'] .blur-card {
 }
 
 .login-card-alert-attention {
-  animation: loginAlertPulse 0.75s ease 2;
-  position: fixed !important; /* <--- Esto es la clave */
+  animation: attention 0.5s ease 1 !important;
+  position: fixed !important;
   bottom: 20px;
   right: 20px;
   z-index: 9999;
@@ -346,7 +346,7 @@ html[data-coreui-theme='dark'] .blur-card {
 @media (max-width: 576px) {
   .login-page-wrapper {
     flex-direction: column;
-    padding: 1.5rem 1rem; 
+    padding: 1.5rem 1rem;
   }
 
   /* 2. Devolvemos los controles al flujo para que no floten sobre el card */
@@ -354,11 +354,11 @@ html[data-coreui-theme='dark'] .blur-card {
     position: relative;
     top: auto;
     right: auto;
-    width: 100%;               /* Ocupa el ancho total disponible */
+    width: 100%; /* Ocupa el ancho total disponible */
     display: flex;
     justify-content: flex-end; /* Mantiene los botones a la derecha */
     margin-top: 0;
-    margin-bottom: 1rem;       /* Espacio de respiración entre botones y card */
+    margin-bottom: 1rem; /* Espacio de respiración entre botones y card */
     padding: 0;
   }
 
@@ -369,15 +369,8 @@ html[data-coreui-theme='dark'] .blur-card {
     width: 100%;
   }
 
-
   .login-glow {
-    width: 16rem;
-    height: 16rem;
-    filter: blur(55px);
-  }
-
-  .login-glow-left {
-    display: none;
+    display: none !important;
   }
 
   .floating-input {

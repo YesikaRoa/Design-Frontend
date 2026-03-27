@@ -19,11 +19,30 @@ import {
   CAlert,
   CFormSelect,
   CLink,
+  useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilLockUnlocked, cilUser, cilEnvelopeOpen } from '@coreui/icons'
+import {
+  cilLockLocked,
+  cilLockUnlocked,
+  cilUser,
+  cilEnvelopeOpen,
+  cilSun,
+  cilMoon,
+  cilLanguage,
+} from '@coreui/icons'
 
 import { validateEmail, isStepValid, validateField } from './Validationes'
+
+const eyeOpenIcon = [
+  '512 512',
+  "<path fill='var(--ci-primary-color, currentColor)' d='M256 112C132.3 112 48 256 48 256s84.3 144 208 144 208-144 208-144-84.3-144-208-144Zm0 256c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112Zm0-176a64 64 0 1 0 64 64 64 64 0 0 0-64-64Z'/>",
+]
+
+const eyeClosedIcon = [
+  '512 512',
+  "<path fill='var(--ci-primary-color, currentColor)' d='M40 80l-24 24 80.4 80.4C64.2 212.8 48 256 48 256s84.3 144 208 144c43.3 0 81.9-17.6 114.3-42.5L448 432l24-24ZM256 368c-61.9 0-112-50.1-112-112 0-17.3 3.9-33.6 10.9-48.2l149.3 149.3A111.5 111.5 0 0 1 256 368Zm0-256c-43.3 0-81.9 17.6-114.3 42.5L64 80 40 104l432 432 24-24-80.4-80.4C447.8 299.2 464 256 464 256S379.7 112 256 112Zm0 32c61.9 0 112 50.1 112 112 0 17.3-3.9 33.6-10.9 48.2L207.8 154.9A111.5 111.5 0 0 1 256 144Z'/>",
+]
 
 const Register = () => {
   const defaultAvatar = '/avatar.png'
@@ -48,7 +67,7 @@ const Register = () => {
   const [alert, setAlert] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [errors, setErrors] = useState({})
 
   const [professionalTypes, setProfessionalTypes] = useState([])
@@ -56,6 +75,21 @@ const Register = () => {
   const [specialtiesData, setSpecialtiesData] = useState([])
 
   const { request, loading: apiLoading } = useApi()
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+
+  const toggleTheme = () => {
+    const newMode = colorMode === 'dark' ? 'light' : 'dark'
+    setColorMode(newMode)
+  }
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'es' : 'en'
+    i18n.changeLanguage(newLang)
+    localStorage.setItem('i18nextLng', newLang)
+  }
+
+  const currentYear = new Date().getFullYear()
+
   useEffect(() => {
     const fetchProfessionalTypes = async () => {
       try {
@@ -187,14 +221,11 @@ const Register = () => {
       case 1:
         return (
           <>
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText className="input-group-text">
-                  <CIcon icon={cilUser} />
-                </CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <CIcon icon={cilUser} className="floating-input-icon" />
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   placeholder={t('First name')}
                   name="first_name"
                   value={formData.first_name}
@@ -206,17 +237,14 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
+              </div>
               {errors.first_name && <small className="text-danger">{errors.first_name}</small>}
             </div>
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText className="input-group-text">
-                  <CIcon icon={cilUser} />
-                </CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <CIcon icon={cilUser} className="floating-input-icon" />
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   placeholder={t('Last name')}
                   name="last_name"
                   value={formData.last_name}
@@ -228,17 +256,14 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
+              </div>
               {errors.last_name && <small className="text-danger">{errors.last_name}</small>}
             </div>
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText className="input-group-text">
-                  <CIcon icon={cilEnvelopeOpen} />
-                </CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <CIcon icon={cilEnvelopeOpen} className="floating-input-icon" />
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   placeholder={t('Email')}
                   name="email"
                   value={formData.email}
@@ -250,20 +275,14 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
+              </div>
               {errors.email && <small className="text-danger">{errors.email}</small>}
             </div>
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                >
-                  <CIcon icon={showPassword ? cilLockUnlocked : cilLockLocked} />
-                </CInputGroupText>
-
+            <div className="mb-4">
+              <div className="floating-input-group">
+                <CIcon icon={cilLockLocked} className="floating-input-icon" />
                 <CFormInput
-                  className="form-input"
+                  className="floating-input pe-5"
                   type={showPassword ? 'text' : 'password'}
                   placeholder={t('Password')}
                   name="password"
@@ -276,8 +295,15 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
-
+                <button
+                  type="button"
+                  className="floating-input-toggle"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? t('Hide password') : t('Show password')}
+                >
+                  <CIcon icon={showPassword ? eyeClosedIcon : eyeOpenIcon} />
+                </button>
+              </div>
               {errors.password && <small className="text-danger">{errors.password}</small>}
             </div>
           </>
@@ -285,12 +311,11 @@ const Register = () => {
       case 2:
         return (
           <>
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText>📍</CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">📍</span>
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   placeholder={t('Address')}
                   name="address"
                   value={formData.address}
@@ -302,16 +327,15 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
+              </div>
               {errors.address && <small className="text-danger">{errors.address}</small>}
             </div>
 
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText>📞</CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">📞</span>
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   placeholder={t('Phone')}
                   name="phone"
                   value={formData.phone}
@@ -323,16 +347,15 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
+              </div>
               {errors.phone && <small className="text-danger">{errors.phone}</small>}
             </div>
 
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText>🎂</CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">🎂</span>
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   type="date"
                   placeholder="Birth Date"
                   name="birth_date"
@@ -345,16 +368,15 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
+              </div>
               {errors.birth_date && <small className="text-danger">{errors.birth_date}</small>}
             </div>
 
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText>⚧</CInputGroupText>
-
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">⚧</span>
                 <CFormSelect
-                  className="form-select"
+                  className="floating-input"
                   name="gender"
                   value={formData.gender}
                   onChange={handleInputChange}
@@ -369,7 +391,7 @@ const Register = () => {
                   <option value="F">F</option>
                   <option value="M">M</option>
                 </CFormSelect>
-              </CInputGroup>
+              </div>
               {errors.gender && <small className="text-danger">{errors.gender}</small>}
             </div>
           </>
@@ -377,77 +399,85 @@ const Register = () => {
       case 3:
         return (
           <>
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>📝</CInputGroupText>
-              <CFormInput
-                className="form-input"
-                placeholder={t('Biography')}
-                name="biography"
-                value={formData.biography}
-                onChange={handleInputChange}
-              />
-            </CInputGroup>
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">📝</span>
+                <CFormInput
+                  className="floating-input"
+                  placeholder={t('Biography')}
+                  name="biography"
+                  value={formData.biography}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
             {/* Tipo de profesional */}
-            <CInputGroup className="mb-3 form-step">
-              <CInputGroupText>👤</CInputGroupText>
-              <CFormSelect
-                className="form-select"
-                name="professional_type"
-                value={formData.professional_type}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">{t('Select type of professional')}</option>
-                {professionalTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </CFormSelect>
-            </CInputGroup>
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">👤</span>
+                <CFormSelect
+                  className="floating-input"
+                  name="professional_type"
+                  value={formData.professional_type}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">{t('Select type of professional')}</option>
+                  {professionalTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </CFormSelect>
+              </div>
+            </div>
             {formData.professional_type && (
               <>
-                <CInputGroup className="mb-3 form-step">
-                  <CInputGroupText>{t('Specialty')}</CInputGroupText>
-                  <CFormSelect
-                    className="form-select"
-                    name="specialty"
-                    value={formData.specialty}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">{t('-- No specialty --')}</option>
-                    {specialties.map((spec) => (
-                      <option key={spec.id} value={spec.id}>
-                        {spec.name}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                </CInputGroup>
+                <div className="mb-3">
+                  <div className="floating-input-group">
+                    <span className="floating-input-icon">🩺</span>
+                    <CFormSelect
+                      className="floating-input"
+                      name="specialty"
+                      value={formData.specialty}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">{t('-- No specialty --')}</option>
+                      {specialties.map((spec) => (
+                        <option key={spec.id} value={spec.id}>
+                          {spec.name}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </div>
+                </div>
 
-                <CInputGroup className="mb-3 form-step">
-                  <CInputGroupText>{t('Subspecialty')}</CInputGroupText>
-                  <CFormSelect
-                    className="form-select"
-                    name="subspecialty"
-                    value={formData.subspecialty}
-                    onChange={handleInputChange}
-                    disabled={!formData.specialty} // 🔹 Solo habilita si hay una especialidad seleccionada
-                  >
-                    <option value="">{t('-- No subspecialty --')}</option>
-                    {subspecialties.map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </option>
-                    ))}
-                  </CFormSelect>
-                </CInputGroup>
+                <div className="mb-3">
+                  <div className="floating-input-group">
+                    <span className="floating-input-icon">🔬</span>
+                    <CFormSelect
+                      className="floating-input"
+                      name="subspecialty"
+                      value={formData.subspecialty}
+                      onChange={handleInputChange}
+                      disabled={!formData.specialty}
+                    >
+                      <option value="">{t('-- No subspecialty --')}</option>
+                      {subspecialties.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </CFormSelect>
+                  </div>
+                </div>
               </>
             )}
-            <div className="mb-3 form-step">
-              <CInputGroup>
-                <CInputGroupText>📅</CInputGroupText>
+            <div className="mb-3">
+              <div className="floating-input-group">
+                <span className="floating-input-icon">📅</span>
                 <CFormInput
-                  className="form-input"
+                  className="floating-input"
                   type="number"
                   placeholder={t('Years of Experience')}
                   name="years_experience"
@@ -464,8 +494,7 @@ const Register = () => {
                     }))
                   }
                 />
-              </CInputGroup>
-
+              </div>
               {errors.years_experience && (
                 <small className="text-danger">{errors.years_experience}</small>
               )}
@@ -478,32 +507,66 @@ const Register = () => {
   }
 
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center Register-background">
-      <CContainer>
-        <CRow className="justify-content-center">
-          <CCol md={9} lg={7} xl={6}>
-            <CCard className="mx-4">
-              <CCardBody className="p-4">
-                <CForm>
-                  <h1 className="text-center">{t('Register')}</h1>
-                  <div className="steps-indicator">
-                    {Array.from({ length: 3 }, (_, index) => (
-                      <div className="step-item" key={index}>
-                        <div className={`step-circle ${index + 1 === step ? 'active' : ''}`}>
-                          {index + 1}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+    <div className="register-page-wrapper min-vh-100 d-flex align-items-center justify-content-center">
+      <div className="register-background-overlay"></div>
 
-                  {alert && (
-                    <CAlert color={alert.type} className="alert-fixed">
-                      {alert.message}
-                    </CAlert>
-                  )}
+      <CContainer>
+        <CRow className="w-100 mt-3">
+          <CCol className="d-flex justify-content-end">
+            <div className="register-controls d-flex justify-content-end gap-2">
+              <CButton
+                color="light"
+                variant="outline"
+                className="btn-toggle shadow-sm"
+                onClick={toggleLanguage}
+              >
+                <CIcon icon={cilLanguage} className="me-2" />
+                {i18n.language === 'en' ? 'EN' : 'ES'}
+              </CButton>
+              <CButton
+                color="light"
+                variant="outline"
+                className="btn-toggle shadow-sm"
+                onClick={toggleTheme}
+              >
+                <CIcon icon={colorMode === 'dark' ? cilSun : cilMoon} />
+              </CButton>
+            </div>
+          </CCol>
+        </CRow>
+        <CRow className="justify-content-center w-100 m-0">
+          <CCol md={9} lg={7} xl={6} className="register-card-col">
+            <CCard className="register-card border-0 shadow-lg blur-card">
+              <CCardBody className={`p-4 p-md-5 register-card-body}`}>
+                <div className="text-center mb-4 register-header">
+                  <div className="brand-pill mb-3">
+                    <span className="brand-dot"></span>
+                    <span className="brand-label">MediPanel</span>
+                  </div>
+                  <h2 className="fw-bold mb-1">{t('Register')}</h2>
+                  <p className="text-secondary mb-0">{t('Create your account')}</p>
+                </div>
+
+                <div className="steps-indicator mb-4">
+                  {Array.from({ length: 3 }, (_, index) => (
+                    <div className="step-item" key={index}>
+                      <div className={`step-circle ${index + 1 === step ? 'active' : ''}`}>
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <CForm
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (step < 3) handleNext()
+                    else handleRegister()
+                  }}
+                >
                   {renderStep()}
 
-                  <div className="d-flex justify-content-between mt-3">
+                  <div className="d-flex justify-content-between mt-4 register-primary-action">
                     {step > 1 && (
                       <CButton color="secondary" onClick={handlePrevious}>
                         {t('Previous')}
@@ -526,17 +589,33 @@ const Register = () => {
                         {t('Next')}
                       </CButton>
                     ) : (
-                      <CButton color="success" onClick={handleRegister}>
+                      <CButton color="success" onClick={handleRegister} disabled={apiLoading}>
+                        {apiLoading ? (
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                        ) : null}
                         {t('Register')}
                       </CButton>
                     )}
                   </div>
                 </CForm>
+
+                <p className="register-footer-note mb-0 mt-4">
+                  {t('Protected access')} - MediPanel {currentYear}
+                </p>
               </CCardBody>
             </CCard>
           </CCol>
         </CRow>
       </CContainer>
+      {alert && (
+        <CAlert
+          color={alert.type}
+          className="alert-fixed register-card-alert register-card-alert-attention mb-3"
+          role="alert"
+        >
+          {alert.message}
+        </CAlert>
+      )}
     </div>
   )
 }

@@ -15,13 +15,7 @@ import {
   useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import {
-  cilLockLocked,
-  cilUser,
-  cilSun,
-  cilMoon,
-  cilLanguage,
-} from '@coreui/icons'
+import { cilLockLocked, cilUser, cilSun, cilMoon, cilLanguage } from '@coreui/icons'
 import ModalSendInformation from '../../components/ModalSendInformation'
 import Notifications from '../../components/Notifications'
 import emailjs from 'emailjs-com'
@@ -63,11 +57,7 @@ const Login = () => {
         email: recoveryEmail,
       })
       if (!response.success) {
-        Notifications.showAlert(
-          setAlert,
-          response.message || t('Error sending email.'),
-          'danger',
-        )
+        Notifications.showAlert(setAlert, response.message || t('Error sending email.'), 'danger')
         return
       }
 
@@ -90,11 +80,7 @@ const Login = () => {
       )
       setModalVisible(false)
     } catch (error) {
-      Notifications.showAlert(
-        setAlert,
-        error.message || t('Error sending email.'),
-        'danger',
-      )
+      Notifications.showAlert(setAlert, error.message || t('Error sending email.'), 'danger')
     }
   }
 
@@ -160,6 +146,7 @@ const Login = () => {
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'es' : 'en'
     i18n.changeLanguage(newLang)
+    localStorage.setItem('i18nextLng', newLang)
   }
 
   const currentYear = new Date().getFullYear()
@@ -173,10 +160,8 @@ const Login = () => {
   return (
     <div className="login-page-wrapper min-vh-100 d-flex align-items-center justify-content-center">
       <div className="login-background-overlay"></div>
-      <div className="login-glow login-glow-left"></div>
-
       <CContainer>
-        <CRow className="w-100 m-0">
+        <CRow className="w-100 mt-3">
           <CCol className="d-flex justify-content-end">
             <div className="login-controls d-flex justify-content-end gap-2">
               <CButton
@@ -186,7 +171,7 @@ const Login = () => {
                 onClick={toggleLanguage}
               >
                 <CIcon icon={cilLanguage} className="me-2" />
-                {i18n.language === 'en' ? 'ES' : 'EN'}
+                {i18n.language === 'en' ? 'EN' : 'ES'}
               </CButton>
               <CButton
                 color="light"
@@ -254,7 +239,9 @@ const Login = () => {
                         <CIcon icon={showPassword ? eyeClosedIcon : eyeOpenIcon} />
                       </button>
                     </div>
-                    <small className="login-input-hint">{t('Minimum 8 characters recommended')}</small>
+                    <small className="login-input-hint">
+                      {t('Minimum 8 characters recommended')}
+                    </small>
                   </div>
 
                   <div className="d-grid mb-3 login-primary-action">
@@ -284,7 +271,11 @@ const Login = () => {
                   <div className="text-center mt-3 login-secondary-action">
                     <p className="text-secondary small mb-3">{t("Don't have an account?")}</p>
                     <Link to="/register">
-                      <CButton color="primary" variant="outline" className="btn-register w-100 py-2">
+                      <CButton
+                        color="primary"
+                        variant="outline"
+                        className="btn-register w-100 py-2"
+                      >
                         {t('Register Now!')}
                       </CButton>
                     </Link>
@@ -294,8 +285,6 @@ const Login = () => {
                     {t('Protected access')} - MediPanel {currentYear}
                   </p>
                 </CForm>
-
-
               </CCardBody>
             </CCard>
           </CCol>
@@ -319,16 +308,16 @@ const Login = () => {
         />
       </ModalSendInformation>
       {alert && (
-                  <CAlert
-                    ref={alertRef}
-                    color={alert.type}
-                    className="alert-fixed login-card-alert login-card-alert-attention mb-0"
-                    role="alert"
-                    tabIndex={-1}
-                  >
-                    {alert.message}
-                  </CAlert>
-                )}
+        <CAlert
+          ref={alertRef}
+          color={alert.type}
+          className="alert-fixed login-card-alert login-card-alert-attention mb-0"
+          role="alert"
+          tabIndex={-1}
+        >
+          {alert.message}
+        </CAlert>
+      )}
     </div>
   )
 }
