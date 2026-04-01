@@ -1,39 +1,41 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import '../users/styles/UserDetails.css'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
+import '../appointments/styles/EditAppointment.css'
 
 import {
   CButton,
   CCard,
   CCardBody,
-  CCardText,
-  CCardTitle,
+  CCardHeader,
   CCol,
   CRow,
   CFormInput,
-  CSpinner,
   CAlert,
+  CModal,
+  CModalBody,
+  CModalFooter,
+  CModalHeader,
+  CModalTitle,
+  CForm,
 } from '@coreui/react'
-import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle } from '@coreui/icons'
+import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle, cilUser } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
 import useApi from '../../hooks/useApi'
 
-const UserDetails = () => {
+const EditPatient = () => {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
+  const [patient, setPatient] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
   const [alert, setAlert] = useState(null)
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
-  const [selectedPatientId, setselectedPatientId] = useState(null)
   const { t } = useTranslation()
   const token = localStorage.getItem('authToken')
   const { id } = useParams()
-  const [patient, setPatient] = useState(null)
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -44,15 +46,14 @@ const UserDetails = () => {
   })
   const { request } = useApi()
 
-  const fetchPatient = async (profId) => {
+  const fetchPatient = async (patientId) => {
     setLoading(true)
     try {
-      const res = await request('get', `/patients/${profId}`, null, {
+      const res = await request('get', `/patients/${patientId}`, null, {
         Authorization: `Bearer ${token}`,
       })
       if (!res.success || !res.data) throw new Error('Error fetching patient')
       setPatient(res.data)
-      setUser(res.data)
       setFormData({
         first_name: res.data.first_name || '',
         last_name: res.data.last_name || '',
@@ -73,51 +74,37 @@ const UserDetails = () => {
     setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handleFieldsDisabled = () => {
-    setFieldsDisabled(!fieldsDisabled)
-  }
+  const handleFieldsDisabled = () => setFieldsDisabled((prev) => !prev)
 
   const save = async () => {
     try {
-      // Comparar campos para enviar solo los modificados (opcional, pero mejor enviar lo necesario)
       const changes = {}
       for (const key in formData) {
-        if (formData[key] !== user[key]) {
+        if (formData[key] !== patient[key]) {
           changes[key] = formData[key]
         }
       }
-
       if (Object.keys(changes).length === 0) {
         Notifications.showAlert(setAlert, t('No changes to save.'), 'info')
         setFieldsDisabled(true)
         return
       }
-
-      const resPut = await request('put', `/patients/${user.id}`, changes, {
+      const resPut = await request('put', `/patients/${patient.id}`, changes, {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       })
-
       if (!resPut.success) {
         const errorData = resPut.error || {}
         if (errorData.issues && Array.isArray(errorData.issues)) {
-          const messages = errorData.issues
-            .map((issue) => issue.message)
-            .join('\n')
+          const messages = errorData.issues.map((issue) => issue.message).join('\n')
           Notifications.showAlert(setAlert, messages, 'danger')
         } else {
-          Notifications.showAlert(
-            setAlert,
-            resPut.message || t('Error saving changes.'),
-            'danger',
-          )
+          Notifications.showAlert(setAlert, resPut.message || t('Error saving changes.'), 'danger')
         }
         return
       }
-
-      const updatedUser = resPut.data.user || resPut.data
-      setUser(updatedUser)
-      setPatient(updatedUser)
+      const updatedPatient = resPut.data.user || resPut.data
+      setPatient(updatedPatient)
       Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
       setFieldsDisabled(true)
     } catch (error) {
@@ -130,12 +117,12 @@ const UserDetails = () => {
     if (id) fetchPatient(id)
   }, [id])
 
-  if (!user && (loading)) return null
-  if (!user) return <p>No se encontró el usuario.</p>
+  if (!patient && loading) return null
+  if (!patient) return <p>{t('Patient not found.')}</p>
 
   const handleToggleStatus = async (patientId) => {
     try {
-      const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
+      const updatedStatus = patient.status === 'Active' ? 'Inactive' : 'Active'
       const res = await request(
         'put',
         `/patients/status/${patientId}`,
@@ -143,206 +130,227 @@ const UserDetails = () => {
         { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
       if (!res.success) {
-        const errorData = res.data || {}
-        if (errorData.issues && Array.isArray(errorData.issues)) {
-          const messages = errorData.issues
-            .map((issue) =>
-              Array.isArray(issue.path)
-                ? `${issue.path.join('.')} - ${issue.message}`
-                : `${issue.path || 'unknown'} - ${issue.message}`,
-            )
-            .join('\n')
-          Notifications.showAlert(setAlert, messages, 'danger')
-        } else {
-          Notifications.showAlert(
-            setAlert,
-            errorData.message || 'Failed to update user status.',
-            'danger',
-          )
-        }
+        Notifications.showAlert(setAlert, 'Failed to update patient status.', 'danger')
         return
       }
-      setUser({ ...user, status: res.data.user.status })
+      setPatient({ ...patient, status: res.data.user.status })
       Notifications.showAlert(
         setAlert,
-        `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
+        `Patient has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
         'info',
       )
     } catch (error) {
-      console.error('Error toggling user status:', error)
-      Notifications.showAlert(setAlert, 'An error occurred while updating user status.', 'danger')
+      Notifications.showAlert(setAlert, 'An error occurred while updating patient status.', 'danger')
     }
   }
 
-  const handleDeleteUser = async () => {
+  const handleDeletePatient = async () => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
-      const res = await request('delete', `/patients/${user.id}`, null, headers)
-
+      const res = await request('delete', `/patients/${patient.id}`, null, headers)
       if (res.success) {
-        // --- SOLUCIÓN AQUÍ ---
-        // 1. Forzamos el foco fuera de la modal ANTES de cualquier cambio de estado
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-        // Movemos el foco al body para asegurar que no quede nada en la modal
+        if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
         document.body.focus()
-
-        // 2. Cerramos la modal
         setDeleteModalVisible(false)
-
         Notifications.showAlert(setAlert, t('Patient deleted successfully.'), 'warning')
-
-        // 3. Esperamos a que la animación de salida termine antes de navegar
-        setTimeout(() => {
-          navigate('/patients')
-        }, 150) // Subimos un poco a 150ms
-      } else {
-        // ... manejo de error
+        setTimeout(() => navigate('/patients'), 150)
       }
     } catch (error) {
-      console.error('Error deleting user:', error)
+      console.error('Error deleting patient:', error)
     }
-  }
-
-  const openDeleteModal = (userId) => {
-    setselectedPatientId(userId)
-    setDeleteModalVisible(true)
   }
 
   return (
-    <CRow>
-      <CCol md={12}>
-        <h3 className="mb-4">{t('Patient Details')}</h3>
-        {alert && (
-          <CAlert color={alert.type} className="alert-fixed">
-            {alert.message}
-          </CAlert>
-        )}
+    <CRow className="justify-content-center">
+      {/* Alert — at CRow level so position:fixed works correctly */}
+      {alert && (
+        <CAlert color={alert.type} className="alert-fixed">
+          {alert.message}
+        </CAlert>
+      )}
+
+      {/* Page Header */}
+      <CCol md={12} className="mb-4">
+        <h3 className="fw-bold text-primary-emphasis d-flex align-items-center">
+          <CIcon icon={cilPencil} size="lg" className="me-2" />
+          {t('Edit Patient')}
+        </h3>
+        <p className="text-muted small">{t('Patient')} #{patient.id}</p>
+        <hr className="my-3 opacity-10" />
       </CCol>
-      <CCol md={4}>
-        <CCard>
-          <CCardBody>
-            <CCardTitle className="text-primary">
-              {user.first_name} {user.last_name}
-            </CCardTitle>
-            <CCardText>
-              <strong>{t('Email')}:</strong> {user.email} <br />
-              <strong>{t('Status')}:</strong> {user.status} <br />
-              <strong>{t('Created at')}:</strong> {new Date(user.created_at).toLocaleDateString()}{' '}
-              <br />
-              <strong>{t('Last Updated')}:</strong> {new Date(user.updated_at).toLocaleDateString()}
-            </CCardText>
-          </CCardBody>
-        </CCard>
-        <CCard className="mt-3">
-          <CCardBody>
-            <div className="card-actions-container">
-              <span
-                className={`card-actions-link ${user.status === 'Active' ? 'deactivate-user' : 'activate-user'}`}
-                onClick={() => handleToggleStatus(user.id)}
+
+      {/* Sidebar */}
+      <CCol lg={3}>
+        <div className="sticky-lg-top" style={{ top: '1.5rem', zIndex: 10 }}>
+          <CCard className="mb-3 shadow-sm border-0 overflow-hidden">
+            <div className="p-1" style={{ backgroundColor: 'var(--cui-primary)' }}></div>
+            <CCardBody>
+              <h6 className="text-primary fw-bold text-uppercase ls-1 mb-3">
+                {t('Patient Information')}
+              </h6>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Full Name')}</label>
+                <div className="fw-bold fs-5 text-primary-emphasis">
+                  {patient.first_name} {patient.last_name}
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Email')}</label>
+                <div className="fw-medium">{patient.email}</div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Status')}</label>
+                <div className="fw-medium">{patient.status}</div>
+              </div>
+              <div className="mb-1">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Created at')}</label>
+                <div className="small">{patient.created_at ? new Date(patient.created_at).toLocaleString() : 'N/A'}</div>
+              </div>
+              {patient.updated_at && (
+                <div className="mt-2 text-muted-subtle" style={{ fontSize: '0.75rem' }}>
+                  <strong>{t('Last Updated')}:</strong> {new Date(patient.updated_at).toLocaleString()}
+                </div>
+              )}
+            </CCardBody>
+          </CCard>
+
+          <CCard className="shadow-sm border-0 mb-4">
+            <CCardBody className="p-2 d-flex flex-column gap-1">
+              <CButton
+                color={patient.status === 'Active' ? 'warning' : 'success'}
+                variant="ghost"
+                className="w-100 text-start d-flex align-items-center"
+                onClick={() => handleToggleStatus(patient.id)}
               >
-                <CIcon
-                  icon={user.status === 'Active' ? cilBan : cilCheckCircle}
-                  className="me-2"
-                  width={24}
-                  height={24}
-                />
-                {user.status === 'Active' ? t('Deactivate Patient') : t('Activate Patient')}
-              </span>
-              <span
-                className="card-actions-link delete-user"
-                onClick={() => openDeleteModal(user.id)}
+                <CIcon icon={patient.status === 'Active' ? cilBan : cilCheckCircle} className="me-2" />
+                {patient.status === 'Active' ? t('Deactivate Patient') : t('Activate Patient')}
+              </CButton>
+              <CButton
+                color="danger"
+                variant="ghost"
+                className="w-100 text-start d-flex align-items-center"
+                onClick={() => setDeleteModalVisible(true)}
               >
-                <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
+                <CIcon icon={cilTrash} className="me-2" />
                 {t('Delete Patient')}
-              </span>
-            </div>
-          </CCardBody>
-        </CCard>
+              </CButton>
+            </CCardBody>
+          </CCard>
+        </div>
       </CCol>
-      <CCol md={8} className="space-component">
-        <CCard>
-          <CCardBody>
-            <CCardTitle>{t('Edit Patient')}</CCardTitle>
-            <CFormInput
-              type="text"
-              id="first_name"
-              floatingLabel={t('First name')}
-              value={formData.first_name}
-              onChange={handleInputChange}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="last_name"
-              floatingLabel={t('Last name')}
-              value={formData.last_name}
-              onChange={handleInputChange}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="email"
-              id="email"
-              floatingLabel={t('Email')}
-              value={formData.email}
-              onChange={handleInputChange}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="address"
-              floatingLabel={t('Address')}
-              value={formData.address}
-              onChange={handleInputChange}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="phone"
-              floatingLabel={t('Phone')}
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="medical_data"
-              floatingLabel={t('Medical Data')}
-              value={formData.medical_data}
-              onChange={handleInputChange}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
-              <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? t('Edit') : t('Save')}
+
+      {/* Main Form */}
+      <CCol lg={9}>
+        <CForm>
+          <CCard className="mb-4 shadow-sm border-0">
+            <CCardHeader className="bg-transparent border-0 pt-4 px-4 d-flex align-items-center">
+              <CIcon icon={cilUser} className="me-2 text-primary" size="lg" />
+              <h5 className="mb-0 fw-bold">{t('Personal Information')}</h5>
+            </CCardHeader>
+            <CCardBody className="p-4">
+              <CRow className="g-3">
+                <CCol md={6}>
+                  <CFormInput
+                    type="text"
+                    id="first_name"
+                    floatingLabel={t('First name')}
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    type="text"
+                    id="last_name"
+                    floatingLabel={t('Last name')}
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    type="email"
+                    id="email"
+                    floatingLabel={t('Email')}
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    type="text"
+                    id="phone"
+                    floatingLabel={t('Phone')}
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={12}>
+                  <CFormInput
+                    type="text"
+                    id="address"
+                    floatingLabel={t('Address')}
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={12}>
+                  <CFormInput
+                    type="text"
+                    id="medical_data"
+                    floatingLabel={t('Medical Data')}
+                    value={formData.medical_data}
+                    onChange={handleInputChange}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+              </CRow>
+            </CCardBody>
+          </CCard>
+
+          {/* Form Actions */}
+          <div className="d-flex justify-content-end gap-2 mb-5">
+            <CButton color="secondary" variant="ghost" onClick={() => navigate('/patients')}>
+              {t('Cancel')}
             </CButton>
-          </CCardBody>
-        </CCard>
+            {fieldsDisabled ? (
+              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                <CIcon icon={cilPencil} className="me-2" />
+                {t('Edit')}
+              </CButton>
+            ) : (
+              <div className="d-flex gap-2">
+                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={save} className="px-4 shadow-sm">
+                  <CIcon icon={cilSave} className="me-2" />
+                  {t('Save Changes')}
+                </CButton>
+              </div>
+            )}
+          </div>
+        </CForm>
       </CCol>
 
       <ModalDelete
         visible={deleteModalVisible}
         unmountOnClose={true}
         onClose={() => {
-          // Cuando el usuario cierra con la "X" o Cancelar
-          if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur()
-          }
+          if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
           setDeleteModalVisible(false)
         }}
-        onConfirm={handleDeleteUser}
-        title={t('Delete User')}
-        message={t('Are you sure you want to delete this user? This action cannot be undone.')}
+        onConfirm={handleDeletePatient}
+        title={t('Delete Patient')}
+        message={t('Are you sure you want to delete this patient? This action cannot be undone.')}
       />
     </CRow>
   )
 }
 
-export default UserDetails
+export default EditPatient

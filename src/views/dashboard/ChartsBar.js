@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { CChart } from '@coreui/react-chartjs'
 import { CCard, CCardBody, CCardHeader, CSpinner } from '@coreui/react'
+import Skeleton from '@mui/material/Skeleton'
 import './Styles.css/ChartBarExample.css'
 import { useTranslation } from 'react-i18next'
 
@@ -252,12 +253,13 @@ const ChartBarExample = () => {
             <CCardHeader className="chart-card-header">{t('Appointment summary')}</CCardHeader>
             <CCardBody className="position-relative chart-card-body">
               {loadingAppointments && (
-                <div className="chart-loading-overlay">
-                  <CSpinner
-                    color={colorScheme === 'dark' ? 'light' : 'dark'}
-                    style={{ width: '2.5rem', height: '2.5rem' }}
-                  />
-                </div>
+                <Skeleton 
+                  variant="rectangular" 
+                  animation="pulse" 
+                  height="100%" 
+                  width="100%" 
+                  sx={{ borderRadius: '6px', bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.08)' : undefined }} 
+                />
               )}
 
               {hasAppointmentsData ? (
@@ -292,12 +294,13 @@ const ChartBarExample = () => {
 
             <CCardBody className="position-relative chart-card-body">
               {(role === 3 ? loadingAppointments : loadingProfessionals) && (
-                <div className="chart-loading-overlay">
-                  <CSpinner
-                    color={colorScheme === 'dark' ? 'light' : 'dark'}
-                    style={{ width: '2.5rem', height: '2.5rem' }}
-                  />
-                </div>
+                <Skeleton 
+                  variant="rectangular" 
+                  animation="pulse" 
+                  height="100%" 
+                  width="100%" 
+                  sx={{ borderRadius: '6px', bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.08)' : undefined }} 
+                />
               )}
               {role === 3 ? (
                 // === PROFESSIONAL (Barras Apiladas) ===

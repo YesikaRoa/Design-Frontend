@@ -891,10 +891,12 @@ const MedicalHistory = () => {
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
-                    {/* ColSpan es 5 para cubrir todas las columnas de esta tabla */}
-                    <CTableDataCell colSpan={5}>
-                      <div className="skeleton-row"></div>
-                    </CTableDataCell>
+                    {/* Renderizamos 5 celdas individuales para mantener el ancho de las columnas */}
+                    {Array.from({ length: 5 }).map((_, cellIndex) => (
+                      <CTableDataCell key={cellIndex}>
+                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                      </CTableDataCell>
+                    ))}
                   </CTableRow>
                 ))
               ) : FilteredMedicalHistory.length === 0 ? (

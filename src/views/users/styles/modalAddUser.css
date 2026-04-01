@@ -1,90 +1,66 @@
-/* Header */
+/* =========================================================
+   PREMIUM REDESIGN FOR GLOBAL MODAL ADD
+   ========================================================= */
 
+/* Header */
 .custom-modal-header {
-  background-color: #5856d6;
-  color: white;
-  border-bottom: none;
-  text-align: center; /* centra texto dentro */
-  justify-content: center !important; /* forza el centrado en caso de que haya flex */
-  padding: 1rem 1.5rem;
+  background: transparent !important;
+  color: inherit !important;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.1) !important;
+  text-align: center;
+  justify-content: center !important;
+  padding: 1.5rem 1.5rem 1rem !important;
   width: 100%;
 }
+
 .custom-modal-title {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.6rem;
+  font-weight: 700;
   margin: 0 auto;
   width: 100%;
   text-align: center;
+  background: linear-gradient(135deg, #5856d6 0%, #3a38b5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  letter-spacing: -0.5px;
 }
-/* Steps Indicator */
 
-.step-circle {
-  background-color: white;
-  border: 2px solid #5856d6;
-  color: #5856d6;
-  width: 40px;
-  height: 40px;
+[data-coreui-theme='dark'] .custom-modal-title {
+  background: linear-gradient(135deg, #b4b2ff 0%, #8b89f5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Close Button */
+.custom-modal-header .btn-close {
+  background-color: transparent !important;
   border-radius: 50%;
+  color: var(--cui-body-color);
+  border: 1px solid rgba(128, 128, 128, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  padding: 0.5rem;
 }
 
-.step-circle.active {
-  background-color: #5856d6;
-  color: white;
+.custom-modal-header .btn-close:hover {
+  background-color: rgba(128, 128, 128, 0.1) !important;
+  transform: scale(1.05);
 }
 
-/* Labels and inputs */
-.mb-3 label {
-  font-weight: 500;
-}
-/* Footer buttons */
-.custom-footer {
-  display: flex;
-  justify-content: center; /* Centra los botones en la fila */
-  width: 100%;
-  gap: 10px; /* Espacio entre los botones */
-}
-
-/* Agrupa los botones juntos */
-.button-group {
-  display: flex;
-  gap: 10px; /* Espacio entre botones */
-  width: 100%; /* Asegura que los botones ocupen el 100% del espacio */
-  justify-content: space-between; /* Los botones deben tener espacio entre ellos */
-}
-
-.button-group .btn {
-  flex: 1; /* Hace que los botones ocupen el mismo ancho que los inputs */
-  margin: 0; /* Elimina márgenes innecesarios */
-}
-
-/* Personalización de los colores */
-.custom-footer .btn-primary {
-  background-color: #5856d6;
-  border-color: #5856d6;
-}
-
-.custom-footer .btn-secondary {
-  border-color: #6c757d;
-}
-
-.custom-footer .btn-success {
-  background-color: #28a745;
-  border-color: #28a745;
-  color: white;
-}
-
+/* Steps Indicator */
 .steps-indicator {
   display: flex;
-  justify-content: space-between; /* ocupar más espacio horizontal */
+  justify-content: center;
   align-items: center;
   position: relative;
-  margin: 20px 0;
-  padding: 0 20px;
+  margin: 1.5rem 0 2.5rem;
+  padding: 0 10%;
 }
 
 .step-item {
@@ -92,37 +68,178 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 8px;
+  padding: 0 10px;
 }
+
+.step-circle {
+  background-color: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  color: #a0a0a0;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+  z-index: 2;
+}
+
+[data-coreui-theme='dark'] .step-circle {
+  background-color: #2b2f33;
+  border-color: #3a3f44;
+  color: #7a8087;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.step-circle.active {
+  background: linear-gradient(135deg, #5856d6 0%, #3a38b5 100%);
+  border: none;
+  color: white;
+  transform: scale(1.15);
+  box-shadow: 0 6px 15px rgba(88, 86, 214, 0.4);
+}
+
+[data-coreui-theme='dark'] .step-circle.active {
+  background: linear-gradient(135deg, #6b69f0 0%, #8b89f5 100%);
+  box-shadow: 0 6px 15px rgba(107, 105, 240, 0.4);
+  color: #ffffff;
+}
+
 .step-item:not(:last-child)::after {
   content: '';
-  height: 2px;
-  background-color: #5856d6;
-  width: 100px; /* barra más ancha entre pasos */
-  margin: 0 16px;
+  height: 3px;
+  background-color: #e0e0e0;
+  width: 90px;
+  margin: 0 12px;
   display: block;
   align-self: center;
+  border-radius: 2px;
+  transition: background-color 0.4s ease;
 }
-.custom-modal-header .btn-close {
-  background-color: white !important;
-  border-radius: 50%;
-  color: var(--cui-primary);
-  border: 1px solid var(--cui-primary);
-  height: 10px;
+
+[data-coreui-theme='dark'] .step-item:not(:last-child)::after {
+  background-color: #3a3f44;
+}
+
+/* Modificar padding interno del modal para mejor espaciado */
+.modal-body {
+  padding: 1rem 2rem 2rem !important;
+}
+
+.mb-3 label {
+  font-weight: 500;
+}
+
+/* Footer buttons */
+.custom-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 15px;
+  padding: 1.5rem !important;
+  border-top: 1px solid rgba(128, 128, 128, 0.1) !important;
+  background-color: rgba(128, 128, 128, 0.02);
+  border-bottom-left-radius: var(--cui-modal-inner-border-radius);
+  border-bottom-right-radius: var(--cui-modal-inner-border-radius);
+}
+
+.button-group {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.button-group .btn {
+  flex: 1;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.custom-modal-header .btn-close:hover {
-  background-color: var(--cui-primary);
-  color: white;
+/* Custom Success Button (Light Green for Light Mode) */
+.custom-footer .btn-success {
+  background-color: #4ade80 !important; /* Light vivid green */
+  border-color: #4ade80 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3);
 }
+
+.custom-footer .btn-success:hover {
+  background-color: #22c55e !important; /* Deeper green on hover */
+  border-color: #22c55e !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(34, 197, 94, 0.35);
+}
+
+/* Keep darker green for Dark Mode to avoid glowing too intensely */
+[data-coreui-theme='dark'] .custom-footer .btn-success {
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+}
+
+[data-coreui-theme='dark'] .custom-footer .btn-success:hover {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  box-shadow: 0 6px 12px rgba(5, 150, 105, 0.35);
+}
+
+/* MUI Sub-styles integration (Inputs styling specifically for modal) */
+.MuiInputBase-root {
+  transition: all 0.3s ease !important;
+}
+.MuiInputBase-root::before {
+  border-bottom-color: rgba(128, 128, 128, 0.3) !important;
+}
+.MuiInputBase-root:hover::before {
+  border-bottom-color: #5856d6 !important;
+}
+[data-coreui-theme='dark'] .MuiInputBase-root:hover::before {
+  border-bottom-color: #8b89f5 !important;
+}
+
+/* Distinct Placeholder Styling (Soft Blue / Fade) */
+.MuiInputBase-input::placeholder {
+  color: #6382a8 !important; /* Soft but readable blueish tone for light mode */
+  opacity: 0.8 !important;
+  font-weight: 400;
+}
+
+[data-coreui-theme='dark'] .MuiInputBase-input::placeholder {
+  color: #7da5f0 !important; /* Visible light blue for dark mode */
+  opacity: 0.9 !important;
+}
+
+/* Distinct Label Styling (Which act as placeholders visually before focus) */
+.MuiInputLabel-root {
+  color: #6382a8 !important; /* Soft blue */
+}
+.MuiInputLabel-root.Mui-focused {
+  color: #5856d6 !important; /* Primary focus */
+}
+
+[data-coreui-theme='dark'] .MuiInputLabel-root {
+  color: #7da5f0 !important; /* Vibrant light blue */
+}
+[data-coreui-theme='dark'] .MuiInputLabel-root.Mui-focused {
+  color: #8b89f5 !important;
+}
+
+/* Floating label old inputs backup */
 .floating-label-input {
   position: relative;
   margin-bottom: 1.5rem;
 }
-
 .floating-label-input input {
   width: 100%;
   padding: 1rem 0.5rem 0.5rem;
@@ -131,18 +248,16 @@
   border-radius: 4px;
   outline: none;
 }
-
 .floating-label-input label {
   position: absolute;
   top: 1rem;
   left: 0.5rem;
   color: #999;
-  background: white;
+  background: transparent;
   padding: 0 0.25rem;
   transition: 0.2s ease all;
   pointer-events: none;
 }
-
 .floating-label-input input:focus + label,
 .floating-label-input input:not(:placeholder-shown) + label {
   top: -0.6rem;

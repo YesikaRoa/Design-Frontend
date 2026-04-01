@@ -16,7 +16,8 @@
   font-weight: bold;
 }
 .chart-card-body {
-  height: 250px; /* altura fija para desktop */
+  height: 280px; /* Incrementado para compensar padding */
+  padding: 1.25rem !important; /* Igual que los lados */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -50,7 +51,7 @@
 /* Estilos de las filas y columnas */
 .chart-wrapper {
   width: 100%;
-  height: 250px;
+  height: 100%;
   margin: 0 auto;
 }
 

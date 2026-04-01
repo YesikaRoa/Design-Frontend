@@ -9,6 +9,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useTranslation } from 'react-i18next'
+import PremiumInfoContent from '../../components/PremiumInfoContent'
 
 import './styles/appointments.css'
 import '../users/styles/filter.css'
@@ -778,10 +779,12 @@ const Appointments = () => {
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
-                    {/* ColSpan es 6 para cubrir todas las columnas de la tabla */}
-                    <CTableDataCell colSpan={6}>
-                      <div className="skeleton-row"></div> {/* Aplica la animación CSS */}
-                    </CTableDataCell>
+                    {/* Renderizamos 6 celdas individuales para mantener el ancho de las columnas */}
+                    {Array.from({ length: 6 }).map((_, cellIndex) => (
+                      <CTableDataCell key={cellIndex}>
+                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                      </CTableDataCell>
+                    ))}
                   </CTableRow>
                 ))
               ) : filteredAppointments.length === 0 ? (
@@ -852,40 +855,7 @@ const Appointments = () => {
         onClose={() => setInfoVisible(false)}
         title={t('Appointment Information')}
         content={
-          selectedAppointment ? (
-            <div>
-              <p>
-                <strong>{t('Patient')}:</strong> {selectedAppointment.patient_full_name}
-              </p>
-              <p>
-                <strong>{t('Professional')}:</strong> {selectedAppointment.professional_full_name}
-              </p>
-              <p>
-                <strong>{t('Scheduled At')}:</strong>{' '}
-                {formatDate(selectedAppointment.scheduled_at, 'DATETIME')}
-              </p>
-              <p>
-                <strong>{t('Status')}:</strong> {selectedAppointment.status}
-              </p>
-              <p>
-                <strong>{t('City')}:</strong> {selectedAppointment.city}
-              </p>
-              <p>
-                <strong>{t('Notes')}:</strong>{' '}
-                {selectedAppointment.notes || t('No notes available')}
-              </p>
-              <p>
-                <strong>{t('Reason for visit')}:</strong>{' '}
-                {selectedAppointment.reason_for_visit || t('No notes available')}
-              </p>
-              <p>
-                <strong>{t('Medical history')}:</strong>{' '}
-                {selectedAppointment.has_medical_record ? t('Sí') : t('No')}
-              </p>
-            </div>
-          ) : (
-            <p>{t('No information available')}.</p>
-          )
+          <PremiumInfoContent type="appointment" data={selectedAppointment} colorScheme={colorScheme} />
         }
       />
 

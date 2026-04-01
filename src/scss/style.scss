@@ -11,13 +11,13 @@ body {
 .alert-fixed {
   position: fixed !important;
   bottom: 60px; /* Más arriba, despegado del borde */
-  right: 40px;
+  right: 40px !important;
   top: auto !important;
   left: auto !important;
-  margin: 0;
-  max-width: 420px; 
-  width: auto;
-  min-width: 320px;
+  margin: 0 !important;
+  max-width: 420px !important;
+  width: auto !important;
+  min-width: 320px !important;
   box-sizing: border-box;
   font-size: 1rem;
   font-weight: 600;
@@ -32,7 +32,7 @@ body {
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   animation: slideInFromRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   pointer-events: auto;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: flex-start;
 }
@@ -259,4 +259,134 @@ body {
     rgba(93, 110, 255, 0) 100%
   );
   box-shadow: 0 0 10px rgba(93, 110, 255, 0.6);
+}
+
+/* Fix for MUI DatePicker calendar icon in dark mode */
+html[data-coreui-theme='dark'] .MuiInputAdornment-root .MuiSvgIcon-root,
+html[data-coreui-theme='dark'] .MuiIconButton-root .MuiSvgIcon-root,
+html[data-coreui-theme='dark'] .MuiSvgIcon-root {
+  color: rgba(255, 255, 255, 0.85) !important;
+  fill: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Bulletproof Global Fix for Native Calendar/Time Icons in dark mode */
+html[data-coreui-theme='dark'] .form-control,
+html[data-coreui-theme='dark'] .form-select,
+html[data-coreui-theme='dark'] input,
+html[data-coreui-theme='dark'] select {
+  color-scheme: dark !important;
+}
+
+html[data-coreui-theme='dark'] input[type="date"]::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type="time"]::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type="month"]::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] .form-control[type="date"]::-webkit-calendar-picker-indicator {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffffff"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>') !important;
+  background-position: center !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  opacity: 0.8 !important;
+  filter: none !important;
+  cursor: pointer;
+}
+
+/* ========================================================================= */
+/* PREMIUM PASTEL BADGES FOR LIGHT MODE (STATUS OVERRIDES)                   */
+/* ========================================================================= */
+html:not([data-coreui-theme='dark']) {
+  .badge.bg-success {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    border: 1px solid rgba(195, 230, 203, 0.7) !important;
+  }
+  .badge.bg-danger {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    border: 1px solid rgba(245, 198, 203, 0.7) !important;
+  }
+  .badge.bg-warning {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+    border: 1px solid rgba(255, 238, 186, 0.7) !important;
+  }
+  .badge.bg-info {
+    background-color: #d1ecf1 !important;
+    color: #0c5460 !important;
+    border: 1px solid rgba(190, 229, 235, 0.7) !important;
+  }
+  .badge.bg-primary {
+    background-color: #cce5ff !important;
+    color: #004085 !important;
+    border: 1px solid rgba(184, 218, 255, 0.7) !important;
+  }
+  .badge.bg-secondary {
+    background-color: #e2e3e5 !important;
+    color: #383d41 !important;
+    border: 1px solid rgba(214, 216, 219, 0.7) !important;
+  }
+}
+
+/* ========================================================================= */
+/* PREMIUM PASTEL ACTION BUTTONS (TABLES) FOR LIGHT MODE                     */
+/* ========================================================================= */
+html:not([data-coreui-theme='dark']) {
+  .table .btn, table .btn {
+    transition: all 0.2s ease-in-out;
+    border: none !important;
+  }
+  
+  .table .btn-primary, table .btn-primary {
+    background-color: #818cf8 !important; /* Medium Pastel Indigo */
+    color: #ffffff !important;
+  }
+  .table .btn-primary svg, table .btn-primary svg { fill: #ffffff !important; color: #ffffff !important; }
+  .table .btn-primary:hover, table .btn-primary:hover {
+    background-color: #6366f1 !important; /* Slightly darker */
+  }
+
+  .table .btn-danger, table .btn-danger {
+    background-color: #f87171 !important; /* Medium Pastel Red */
+    color: #ffffff !important;
+  }
+  .table .btn-danger svg, table .btn-danger svg { fill: #ffffff !important; color: #ffffff !important; }
+  .table .btn-danger:hover, table .btn-danger:hover {
+    background-color: #ef4444 !important;
+  }
+
+  .table .btn-info, table .btn-info {
+    background-color: #38bdf8 !important; /* Medium Pastel Sky/Blue */
+    color: #ffffff !important;
+  }
+  .table .btn-info svg, table .btn-info svg { fill: #ffffff !important; color: #ffffff !important; }
+  .table .btn-info:hover, table .btn-info:hover {
+    background-color: #0ea5e9 !important;
+  }
+  
+  .table .btn-success, table .btn-success {
+    background-color: #34d399 !important; /* Medium Pastel Emerald/Green */
+    color: #ffffff !important;
+  }
+  .table .btn-success svg, table .btn-success svg { fill: #ffffff !important; color: #ffffff !important; }
+  .table .btn-success:hover, table .btn-success:hover {
+    background-color: #10b981 !important;
+  }
+
+  .table .btn-warning, table .btn-warning {
+    background-color: #fbbf24 !important; /* Medium Pastel Amber/Yellow */
+    color: #ffffff !important;
+  }
+  .table .btn-warning svg, table .btn-warning svg { fill: #ffffff !important; color: #ffffff !important; }
+  .table .btn-warning:hover, table .btn-warning:hover {
+    background-color: #f59e0b !important;
+  }
+}
+
+/* ========================================================================= */
+/* GLOBAL TABLE COLUMN ALIGNMENT FIX                                         */
+/* ========================================================================= */
+.table th,
+.table td {
+  text-align: left !important;
+  vertical-align: middle !important;
 }

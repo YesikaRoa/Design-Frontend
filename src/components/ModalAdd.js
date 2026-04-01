@@ -395,7 +395,6 @@ const ModalAdd = forwardRef(
 
         <CModalFooter
           className="custom-footer"
-          style={{ borderTop: 'none', marginTop: '-5px', marginBottom: '10px' }}
         >
           {stepIndex === 0 && (
             <div className="button-group">
