@@ -7,6 +7,7 @@ import ModalAdd from '../../components/ModalAdd'
 import Notifications from '../../components/Notifications'
 import { formatDate } from '../../utils/dateUtils'
 import { useTranslation } from 'react-i18next'
+import PremiumInfoContent from '../../components/PremiumInfoContent'
 
 import './styles/users.css'
 import './styles/filter.css'
@@ -58,6 +59,32 @@ export const Users = () => {
   const [professionalTypes, setProfessionalTypes] = useState([])
   const [specialties, setSpecialties] = useState([])
   const [formDataState, setFormData] = useState({})
+
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
 
   const { request, loading } = useApi()
   useEffect(() => {
@@ -116,13 +143,13 @@ export const Users = () => {
             years_of_experience: Number(formData.years_of_experience) || 0,
             specialties: [
               ...(Array.isArray(formData.specialty_id)
-                ? formData.specialty_id.map(Number)
-                : formData.specialty_id
+                ? formData.specialty_id.filter((v) => v !== '' && v !== 'none').map(Number)
+                : formData.specialty_id && formData.specialty_id !== '' && formData.specialty_id !== 'none'
                   ? [Number(formData.specialty_id)]
                   : []),
               ...(Array.isArray(formData.subspecialty_id)
-                ? formData.subspecialty_id.map(Number)
-                : formData.subspecialty_id
+                ? formData.subspecialty_id.filter((v) => v !== '' && v !== 'none').map(Number)
+                : formData.subspecialty_id && formData.subspecialty_id !== '' && formData.subspecialty_id !== 'none'
                   ? [Number(formData.subspecialty_id)]
                   : []),
             ],
@@ -278,11 +305,14 @@ export const Users = () => {
                 name: 'specialty_id',
                 label: 'Especialidad',
                 type: 'select',
-                required: true,
+                required: false,
                 multiple: true,
-                options: specialties
-                  .filter((s) => s.id >= 1 && s.id <= 15)
-                  .map((s) => ({ label: s.name, value: s.id })),
+                options: [
+                  { label: 'Sin especialidad', value: 'none' },
+                  ...specialties
+                    .filter((s) => s.id >= 1 && s.id <= 15)
+                    .map((s) => ({ label: s.name, value: s.id }))
+                ],
               },
               {
                 name: 'subspecialty_id',
@@ -290,9 +320,12 @@ export const Users = () => {
                 type: 'select',
                 required: false,
                 multiple: true,
-                options: specialties
-                  .filter((s) => s.id >= 16 && s.id <= 60)
-                  .map((s) => ({ label: s.name, value: s.id })),
+                options: [
+                  { label: 'Sin subespecialidad', value: 'none' },
+                  ...specialties
+                    .filter((s) => s.id >= 16 && s.id <= 60)
+                    .map((s) => ({ label: s.name, value: s.id }))
+                ],
               },
             ]
           : []),
@@ -588,17 +621,20 @@ export const Users = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {/* 1. Muestra el Skeleton Loader si loading es true */}
+              {/* 1. Muestra el Skeleton Loader si loading es true O si los roles aún no han cargado */}
               {users === null ||
               (loading && (!users || users.length === 0)) ||
-              (!showEmptyMessage && filteredUsers.length === 0) ? (
+              (!showEmptyMessage && filteredUsers.length === 0) ||
+              roles.length === 0 ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
-                    {/* ColSpan es 7 para cubrir todas las columnas de esta tabla (7 celdas de datos por fila) */}
-                    <CTableDataCell colSpan={7}>
-                      <div className="skeleton-row"></div> {/* Aplica la animación CSS */}
-                    </CTableDataCell>
+                    {/* Renderizamos 7 celdas individuales para mantener el ancho de las columnas */}
+                    {Array.from({ length: 7 }).map((_, cellIndex) => (
+                      <CTableDataCell key={cellIndex}>
+                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                      </CTableDataCell>
+                    ))}
                   </CTableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
@@ -663,38 +699,7 @@ export const Users = () => {
         onClose={() => setInfoVisible(false)} // Cierra la modal
         title={t('User information')}
         content={
-          selectedUser ? (
-            <div>
-              <p>
-                <strong>{t('First name')}:</strong> {selectedUser.first_name}
-              </p>
-              <p>
-                <strong>{t('Last name')}:</strong> {selectedUser.last_name}
-              </p>
-              <p>
-                <strong>{t('Email')}:</strong> {selectedUser.email}
-              </p>
-              <p>
-                <strong>{t('Address')}:</strong> {selectedUser.address || t('No address available')}
-              </p>
-              <p>
-                <strong>{t('Phone')}:</strong> {selectedUser.phone || t('No phone available')}
-              </p>
-              <p>
-                <strong>{t('Birth Date')}:</strong>{' '}
-                {formatDate(selectedUser.birth_date, 'DATE') || t('No birth date available')}
-              </p>
-              <p>
-                <strong>{t('Gender')}:</strong>{' '}
-                {selectedUser.gender === 'F' ? t('Female') : t('Male')}
-              </p>
-              <p>
-                <strong>{t('Status')}:</strong> {selectedUser.status}
-              </p>
-            </div>
-          ) : (
-            <p>{t('No information available.')}</p>
-          )
+          <PremiumInfoContent type="user" data={selectedUser} colorScheme={colorScheme} />
         }
       />
 

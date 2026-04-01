@@ -116,3 +116,82 @@
   color: #555;
   font-size: 14px;
 }
+
+/* React Select Styles for Dark Mode */
+html[data-coreui-theme='dark'] .react-select__control {
+  background-color: var(--cui-input-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--cui-input-border-color, rgba(255, 255, 255, 0.15));
+}
+
+html[data-coreui-theme='dark'] .react-select__control--is-focused {
+  background-color: var(--cui-input-bg, rgba(255, 255, 255, 0.05));
+  border-color: var(--cui-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--cui-primary-rgb), 0.25);
+}
+
+html[data-coreui-theme='dark'] .react-select__menu {
+  background-color: var(--cui-body-bg, #212631);
+  border: 1px solid var(--cui-border-color, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  z-index: 1050;
+}
+
+html[data-coreui-theme='dark'] .react-select__option {
+  background-color: transparent;
+  color: var(--cui-body-color);
+  cursor: pointer;
+}
+
+html[data-coreui-theme='dark'] .react-select__option--is-focused {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-coreui-theme='dark'] .react-select__option--is-selected {
+  background-color: var(--cui-primary);
+  color: var(--cui-primary-contrast, #fff);
+}
+
+html[data-coreui-theme='dark'] .react-select__single-value,
+html[data-coreui-theme='dark'] .react-select__input-container {
+  color: var(--cui-body-color) !important;
+}
+
+html[data-coreui-theme='dark'] .react-select__placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Multi-select chips in dark mode */
+html[data-coreui-theme='dark'] .react-select__multi-value {
+  background-color: rgba(var(--cui-primary-rgb), 0.2);
+  border: 1px solid rgba(var(--cui-primary-rgb), 0.3);
+  border-radius: 4px;
+}
+
+html[data-coreui-theme='dark'] .react-select__multi-value__label {
+  color: var(--cui-body-color);
+  font-weight: 500;
+}
+
+html[data-coreui-theme='dark'] .react-select__multi-value__remove {
+  color: var(--cui-body-color);
+  cursor: pointer;
+}
+
+html[data-coreui-theme='dark'] .react-select__multi-value__remove:hover {
+  background-color: rgba(255, 99, 132, 0.6);
+  color: #fff;
+}
+
+html[data-coreui-theme='dark'] .react-select__indicator-separator {
+  background-color: var(--cui-input-border-color, rgba(255, 255, 255, 0.15));
+}
+
+html[data-coreui-theme='dark'] .react-select__dropdown-indicator,
+html[data-coreui-theme='dark'] .react-select__clear-indicator {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+html[data-coreui-theme='dark'] .react-select__dropdown-indicator:hover,
+html[data-coreui-theme='dark'] .react-select__clear-indicator:hover {
+  color: var(--cui-body-color);
+}

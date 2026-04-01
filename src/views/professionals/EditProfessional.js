@@ -1,27 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import useApi from '../../hooks/useApi'
 import { useLocation, useNavigate } from 'react-router-dom'
-import '../users/styles/UserDetails.css'
 import { useTranslation } from 'react-i18next'
 import Select from 'react-select'
+import '../appointments/styles/EditAppointment.css'
 import {
   CButton,
   CCard,
   CCardBody,
-  CCardText,
-  CCardTitle,
+  CCardHeader,
   CCol,
   CRow,
   CFormInput,
-  CSpinner,
   CAlert,
+  CForm,
 } from '@coreui/react'
-import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle } from '@coreui/icons'
+import { cilPencil, cilSave, cilTrash, cilBan, cilCheckCircle, cilUser, cilMedicalCross } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import Notifications from '../../components/Notifications'
 import ModalDelete from '../../components/ModalDelete'
 import { useParams } from 'react-router-dom'
-const UserDetails = () => {
+
+const EditProfessional = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -29,9 +29,7 @@ const UserDetails = () => {
     if (typeof window === 'undefined') return 'light'
     const ds = document.documentElement.dataset.coreuiTheme
     if (ds) return ds
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
 
   useEffect(() => {
@@ -50,6 +48,7 @@ const UserDetails = () => {
       mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
     }
   }, [])
+
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fieldsDisabled, setFieldsDisabled] = useState(true)
@@ -58,33 +57,33 @@ const UserDetails = () => {
   const [selectedSpecialties, setSelectedSpecialties] = useState([])
   const [selectedSubspecialties, setSelectedSubspecialties] = useState([])
   const [professional, setProfessional] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    address: '',
-    phone: '',
-    biography: '',
-    years_of_experience: 0,
-    specialties: [],
-    subspecialties: [],
-    // otros campos que uses
+    first_name: '', last_name: '', email: '', address: '', phone: '',
+    biography: '', years_of_experience: 0, specialties: [], subspecialties: [],
   })
   const [specialties, setSpecialties] = useState([])
   const [subspecialties, setSubspecialties] = useState([])
   const token = localStorage.getItem('authToken')
   const { id } = useParams()
-
   const { request, loading: apiLoading } = useApi()
+
+  const selectStyles = {
+    control: (p) => ({ ...p, background: colorScheme === 'dark' ? '#23262b' : p.background, color: colorScheme === 'dark' ? '#fff' : p.color }),
+    singleValue: (p) => ({ ...p, color: colorScheme === 'dark' ? '#fff' : p.color }),
+    input: (p) => ({ ...p, color: colorScheme === 'dark' ? '#fff' : p.color }),
+    placeholder: (p) => ({ ...p, color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : p.color }),
+    menu: (p) => ({ ...p, zIndex: 9999, background: colorScheme === 'dark' ? '#2b2f33' : p.background }),
+    menuList: (p) => ({ ...p, background: colorScheme === 'dark' ? '#2b2f33' : p.background }),
+    option: (p, s) => ({ ...p, background: s.isFocused ? (colorScheme === 'dark' ? '#3a3f44' : p.background) : (colorScheme === 'dark' ? '#2b2f33' : p.background), color: colorScheme === 'dark' ? '#fff' : p.color }),
+    multiValue: (p) => ({ ...p, background: colorScheme === 'dark' ? '#3a3f44' : p.background }),
+    multiValueLabel: (p) => ({ ...p, color: colorScheme === 'dark' ? '#fff' : p.color }),
+    multiValueRemove: (p) => ({ ...p, color: colorScheme === 'dark' ? '#fff' : p.color, ':hover': { backgroundColor: '#ef4444', color: '#fff' } }),
+  }
+
   const fetchProfessional = async (profId) => {
     setLoading(true)
     try {
-      const { data, status, success } = await request('get', `/professionals/${profId}`, null, {
-        Authorization: `Bearer ${token}`,
-      })
-      if (status === 403 || status === 401) {
-        navigate('/404')
-        return
-      }
+      const { data, status, success } = await request('get', `/professionals/${profId}`, null, { Authorization: `Bearer ${token}` })
+      if (status === 403 || status === 401) { navigate('/404'); return }
       if (!success || !data) throw new Error('Error fetching professional')
       setProfessional(data)
     } catch (error) {
@@ -94,23 +93,17 @@ const UserDetails = () => {
       setLoading(false)
     }
   }
+
   useEffect(() => {
     if (id) fetchProfessional(id)
-
     const fetchSpecialties = async () => {
       try {
         const { data } = await request('get', '/auth/specialties')
-        const specialtyList = (data || [])
-          .filter((item) => item.type === 'specialty')
-          .map((s) => ({ label: s.name, value: s.id }))
-        const subspecialtyList = (data || [])
-          .filter((item) => item.type === 'subspecialty')
-          .map((s) => ({ label: s.name, value: s.id }))
+        const specialtyList = (data || []).filter((item) => item.type === 'specialty').map((s) => ({ label: s.name, value: s.id }))
+        const subspecialtyList = (data || []).filter((item) => item.type === 'subspecialty').map((s) => ({ label: s.name, value: s.id }))
         setSpecialties(specialtyList)
         setSubspecialties(subspecialtyList)
-      } catch (error) {
-        console.error('Error fetching specialties:', error)
-      }
+      } catch (error) { console.error('Error fetching specialties:', error) }
     }
     fetchSpecialties()
   }, [id, token])
@@ -118,37 +111,40 @@ const UserDetails = () => {
   useEffect(() => {
     if (professional && specialties.length > 0 && subspecialties.length > 0) {
       if (Array.isArray(professional.specialties)) {
-        const mappedSpecialties = professional.specialties.map((name, index) => {
+        setSelectedSpecialties(professional.specialties.map((name, idx) => {
           const found = specialties.find((s) => s.label === name)
-          return found
-            ? { label: found.label, value: found.value }
-            : { label: name, value: `custom-${index}-${name}` }
-        })
-        setSelectedSpecialties(mappedSpecialties)
+          return found ? { label: found.label, value: found.value } : { label: name, value: `custom-${idx}-${name}` }
+        }))
       }
-
       if (Array.isArray(professional.subspecialties)) {
-        const mappedSubspecialties = professional.subspecialties.map((name, index) => {
+        setSelectedSubspecialties(professional.subspecialties.map((name, idx) => {
           const found = subspecialties.find((s) => s.label === name)
-          return found
-            ? { label: found.label, value: found.value }
-            : { label: name, value: `custom-${index}-${name}` }
-        })
-        setSelectedSubspecialties(mappedSubspecialties)
+          return found ? { label: found.label, value: found.value } : { label: name, value: `custom-${idx}-${name}` }
+        }))
       }
     }
   }, [professional, specialties, subspecialties])
 
-  const handleFieldsDisabled = () => {
-    setFieldsDisabled(!fieldsDisabled)
-  }
+  useEffect(() => {
+    setUser(null)
+    setLoading(true)
+    if (location.state && location.state.user) {
+      const newUser = location.state.user
+      setUser(newUser)
+      localStorage.setItem('selectedProfessional', JSON.stringify(newUser))
+      const firstName = newUser.first_name.split(' ')[0].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      navigate(`/professionals/${firstName}`, { replace: true })
+    } else {
+      const storedUser = localStorage.getItem('selectedProfessional')
+      if (storedUser) setUser(JSON.parse(storedUser))
+      setLoading(false)
+    }
+  }, [location, navigate])
 
-  const normalizeNameForURL = (name) => {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-  }
+  if (!professional && (loading || apiLoading)) return null
+  if (!professional) return <p>{t('Professional not found.')}</p>
+
+  const handleFieldsDisabled = () => setFieldsDisabled((prev) => !prev)
 
   const save = async () => {
     try {
@@ -156,122 +152,58 @@ const UserDetails = () => {
         ...selectedSpecialties.map((s) => s.value),
         ...selectedSubspecialties.map((s) => s.value),
       ]
-      const updatedProfessional = {
-        professional_type_id: professional.professional_type_id || null,
-        biography: professional.biography || null,
-        years_of_experience: professional.years_of_experience || 0,
-      }
-      const updatedUser = {
-        first_name: professional.first_name || '',
-        last_name: professional.last_name || '',
-        email: professional.email || '',
-        address: professional.address || '',
-        phone: professional.phone || '',
-      }
-      const specialtiesArr = combinedSpecialties
-      const {
-        data: result,
-        success,
-        error: apiError,
-      } = await request(
+      const { data: result, success, error: apiError } = await request(
         'put',
         `/professionals/${professional.id}`,
         {
-          professional: updatedProfessional,
-          specialties: specialtiesArr,
-          ...updatedUser,
+          professional: {
+            professional_type_id: professional.professional_type_id || null,
+            biography: professional.biography || null,
+            years_of_experience: professional.years_of_experience || 0,
+          },
+          specialties: combinedSpecialties,
+          first_name: professional.first_name || '',
+          last_name: professional.last_name || '',
+          email: professional.email || '',
+          address: professional.address || '',
+          phone: professional.phone || '',
         },
         { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
       if (!success) {
         if (apiError && apiError.issues && Array.isArray(apiError.issues)) {
-          const messages = apiError.issues
-            .map((issue) =>
-              Array.isArray(issue.path)
-                ? `${issue.path.join('.')} - ${issue.message}`
-                : `${issue.path || 'unknown'} - ${issue.message}`,
-            )
-            .join('\n')
-          Notifications.showAlert(setAlert, messages, 'danger')
+          Notifications.showAlert(setAlert, apiError.issues.map((i) => Array.isArray(i.path) ? `${i.path.join('.')} - ${i.message}` : `${i.path || 'unknown'} - ${i.message}`).join('\n'), 'danger')
         } else {
-          Notifications.showAlert(
-            setAlert,
-            (apiError && apiError.message) || 'Error updating professional and user data.',
-            'danger',
-          )
+          Notifications.showAlert(setAlert, (apiError && apiError.message) || 'Error updating professional.', 'danger')
         }
         return
       }
       fetchProfessional(professional.id)
       setProfessional(result.professional)
       setUser(result.user)
-      const specialtyIds = (result.specialties || []).map((s) => (typeof s === 'object' ? s.id : s))
-      setSelectedSpecialties(
-        specialtyIds.map((id) => {
-          const found = specialties.find((s) => s.value === id)
-          return found
-            ? { label: found.label, value: found.value }
-            : { label: `Unknown-${id}`, value: id }
-        }),
-      )
       Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
       setFieldsDisabled(true)
     } catch (error) {
-      console.error('Error saving changes:', error)
       Notifications.showAlert(setAlert, t('Error saving changes.'), 'danger')
     }
   }
 
-  useEffect(() => {
-    setUser(null)
-    setLoading(true)
-
-    if (location.state && location.state.user) {
-      const newUser = location.state.user
-      setUser(newUser)
-      localStorage.setItem('selectedProfessional', JSON.stringify(newUser))
-
-      const firstName = newUser.first_name.split(' ')[0]
-      const normalizedFirstName = normalizeNameForURL(firstName)
-      navigate(`/professionals/${normalizedFirstName}`, { replace: true })
-    } else {
-      const storedUser = localStorage.getItem('selectedProfessional')
-      if (storedUser) {
-        setUser(JSON.parse(storedUser))
-      }
-      setLoading(false)
-    }
-  }, [location, navigate])
-
-  if (!professional && (loading || apiLoading)) return null
-  if (!professional) return <p>No se encontró el profesional.</p>
-
   const handleToggleStatus = async (userId) => {
     try {
-      const updatedStatus = user.status === 'Active' ? 'Inactive' : 'Active'
-      const {
-        data: result,
-        success,
-        error: apiError,
-      } = await request(
-        'put',
-        `/professionals/status/${userId}`,
+      const currentStatus = user?.status || professional?.status
+      const updatedStatus = currentStatus === 'Active' ? 'Inactive' : 'Active'
+      const { data: result, success } = await request(
+        'put', `/professionals/status/${userId}`,
         { newStatus: updatedStatus },
         { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       )
       if (success) {
         setUser(result.user)
-        Notifications.showAlert(
-          setAlert,
-          `User has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`,
-          'info',
-        )
+        Notifications.showAlert(setAlert, `Professional has been ${updatedStatus === 'Active' ? 'activated' : 'deactivated'}.`, 'info')
       } else {
-        const errorMessage = (apiError && apiError.message) || 'Failed to update user status.'
-        Notifications.showAlert(setAlert, errorMessage, 'danger')
+        Notifications.showAlert(setAlert, 'Failed to update professional status.', 'danger')
       }
     } catch (error) {
-      console.error('Error toggling user status:', error)
       Notifications.showAlert(setAlert, t('Error updating status.'), 'danger')
     }
   }
@@ -285,277 +217,257 @@ const UserDetails = () => {
         setDeleteModalVisible(false)
         navigate('/professionals')
       } else {
-        const errorData = res.data || {}
-        Notifications.showAlert(
-          setAlert,
-          errorData.message || 'No se pudo eliminar el Professional.',
-          'danger',
-        )
+        Notifications.showAlert(setAlert, (res.data && res.data.message) || 'Could not delete the professional.', 'danger')
       }
     } catch (error) {
-      console.error('Error deleting user:', error)
       Notifications.showAlert(setAlert, t('An unexpected error occurred.'), 'danger')
     }
   }
 
-  const openDeleteModal = () => {
-    setDeleteModalVisible(true)
-  }
+  const currentStatus = user?.status || professional?.status
 
   return (
-    <CRow>
-      <CCol md={12}>
-        <h3 className="mb-4">{t('Professional Details')}</h3>
-        {alert && (
-          <CAlert color={alert.type} className="alert-fixed">
-            {alert.message}
-          </CAlert>
-        )}
+    <CRow className="justify-content-center">
+      {/* Alert — at CRow level so position:fixed works correctly */}
+      {alert && (
+        <CAlert color={alert.type} className="alert-fixed">
+          {alert.message}
+        </CAlert>
+      )}
+
+      {/* Page Header */}
+      <CCol md={12} className="mb-4">
+        <h3 className="fw-bold text-primary-emphasis d-flex align-items-center">
+          <CIcon icon={cilPencil} size="lg" className="me-2" />
+          {t('Edit Professional')}
+        </h3>
+        <p className="text-muted small">{t('Professional')} #{professional.id}</p>
+        <hr className="my-3 opacity-10" />
       </CCol>
-      <CCol md={4}>
-        <CCard>
-          <CCardBody>
-            <CCardTitle className="text-primary">
-              {professional.first_name} {professional.last_name}
-            </CCardTitle>
-            <CCardText>
-              <strong>{t('Email')}:</strong> {professional.email} <br />
-              <strong>{t('Professional Type')}:</strong> {professional.professional_type} <br />
-              <strong>{t('Status')}:</strong> {professional.status} <br />
-              <strong>{t('Created at')}:</strong>{' '}
-              {new Date(professional.created_at).toLocaleDateString()} <br />
-              <strong>{t('Last Updated')}:</strong>{' '}
-              {new Date(professional.updated_at).toLocaleDateString()}
-            </CCardText>
-          </CCardBody>
-        </CCard>
-        <CCard className="mt-3">
-          <CCardBody>
-            <div className="card-actions-container">
-              <span
-                className={`card-actions-link ${user.status === 'Active' ? 'deactivate-user' : 'activate-user'}`}
+
+      {/* Sidebar */}
+      <CCol lg={3}>
+        <div className="sticky-lg-top" style={{ top: '1.5rem', zIndex: 10 }}>
+          <CCard className="mb-3 shadow-sm border-0 overflow-hidden">
+            <div className="p-1" style={{ backgroundColor: 'var(--cui-primary)' }}></div>
+            <CCardBody>
+              <h6 className="text-primary fw-bold text-uppercase ls-1 mb-3">
+                {t('Professional Information')}
+              </h6>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Full Name')}</label>
+                <div className="fw-bold fs-5 text-primary-emphasis">
+                  {professional.first_name} {professional.last_name}
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Email')}</label>
+                <div className="fw-medium">{professional.email}</div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Professional Type')}</label>
+                <div className="fw-medium">{professional.professional_type || 'N/A'}</div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Status')}</label>
+                <div className="fw-medium">{currentStatus}</div>
+              </div>
+              <div className="mb-1">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Created at')}</label>
+                <div className="small">{professional.created_at ? new Date(professional.created_at).toLocaleString() : 'N/A'}</div>
+              </div>
+              {professional.updated_at && (
+                <div className="mt-2 text-muted-subtle" style={{ fontSize: '0.75rem' }}>
+                  <strong>{t('Last Updated')}:</strong> {new Date(professional.updated_at).toLocaleString()}
+                </div>
+              )}
+            </CCardBody>
+          </CCard>
+
+          <CCard className="shadow-sm border-0 mb-4">
+            <CCardBody className="p-2 d-flex flex-column gap-1">
+              <CButton
+                color={currentStatus === 'Active' ? 'warning' : 'success'}
+                variant="ghost"
+                className="w-100 text-start d-flex align-items-center"
                 onClick={() => handleToggleStatus(professional.id)}
               >
-                <CIcon
-                  icon={user.status === 'Active' ? cilBan : cilCheckCircle}
-                  className="me-2"
-                  width={24}
-                  height={24}
-                />
-                {user.status === 'Active'
-                  ? t('Deactivate Professional')
-                  : t('Activate Professional')}
-              </span>
-              <span className="card-actions-link delete-user" onClick={openDeleteModal}>
-                <CIcon icon={cilTrash} className="me-2" width={24} height={24} />
+                <CIcon icon={currentStatus === 'Active' ? cilBan : cilCheckCircle} className="me-2" />
+                {currentStatus === 'Active' ? t('Deactivate Professional') : t('Activate Professional')}
+              </CButton>
+              <CButton
+                color="danger"
+                variant="ghost"
+                className="w-100 text-start d-flex align-items-center"
+                onClick={() => setDeleteModalVisible(true)}
+              >
+                <CIcon icon={cilTrash} className="me-2" />
                 {t('Delete Professional')}
-              </span>
-            </div>
-          </CCardBody>
-        </CCard>
+              </CButton>
+            </CCardBody>
+          </CCard>
+        </div>
       </CCol>
-      <CCol md={8} className="space-component">
-        <CCard>
-          <CCardBody>
-            <CCardTitle>{t('Edit Professional')}</CCardTitle>
 
-            {/* Información básica */}
-            <CFormInput
-              type="text"
-              id="firstName"
-              floatingLabel={t('First name')}
-              value={professional.first_name || ''}
-              onChange={(e) => setProfessional((prev) => ({ ...prev, first_name: e.target.value }))}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="lastName"
-              floatingLabel={t('Last name')}
-              value={professional.last_name || ''}
-              onChange={(e) => setProfessional((prev) => ({ ...prev, last_name: e.target.value }))}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="email"
-              id="email"
-              floatingLabel={t('Email')}
-              value={professional.email || ''}
-              onChange={(e) => setProfessional((prev) => ({ ...prev, email: e.target.value }))}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="address"
-              floatingLabel={t('Address')}
-              value={professional.address || ''}
-              onChange={(e) => setProfessional((prev) => ({ ...prev, address: e.target.value }))}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="phone"
-              floatingLabel={t('Phone')}
-              value={professional.phone || ''}
-              onChange={(e) => setProfessional((prev) => ({ ...prev, phone: e.target.value }))}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="text"
-              id="biography"
-              floatingLabel={t('Biography')}
-              value={professional.biography || ''}
-              onChange={(e) => setProfessional((prev) => ({ ...prev, biography: e.target.value }))}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormInput
-              type="number"
-              id="years_of_experience"
-              floatingLabel={t('Years of Experience')}
-              value={professional.years_of_experience || 0}
-              onChange={(e) =>
-                setProfessional((prev) => ({
-                  ...prev,
-                  years_of_experience: Number(e.target.value),
-                }))
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
+      {/* Main Form */}
+      <CCol lg={9}>
+        <CForm>
+          {/* Section 1: Personal Info */}
+          <CCard className="mb-4 shadow-sm border-0">
+            <CCardHeader className="bg-transparent border-0 pt-4 px-4 d-flex align-items-center">
+              <CIcon icon={cilUser} className="me-2 text-primary" size="lg" />
+              <h5 className="mb-0 fw-bold">{t('Personal Information')}</h5>
+            </CCardHeader>
+            <CCardBody className="p-4">
+              <CRow className="g-3">
+                <CCol md={6}>
+                  <CFormInput
+                    type="text"
+                    id="firstName"
+                    floatingLabel={t('First name')}
+                    value={professional.first_name || ''}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, first_name: e.target.value }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    type="text"
+                    id="lastName"
+                    floatingLabel={t('Last name')}
+                    value={professional.last_name || ''}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, last_name: e.target.value }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    type="email"
+                    id="email"
+                    floatingLabel={t('Email')}
+                    value={professional.email || ''}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, email: e.target.value }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    type="text"
+                    id="phone"
+                    floatingLabel={t('Phone')}
+                    value={professional.phone || ''}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, phone: e.target.value }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={12}>
+                  <CFormInput
+                    type="text"
+                    id="address"
+                    floatingLabel={t('Address')}
+                    value={professional.address || ''}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, address: e.target.value }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={9}>
+                  <CFormInput
+                    type="text"
+                    id="biography"
+                    floatingLabel={t('Biography')}
+                    value={professional.biography || ''}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, biography: e.target.value }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+                <CCol md={3}>
+                  <CFormInput
+                    type="number"
+                    id="years_of_experience"
+                    floatingLabel={t('Years of Experience')}
+                    value={professional.years_of_experience || 0}
+                    onChange={(e) => setProfessional((prev) => ({ ...prev, years_of_experience: Number(e.target.value) }))}
+                    disabled={fieldsDisabled}
+                  />
+                </CCol>
+              </CRow>
+            </CCardBody>
+          </CCard>
 
-            {/* Especialidades */}
-            <label htmlFor="specialty" className="form-label">
-              {t('Specialties')}
-            </label>
-            <Select
-              isMulti
-              name="specialty"
-              options={specialties}
-              value={selectedSpecialties}
-              onChange={setSelectedSpecialties}
-              className="mb-2"
-              classNamePrefix="react-select"
-              placeholder={t('Select specialties')}
-              isDisabled={fieldsDisabled}
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  background: colorScheme === 'dark' ? '#23262b' : provided.background,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-                input: (provided) => ({
-                  ...provided,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-                placeholder: (provided) => ({
-                  ...provided,
-                  color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  zIndex: 9999,
-                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-                }),
-                menuList: (provided) => ({
-                  ...provided,
-                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  background: state.isFocused
-                    ? colorScheme === 'dark'
-                      ? '#3a3f44'
-                      : provided.background
-                    : colorScheme === 'dark'
-                      ? '#2b2f33'
-                      : provided.background,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-              }}
-            />
+          {/* Section 2: Specialties */}
+          <CCard className="mb-4 shadow-sm border-0">
+            <CCardHeader className="bg-transparent border-0 pt-4 px-4 d-flex align-items-center">
+              <CIcon icon={cilMedicalCross} className="me-2 text-primary" size="lg" />
+              <h5 className="mb-0 fw-bold">{t('Specialties')}</h5>
+            </CCardHeader>
+            <CCardBody className="p-4">
+              <CRow className="g-3">
+                <CCol md={12}>
+                  <label className="form-label fw-semibold small text-uppercase text-muted">{t('Specialties')}</label>
+                  <Select
+                    isMulti
+                    name="specialty"
+                    options={specialties}
+                    value={selectedSpecialties}
+                    onChange={setSelectedSpecialties}
+                    classNamePrefix="react-select"
+                    placeholder={t('Select specialties')}
+                    isDisabled={fieldsDisabled}
+                    styles={selectStyles}
+                  />
+                </CCol>
+                <CCol md={12}>
+                  <label className="form-label fw-semibold small text-uppercase text-muted">{t('Subspecialties')}</label>
+                  <Select
+                    isMulti
+                    name="subspecialty"
+                    options={subspecialties}
+                    value={selectedSubspecialties}
+                    onChange={setSelectedSubspecialties}
+                    classNamePrefix="react-select"
+                    placeholder={t('Select subspecialties')}
+                    isDisabled={fieldsDisabled}
+                    styles={selectStyles}
+                  />
+                </CCol>
+              </CRow>
+            </CCardBody>
+          </CCard>
 
-            {/* Subespecialidades */}
-            <label htmlFor="subspecialty" className="form-label">
-              {t('Subspecialties')}
-            </label>
-            <Select
-              isMulti
-              name="subspecialty"
-              options={subspecialties}
-              value={selectedSubspecialties}
-              onChange={setSelectedSubspecialties}
-              className="mb-2"
-              classNamePrefix="react-select"
-              placeholder={t('Select subspecialties')}
-              isDisabled={fieldsDisabled}
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  background: colorScheme === 'dark' ? '#23262b' : provided.background,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-                input: (provided) => ({
-                  ...provided,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-                placeholder: (provided) => ({
-                  ...provided,
-                  color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  zIndex: 9999,
-                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-                }),
-                menuList: (provided) => ({
-                  ...provided,
-                  background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  background: state.isFocused
-                    ? colorScheme === 'dark'
-                      ? '#3a3f44'
-                      : provided.background
-                    : colorScheme === 'dark'
-                      ? '#2b2f33'
-                      : provided.background,
-                  color: colorScheme === 'dark' ? '#fff' : provided.color,
-                }),
-              }}
-            />
-
-            <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : save}>
-              <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? t('Edit') : t('Save')}
+          {/* Form Actions */}
+          <div className="d-flex justify-content-end gap-2 mb-5">
+            <CButton color="secondary" variant="ghost" onClick={() => navigate('/professionals')}>
+              {t('Cancel')}
             </CButton>
-          </CCardBody>
-        </CCard>
+            {fieldsDisabled ? (
+              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                <CIcon icon={cilPencil} className="me-2" />
+                {t('Edit')}
+              </CButton>
+            ) : (
+              <div className="d-flex gap-2">
+                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={save} className="px-4 shadow-sm">
+                  <CIcon icon={cilSave} className="me-2" />
+                  {t('Save Changes')}
+                </CButton>
+              </div>
+            )}
+          </div>
+        </CForm>
       </CCol>
 
       <ModalDelete
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
         onConfirm={confirmDelete}
-        title={t('Delete user')}
-        message={t('Are you sure you want to delete this user? This action cannot be undone.')}
+        title={t('Delete Professional')}
+        message={t('Are you sure you want to delete this professional? This action cannot be undone.')}
       />
     </CRow>
   )
 }
 
-export default UserDetails
+export default EditProfessional

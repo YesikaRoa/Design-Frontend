@@ -89,7 +89,7 @@ const EditMedicalHistory = () => {
     if (!medicalHistory || !medicalHistory.id) {
       Notifications.showAlert(
         setAlert,
-        'Cannot save because the medical history ID is not valid.',
+        t('Cannot save because the medical history ID is not valid.'),
         'danger',
       )
       return
@@ -125,7 +125,7 @@ const EditMedicalHistory = () => {
     }
 
     if (Object.keys(changedFields).length === 0) {
-      Notifications.showAlert(setAlert, 'No changes to save.', 'info')
+      Notifications.showAlert(setAlert, t('No changes to save.'), 'info')
       return
     }
 
@@ -184,7 +184,7 @@ const EditMedicalHistory = () => {
   }
 
   if (!medicalHistory && (loading || apiLoading)) return null // Prevent crash if no data yet but still loading basic info
-  if (!medicalHistory) return <p>Medical history not found.</p>
+  if (!medicalHistory) return <p>{t('Medical history not found.')}</p>
 
   return (
     <CRow className="justify-content-center edit-medical-history-page">
@@ -218,7 +218,7 @@ const EditMedicalHistory = () => {
               </div>
               {medicalHistory?.updated_at && (
                 <div className="mt-2 text-muted-subtle" style={{ fontSize: '0.75rem' }}>
-                  <strong>{t('Last updated')}:</strong> {new Date(medicalHistory.updated_at).toLocaleString()}
+                  <strong>{t('Last Updated')}:</strong> {new Date(medicalHistory.updated_at).toLocaleString()}
                 </div>
               )}
             </CCardBody>

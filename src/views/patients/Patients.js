@@ -11,6 +11,7 @@ import { formatDate } from '../../utils/dateUtils'
 import '../users/styles/users.css'
 import '../users/styles/filter.css'
 import { useTranslation } from 'react-i18next'
+import PremiumInfoContent from '../../components/PremiumInfoContent'
 
 import {
   CTable,
@@ -55,6 +56,32 @@ export const Patients = () => {
   const [userToDelete, setUserToDelete] = useState(null)
   const token = localStorage.getItem('authToken')
   const [formDataState, setFormData] = useState({})
+
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
 
   const { request, loading } = useApi()
   useEffect(() => {
@@ -467,14 +494,15 @@ export const Patients = () => {
               {users === null ||
               (loading && (!users || users.length === 0)) ||
               (!showEmptyMessage && filteredUsers.length === 0) ? (
-                // === Skeleton Loader ===
                 // Simulamos 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
-                    {/* ColSpan es 6 para cubrir todas las columnas */}
-                    <CTableDataCell colSpan={6}>
-                      <div className="skeleton-row"></div> {/* Aplica la animación CSS */}
-                    </CTableDataCell>
+                    {/* Renderizamos 6 celdas individuales para mantener el ancho de las columnas */}
+                    {Array.from({ length: 6 }).map((_, cellIndex) => (
+                      <CTableDataCell key={cellIndex}>
+                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                      </CTableDataCell>
+                    ))}
                   </CTableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
@@ -535,41 +563,7 @@ export const Patients = () => {
         onClose={() => setInfoVisible(false)} // Cierra la modal
         title={t('Patient information')}
         content={
-          selectedPatient ? (
-            <div>
-              <p>
-                <strong>{t('First name')}:</strong> {selectedPatient.first_name}
-              </p>
-              <p>
-                <strong>{t('Last name')}:</strong> {selectedPatient.last_name}
-              </p>
-              <p>
-                <strong>{t('Email')}:</strong> {selectedPatient.email}
-              </p>
-              <p>
-                <strong>{t('Address')}:</strong> {selectedPatient.address || 'No address available'}
-              </p>
-              <p>
-                <strong>{t('Phone')}:</strong> {selectedPatient.phone || 'No phone available'}
-              </p>
-              <p>
-                <strong>{t('Birth Date')}:</strong>{' '}
-                {formatDate(selectedPatient.birth_date, 'DATE') || 'No birth date available'}
-              </p>
-              <p>
-                <strong>{t('Gender')}:</strong> {selectedPatient.gender === 'F' ? 'Female' : 'Male'}
-              </p>
-              <p>
-                <strong>{t('Status')}:</strong> {selectedPatient.status}
-              </p>
-              <p>
-                <strong>{t('Medical Data')}:</strong>{' '}
-                {selectedPatient.medical_data || 'No medical data'}
-              </p>
-            </div>
-          ) : (
-            <p>{t('No information available')}.</p>
-          )
+          <PremiumInfoContent type="patient" data={selectedPatient} colorScheme={colorScheme} />
         }
       />
       <ModalAdd

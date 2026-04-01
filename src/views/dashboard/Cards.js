@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import styles from './Styles.css/Cards.module.css'
 import useRole from '../../hooks/useRole'
 import useApi from '../../hooks/useApi'
+import Skeleton from '@mui/material/Skeleton'
+
 const Cards = () => {
   const role = useRole()
 
@@ -127,9 +129,11 @@ const Cards = () => {
         >
           <CCardBody>
             {loading ? (
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
+              <>
+                <Skeleton animation="wave" height={40} width="40%" sx={{ mb: 1, bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+                <Skeleton animation="wave" height={24} width="70%" sx={{ mb: 1, bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+                <Skeleton animation="wave" height={16} width="90%" sx={{ bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+              </>
             ) : (
               <>
                 <div className="fs-3 fw-bold">{data.attendedPatients}</div>
@@ -152,9 +156,11 @@ const Cards = () => {
         >
           <CCardBody>
             {loading ? (
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
+              <>
+                <Skeleton animation="wave" height={40} width="40%" sx={{ mb: 1, bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+                <Skeleton animation="wave" height={24} width="70%" sx={{ mb: 1, bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+                <Skeleton animation="wave" height={16} width="90%" sx={{ bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+              </>
             ) : (
               <>
                 <div className="fs-3 fw-bold">{data.newPatients}</div>
@@ -177,9 +183,11 @@ const Cards = () => {
         >
           <CCardBody>
             {loading ? (
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
+              <>
+                <Skeleton animation="wave" height={40} width="40%" sx={{ mb: 1, bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+                <Skeleton animation="wave" height={24} width="70%" sx={{ mb: 1, bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+                <Skeleton animation="wave" height={16} width="90%" sx={{ bgcolor: colorScheme === 'dark' ? 'rgba(255,255,255,0.11)' : undefined }} />
+              </>
             ) : (
               <>
                 {role === 3 ? (

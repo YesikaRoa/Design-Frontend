@@ -11,23 +11,21 @@ import {
   CButton,
   CCard,
   CCardBody,
-  CCardText,
-  CCardTitle,
+  CCardHeader,
   CCol,
   CRow,
-  CFormInput,
   CFormTextarea,
   CFormSelect,
-  CSpinner,
   CAlert,
   CModal,
   CModalBody,
   CModalFooter,
   CModalHeader,
   CModalTitle,
+  CForm,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPencil, cilSave, cilTrash } from '@coreui/icons'
+import { cilPencil, cilSave, cilTrash, cilCalendar, cilNotes } from '@coreui/icons'
 import Notifications from '../../components/Notifications'
 import useApi from '../../hooks/useApi'
 
@@ -40,9 +38,7 @@ const EditAppointment = () => {
     if (typeof window === 'undefined') return 'light'
     const ds = document.documentElement.dataset.coreuiTheme
     if (ds) return ds
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
 
   useEffect(() => {
@@ -73,6 +69,16 @@ const EditAppointment = () => {
   const token = localStorage.getItem('authToken')
   const { request, loading: apiLoading } = useApi()
 
+  const asyncSelectStyles = {
+    control: (p) => ({ ...p, background: colorScheme === 'dark' ? '#23262b' : p.background }),
+    singleValue: (p) => ({ ...p, color: colorScheme === 'dark' ? '#fff' : p.color }),
+    input: (p) => ({ ...p, color: colorScheme === 'dark' ? '#fff' : p.color }),
+    placeholder: (p) => ({ ...p, color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : p.color }),
+    menu: (p) => ({ ...p, zIndex: 9999, background: colorScheme === 'dark' ? '#2b2f33' : p.background }),
+    menuList: (p) => ({ ...p, background: colorScheme === 'dark' ? '#2b2f33' : p.background }),
+    option: (p, s) => ({ ...p, background: s.isFocused ? (colorScheme === 'dark' ? '#3a3f44' : p.background) : (colorScheme === 'dark' ? '#2b2f33' : p.background), color: colorScheme === 'dark' ? '#fff' : p.color }),
+  }
+
   useEffect(() => {
     setLoading(true)
     const storedAppointment = localStorage.getItem('selectedAppointment')
@@ -94,19 +100,12 @@ const EditAppointment = () => {
     request('get', '/appointments/cities')
       .then(async (res) => {
         let citiesArr = res.data && res.data.cities ? res.data.cities : []
-        if (
-          parsed &&
-          parsed.city_id &&
-          !citiesArr.some((c) => String(c.id) === String(parsed.city_id))
-        ) {
+        if (parsed && parsed.city_id && !citiesArr.some((c) => String(c.id) === String(parsed.city_id))) {
           if (parsed.city_name) {
             citiesArr = [...citiesArr, { id: parsed.city_id, name: parsed.city_name }]
           } else {
             try {
-              const resCity = await request(
-                'get',
-                `/appointments/cities?search=${parsed.city_id}&limit=1`,
-              )
+              const resCity = await request('get', `/appointments/cities?search=${parsed.city_id}&limit=1`)
               if (resCity.data && resCity.data.cities && resCity.data.cities.length > 0) {
                 citiesArr = [...citiesArr, resCity.data.cities[0]]
               }
@@ -119,56 +118,30 @@ const EditAppointment = () => {
       .finally(() => setCitiesLoading(false))
   }, [location])
 
-  const handleFieldsDisabled = () => {
-    setFieldsDisabled(!fieldsDisabled)
-  }
+  const handleFieldsDisabled = () => setFieldsDisabled((prev) => !prev)
 
   const saveChanges = async () => {
     if (!appointment || !appointment.id) {
-      console.error('The appointment ID is not valid.')
-      Notifications.showAlert(
-        setAlert,
-        'Cannot save because the appointment ID is not valid.',
-        'danger',
-      )
+      Notifications.showAlert(setAlert, 'Cannot save because the appointment ID is not valid.', 'danger')
       return
     }
-    // Solo enviar los campos permitidos por el schema
-    const allowedFields = [
-      'scheduled_at',
-      'status',
-      'notes',
-      'reason_for_visit',
-      'has_medical_record',
-      'city_id',
-    ]
+    const allowedFields = ['scheduled_at', 'status', 'notes', 'reason_for_visit', 'has_medical_record', 'city_id']
     const updates = {}
     allowedFields.forEach((field) => {
       let value = editedAppointment[field]
-      if (field === 'city_id' && value !== undefined && value !== null && value !== '') {
-        value = Number(value)
-      }
-      if (value !== undefined && value !== null && value !== '') {
-        updates[field] = value
-      }
+      if (field === 'city_id' && value !== undefined && value !== null && value !== '') value = Number(value)
+      if (value !== undefined && value !== null && value !== '') updates[field] = value
     })
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
       const res = await request('put', `/appointments/${appointment.id}`, updates, headers)
       if (res.success) {
-        // Después de guardar, obtener los datos completos y enriquecidos
         let fullData = null
         try {
           const resFull = await request('get', `/appointments/${appointment.id}`, null, headers)
-          if (resFull.success && resFull.data) {
-            fullData = resFull.data
-          } else if (res.data && res.data.appointment) {
-            fullData = res.data.appointment
-          }
+          fullData = resFull.success && resFull.data ? resFull.data : (res.data && res.data.appointment ? res.data.appointment : null)
         } catch {
-          if (res.data && res.data.appointment) {
-            fullData = res.data.appointment
-          }
+          fullData = res.data && res.data.appointment ? res.data.appointment : null
         }
         if (fullData) {
           setAppointment(fullData)
@@ -177,10 +150,9 @@ const EditAppointment = () => {
         }
         Notifications.showAlert(setAlert, t('Changes saved successfully!'), 'info')
       } else {
-        throw new Error(res.message || 'Error al guardar los cambios.')
+        throw new Error(res.message || 'Error saving changes.')
       }
     } catch (error) {
-      console.error(error)
       Notifications.showAlert(setAlert, t('Error saving changes.'), 'danger')
     }
     handleFieldsDisabled()
@@ -192,410 +164,293 @@ const EditAppointment = () => {
       const res = await request('delete', `/appointments/${appointment.id}`, null, headers)
       if (res.success) {
         Notifications.showAlert(setAlert, t('Appointment deleted successfully.'), 'warning', 3500)
-
-        setTimeout(() => {
-          navigate('/appointments')
-        }, 5000)
+        setTimeout(() => navigate('/appointments'), 5000)
       } else {
         throw new Error(res.message || 'Error deleting the appointment.')
       }
     } catch (error) {
-      console.error(error)
       Notifications.showAlert(setAlert, 'There was an error deleting the appointment.', 'danger')
     }
     setDeleteModalVisible(false)
+  }
+
+  const quickStatusChange = async (newStatus) => {
+    try {
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const res = await request('put', `/appointments/status/${appointment.id}`, { status: newStatus }, headers)
+      if (res.success) {
+        let fullData = null
+        try {
+          const resFull = await request('get', `/appointments/${appointment.id}`, null, headers)
+          fullData = resFull.success && resFull.data ? resFull.data : (res.data && res.data.appointment ? res.data.appointment : null)
+        } catch {
+          fullData = res.data && res.data.appointment ? res.data.appointment : null
+        }
+        if (fullData) {
+          setAppointment(fullData)
+          setEditedAppointment({ ...fullData })
+          localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
+        }
+        Notifications.showAlert(setAlert, `Status changed to ${newStatus}.`, 'success')
+      }
+    } catch (error) {
+      Notifications.showAlert(setAlert, 'There was an error changing the appointment status.', 'danger')
+    }
   }
 
   if (!appointment && (loading || apiLoading)) return null
   if (!appointment) return <p>Appointment not found.</p>
 
   return (
-    <CRow>
-      <CCol md={12}>
-        <h3 className="mb-4">{t('Edit Appointment')}</h3>
-        {alert && (
-          <CAlert color={alert.type} className="alert-fixed">
-            {alert.message}
-          </CAlert>
-        )}
+    <CRow className="justify-content-center">
+      {/* Alert — at CRow level so position:fixed works correctly */}
+      {alert && (
+        <CAlert color={alert.type} className="alert-fixed">
+          {alert.message}
+        </CAlert>
+      )}
+
+      {/* Page Header */}
+      <CCol md={12} className="mb-4">
+        <h3 className="fw-bold text-primary-emphasis d-flex align-items-center">
+          <CIcon icon={cilPencil} size="lg" className="me-2" />
+          {t('Edit Appointment')}
+        </h3>
+        <p className="text-muted small">{t('Appointment')} #{appointment.id}</p>
+        <hr className="my-3 opacity-10" />
       </CCol>
-      <CCol md={4}>
-        <CCard>
-          <CCardBody>
-            <CCardTitle className="text-primary">
-              {t('Patient')}: {appointment.patient_full_name}
-            </CCardTitle>
-            <CCardText>
-              <strong>{t('Professional')}:</strong> {appointment.professional_full_name} <br />
-              <strong>{t('Status')}:</strong> {appointment.status} <br />
-              <strong>{t('Date')}:</strong> {new Date(appointment.scheduled_at).toLocaleString()}{' '}
-              <br />
-              <strong>{t('City')}:</strong> {appointment.city_name} <br />
-            </CCardText>
-          </CCardBody>
-        </CCard>
-        <CCard className="mt-3">
-          <CCardBody>
-            <CCardTitle className="text-primary">{t('Change Status')}</CCardTitle>
-            <div className="mb-3">
+
+      {/* Sidebar */}
+      <CCol lg={3}>
+        <div className="sticky-lg-top" style={{ top: '1.5rem', zIndex: 10 }}>
+          <CCard className="mb-3 shadow-sm border-0 overflow-hidden">
+            <div className="p-1" style={{ backgroundColor: 'var(--cui-primary)' }}></div>
+            <CCardBody>
+              <h6 className="text-primary fw-bold text-uppercase ls-1 mb-3">
+                {t('Appointment Information')}
+              </h6>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Patient')}</label>
+                <div className="fw-bold fs-6 text-primary-emphasis">{appointment.patient_full_name}</div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Professional')}</label>
+                <div className="fw-medium">{appointment.professional_full_name}</div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Date')}</label>
+                <div className="small">{new Date(appointment.scheduled_at).toLocaleString()}</div>
+              </div>
+              <div className="mb-3">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('City')}</label>
+                <div className="fw-medium">{appointment.city_name}</div>
+              </div>
+              <div className="mb-2">
+                <label className="small text-muted text-uppercase fw-bold d-block">{t('Status')}</label>
+                <div className="fw-medium">{appointment.status}</div>
+              </div>
+            </CCardBody>
+          </CCard>
+
+          {/* Quick Status Change */}
+          <CCard className="shadow-sm border-0 mb-3">
+            <CCardBody>
+              <h6 className="text-primary fw-bold text-uppercase ls-1 mb-2">{t('Change Status')}</h6>
               <CFormSelect
                 id="quickStatusChange"
                 value={appointment.status}
-                onChange={async (e) => {
-                  const updatedStatus = e.target.value
-                  const headers = token ? { Authorization: `Bearer ${token}` } : {}
-                  try {
-                    const resStatus = await request(
-                      'put',
-                      `/appointments/status/${appointment.id}`,
-                      { status: updatedStatus },
-                      headers,
-                    )
-                    if (resStatus.success) {
-                      let fullData = null
-                      try {
-                        const resFull = await request(
-                          'get',
-                          `/appointments/${appointment.id}`,
-                          null,
-                          headers,
-                        )
-                        if (resFull.success && resFull.data) {
-                          fullData = resFull.data
-                        } else if (resStatus.data && resStatus.data.appointment) {
-                          fullData = resStatus.data.appointment
-                        }
-                      } catch {
-                        if (resStatus.data && resStatus.data.appointment) {
-                          fullData = resStatus.data.appointment
-                        }
-                      }
-                      if (fullData) {
-                        setAppointment(fullData)
-                        setEditedAppointment({ ...fullData })
-                        localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
-                      }
-                      // Actualizar cache del dashboard luego de cambio de estado
-
-                      Notifications.showAlert(
-                        setAlert,
-                        `Status changed to ${updatedStatus}.`,
-                        'success',
-                      )
-                    } else {
-                      throw new Error('Error changing the appointment status.')
-                    }
-                  } catch (error) {
-                    console.error('Error changing status:', error)
-                    Notifications.showAlert(
-                      setAlert,
-                      'There was an error changing the appointment status.',
-                      'danger',
-                    )
-                  }
-                }}
-                className="mb-3"
+                onChange={(e) => quickStatusChange(e.target.value)}
+                size="sm"
               >
                 <option value="pending">{t('Pending')}</option>
                 <option value="confirmed">{t('Confirmed')}</option>
                 <option value="canceled">{t('Canceled')}</option>
                 <option value="completed">{t('Completed')}</option>
               </CFormSelect>
-            </div>
-            <CButton color="danger" onClick={() => setDeleteModalVisible(true)} className="mt-2">
-              <CIcon icon={cilTrash} className="me-2" />
-              {t('Delete Appointment')}
-            </CButton>
-          </CCardBody>
-        </CCard>
-      </CCol>
-      <CCol md={8}>
-        <CCard className=" mb-4">
-          <CCardBody>
-            <CCardTitle>{t('Edit Information')}</CCardTitle>
+            </CCardBody>
+          </CCard>
 
-            {/* Scheduled At con DateTimePicker */}
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DateTimePicker
-                label={t('Scheduled At')}
-                value={
-                  editedAppointment.scheduled_at ? new Date(editedAppointment.scheduled_at) : null
-                }
-                onChange={(newValue) =>
-                  setEditedAppointment({
-                    ...editedAppointment,
-                    scheduled_at: newValue ? newValue.toISOString() : '',
-                  })
-                }
-                format="dd/MM/yyyy HH:mm"
-                slotProps={{
-                  popper: {
-                    disablePortal: true,
-                    modifiers: [{ name: 'preventOverflow', enabled: true }],
-                  },
-                  textField: {
-                    variant: 'standard',
-                    fullWidth: true,
-                    className: 'mb-3',
-                    disabled: fieldsDisabled,
-                    InputLabelProps: {
-                      style: {
-                        color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined,
-                      },
-                    },
-                    InputProps: {
-                      style: { color: colorScheme === 'dark' ? '#fff' : undefined },
-                    },
-                    inputProps: {
-                      style: { color: colorScheme === 'dark' ? '#fff' : undefined },
-                    },
-                    FormHelperTextProps: {
-                      style: {
-                        color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined,
-                      },
-                    },
-                  },
-                }}
-                disabled={fieldsDisabled}
-              />
-            </LocalizationProvider>
-
-            {/* Status */}
-            <CFormSelect
-              id="status"
-              floatingLabel={t('Status')}
-              value={editedAppointment.status}
-              onChange={async (e) => {
-                const newStatus = e.target.value
-                setEditedAppointment({ ...editedAppointment, status: newStatus })
-                if (!fieldsDisabled) return // Solo guardar si está en modo edición
-                try {
-                  const headers = token ? { Authorization: `Bearer ${token}` } : {}
-                  const resStatus = await request(
-                    'put',
-                    `/appointments/status/${appointment.id}`,
-                    { status: newStatus },
-                    headers,
-                  )
-                  if (resStatus.success) {
-                    let fullData = null
-                    try {
-                      const resFull = await request(
-                        'get',
-                        `/appointments/${appointment.id}`,
-                        null,
-                        headers,
-                      )
-                      if (resFull.success && resFull.data) {
-                        fullData = resFull.data
-                      } else if (resStatus.data && resStatus.data.appointment) {
-                        fullData = resStatus.data.appointment
-                      }
-                    } catch {
-                      if (resStatus.data && resStatus.data.appointment) {
-                        fullData = resStatus.data.appointment
-                      }
-                    }
-                    if (fullData) {
-                      setAppointment(fullData)
-                      setEditedAppointment({ ...fullData })
-                      localStorage.setItem('selectedAppointment', JSON.stringify(fullData))
-                    }
-                    Notifications.showAlert(setAlert, 'Status updated successfully.', 'success')
-                  } else {
-                    throw new Error('Error updating status.')
-                  }
-                } catch (error) {
-                  Notifications.showAlert(
-                    setAlert,
-                    'There was an error updating the status.',
-                    'danger',
-                  )
-                }
-              }}
-              className="mb-3"
-              disabled={fieldsDisabled}
-            >
-              <option value="pending">{t('Pending')}</option>
-              <option value="confirmed">{t('Confirmed')}</option>
-              <option value="canceled">{t('Canceled')}</option>
-              <option value="completed">{t('Completed')}</option>
-            </CFormSelect>
-
-            {/* City con AsyncSelect */}
-            <div className="mb-3">
-              <AsyncSelect
-                cacheOptions
-                defaultOptions={cities.slice(0, 5).map((city) => ({
-                  label: city.name,
-                  value: city.id,
-                }))}
-                value={(() => {
-                  // Buscar la ciudad seleccionada en el array cities
-                  const found = cities.find(
-                    (city) => String(city.id) === String(editedAppointment.city_id),
-                  )
-                  if (found) {
-                    return { label: found.name, value: found.id }
-                  }
-                  // Si no está en cities pero hay city_id, mostrar solo el id
-                  if (editedAppointment.city_id) {
-                    return {
-                      label: `ID: ${editedAppointment.city_id}`,
-                      value: editedAppointment.city_id,
-                    }
-                  }
-                  return null
-                })()}
-                loadOptions={async (inputValue) => {
-                  if (!inputValue) {
-                    return cities.slice(0, 5).map((city) => ({
-                      label: city.name,
-                      value: city.id,
-                    }))
-                  }
-                  try {
-                    const res = await request(
-                      'get',
-                      `/appointments/cities?search=${encodeURIComponent(inputValue)}&limit=10`,
-                    )
-                    if (res.success && res.data && res.data.cities) {
-                      return res.data.cities.map((city) => ({
-                        label: city.name,
-                        value: city.id,
-                      }))
-                    }
-                    return []
-                  } catch {
-                    return []
-                  }
-                }}
-                onChange={async (option) => {
-                  setEditedAppointment((prev) => ({
-                    ...prev,
-                    city_id: option ? option.value : '',
-                  }))
-                  // Si la ciudad seleccionada no está en cities, la agregamos
-                  if (option && !cities.some((c) => String(c.id) === String(option.value))) {
-                    try {
-                      const res = await request(
-                        'get',
-                        `/appointments/cities?search=${encodeURIComponent(option.label)}&limit=1`,
-                      )
-                      if (
-                        res.success &&
-                        res.data &&
-                        res.data.cities &&
-                        res.data.cities.length > 0
-                      ) {
-                        setCities((prev) => [...prev, res.data.cities[0]])
-                      }
-                    } catch {}
-                  }
-                }}
-                placeholder={citiesLoading ? 'Cargando ciudades...' : 'Buscar ciudad...'}
-                isClearable
-                isDisabled={fieldsDisabled || citiesLoading}
-                styles={{
-                  control: (provided) => ({
-                    ...provided,
-                    background: colorScheme === 'dark' ? '#23262b' : provided.background,
-                    color: colorScheme === 'dark' ? '#fff' : provided.color,
-                  }),
-                  singleValue: (provided) => ({
-                    ...provided,
-                    color: colorScheme === 'dark' ? '#fff' : provided.color,
-                  }),
-                  input: (provided) => ({
-                    ...provided,
-                    color: colorScheme === 'dark' ? '#fff' : provided.color,
-                  }),
-                  placeholder: (provided) => ({
-                    ...provided,
-                    color: colorScheme === 'dark' ? 'rgba(255,255,255,0.6)' : provided.color,
-                  }),
-                  menu: (provided) => ({
-                    ...provided,
-                    zIndex: 9999,
-                    background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-                  }),
-                  menuList: (provided) => ({
-                    ...provided,
-                    background: colorScheme === 'dark' ? '#2b2f33' : provided.background,
-                  }),
-                  option: (provided, state) => ({
-                    ...provided,
-                    background: state.isFocused
-                      ? colorScheme === 'dark'
-                        ? '#3a3f44'
-                        : provided.background
-                      : colorScheme === 'dark'
-                        ? '#2b2f33'
-                        : provided.background,
-                    color: colorScheme === 'dark' ? '#fff' : provided.color,
-                  }),
-                }}
-              />
-            </div>
-
-            <CFormTextarea
-              id="notes"
-              floatingLabel={t('Notes')}
-              value={editedAppointment.notes}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, notes: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormTextarea
-              id="reason_for_visit"
-              floatingLabel={t('Reason for visit')}
-              value={editedAppointment.reason_for_visit}
-              onChange={(e) =>
-                setEditedAppointment({ ...editedAppointment, reason_for_visit: e.target.value })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            />
-            <CFormSelect
-              id="has_medical_record"
-              floatingLabel={t('Has Medical Record')}
-              value={
-                editedAppointment.has_medical_record === true ||
-                editedAppointment.has_medical_record === 'true'
-                  ? 'true'
-                  : editedAppointment.has_medical_record === false ||
-                      editedAppointment.has_medical_record === 'false'
-                    ? 'false'
-                    : ''
-              }
-              onChange={(e) =>
-                setEditedAppointment({
-                  ...editedAppointment,
-                  has_medical_record: e.target.value === 'true',
-                })
-              }
-              className="mb-3"
-              disabled={fieldsDisabled}
-            >
-              <option value="">Seleccione una opción</option>
-              <option value="true">Sí</option>
-              <option value="false">No</option>
-            </CFormSelect>
-            <CButton color="primary" onClick={fieldsDisabled ? handleFieldsDisabled : saveChanges}>
-              <CIcon icon={fieldsDisabled ? cilPencil : cilSave} className="me-2" />
-              {fieldsDisabled ? t('Edit') : t('Save')}
-            </CButton>
-          </CCardBody>
-        </CCard>
+          <CCard className="shadow-sm border-0 mb-4">
+            <CCardBody className="p-2">
+              <CButton
+                color="danger"
+                variant="ghost"
+                className="w-100 text-start d-flex align-items-center"
+                onClick={() => setDeleteModalVisible(true)}
+              >
+                <CIcon icon={cilTrash} className="me-2" />
+                {t('Delete Appointment')}
+              </CButton>
+            </CCardBody>
+          </CCard>
+        </div>
       </CCol>
 
-      <CModal
-        alignment="center"
-        visible={deleteModalVisible}
-        onClose={() => setDeleteModalVisible(false)}
-      >
+      {/* Main Form */}
+      <CCol lg={9}>
+        <CForm>
+          {/* Section: Date & Details */}
+          <CCard className="mb-4 shadow-sm border-0">
+            <CCardHeader className="bg-transparent border-0 pt-4 px-4 d-flex align-items-center">
+              <CIcon icon={cilCalendar} className="me-2 text-primary" size="lg" />
+              <h5 className="mb-0 fw-bold">{t('Appointment Details')}</h5>
+            </CCardHeader>
+            <CCardBody className="p-4">
+              <CRow className="g-4">
+                <CCol md={12}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DateTimePicker
+                      label={t('Scheduled At')}
+                      value={editedAppointment.scheduled_at ? new Date(editedAppointment.scheduled_at) : null}
+                      onChange={(newValue) =>
+                        setEditedAppointment({ ...editedAppointment, scheduled_at: newValue ? newValue.toISOString() : '' })
+                      }
+                      format="dd/MM/yyyy HH:mm"
+                      slotProps={{
+                        popper: { disablePortal: true, modifiers: [{ name: 'preventOverflow', enabled: true }] },
+                        textField: {
+                          variant: 'standard',
+                          fullWidth: true,
+                          disabled: fieldsDisabled,
+                          InputLabelProps: { style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined } },
+                          InputProps: { style: { color: colorScheme === 'dark' ? '#fff' : undefined } },
+                          inputProps: { style: { color: colorScheme === 'dark' ? '#fff' : undefined } },
+                        },
+                      }}
+                      disabled={fieldsDisabled}
+                    />
+                  </LocalizationProvider>
+                </CCol>
+                <CCol md={6}>
+                  <CFormSelect
+                    id="status"
+                    floatingLabel={t('Status')}
+                    value={editedAppointment.status}
+                    onChange={(e) => setEditedAppointment({ ...editedAppointment, status: e.target.value })}
+                    disabled={fieldsDisabled}
+                  >
+                    <option value="pending">{t('Pending')}</option>
+                    <option value="confirmed">{t('Confirmed')}</option>
+                    <option value="canceled">{t('Canceled')}</option>
+                    <option value="completed">{t('Completed')}</option>
+                  </CFormSelect>
+                </CCol>
+                <CCol md={6}>
+                  <CFormSelect
+                    id="has_medical_record"
+                    floatingLabel={t('Has Medical Record')}
+                    value={
+                      editedAppointment.has_medical_record === true || editedAppointment.has_medical_record === 'true'
+                        ? 'true'
+                        : editedAppointment.has_medical_record === false || editedAppointment.has_medical_record === 'false'
+                        ? 'false'
+                        : ''
+                    }
+                    onChange={(e) => setEditedAppointment({ ...editedAppointment, has_medical_record: e.target.value === 'true' })}
+                    disabled={fieldsDisabled}
+                  >
+                    <option value="">Seleccione una opción</option>
+                    <option value="true">Sí</option>
+                    <option value="false">No</option>
+                  </CFormSelect>
+                </CCol>
+                <CCol md={12}>
+                  <label className="form-label fw-semibold small text-uppercase text-muted mb-1">{t('City')}</label>
+                  <AsyncSelect
+                    cacheOptions
+                    defaultOptions={cities.slice(0, 5).map((city) => ({ label: city.name, value: city.id }))}
+                    value={(() => {
+                      const found = cities.find((city) => String(city.id) === String(editedAppointment.city_id))
+                      if (found) return { label: found.name, value: found.id }
+                      if (editedAppointment.city_id) return { label: `ID: ${editedAppointment.city_id}`, value: editedAppointment.city_id }
+                      return null
+                    })()}
+                    loadOptions={async (inputValue) => {
+                      if (!inputValue) return cities.slice(0, 5).map((city) => ({ label: city.name, value: city.id }))
+                      try {
+                        const res = await request('get', `/appointments/cities?search=${encodeURIComponent(inputValue)}&limit=10`)
+                        return res.success && res.data && res.data.cities ? res.data.cities.map((city) => ({ label: city.name, value: city.id })) : []
+                      } catch { return [] }
+                    }}
+                    onChange={async (option) => {
+                      setEditedAppointment((prev) => ({ ...prev, city_id: option ? option.value : '' }))
+                      if (option && !cities.some((c) => String(c.id) === String(option.value))) {
+                        try {
+                          const res = await request('get', `/appointments/cities?search=${encodeURIComponent(option.label)}&limit=1`)
+                          if (res.success && res.data && res.data.cities && res.data.cities.length > 0) {
+                            setCities((prev) => [...prev, res.data.cities[0]])
+                          }
+                        } catch {}
+                      }
+                    }}
+                    placeholder={citiesLoading ? 'Cargando ciudades...' : 'Buscar ciudad...'}
+                    isClearable
+                    isDisabled={fieldsDisabled || citiesLoading}
+                    styles={asyncSelectStyles}
+                  />
+                </CCol>
+              </CRow>
+            </CCardBody>
+          </CCard>
+
+          {/* Section: Notes */}
+          <CCard className="mb-4 shadow-sm border-0">
+            <CCardHeader className="bg-transparent border-0 pt-4 px-4 d-flex align-items-center">
+              <CIcon icon={cilNotes} className="me-2 text-primary" size="lg" />
+              <h5 className="mb-0 fw-bold">{t('Notes')}</h5>
+            </CCardHeader>
+            <CCardBody className="p-4">
+              <CRow className="g-4">
+                <CCol md={6}>
+                  <CFormTextarea
+                    id="notes"
+                    floatingLabel={t('Notes')}
+                    value={editedAppointment.notes || ''}
+                    onChange={(e) => setEditedAppointment({ ...editedAppointment, notes: e.target.value })}
+                    disabled={fieldsDisabled}
+                    rows={4}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormTextarea
+                    id="reason_for_visit"
+                    floatingLabel={t('Reason for visit')}
+                    value={editedAppointment.reason_for_visit || ''}
+                    onChange={(e) => setEditedAppointment({ ...editedAppointment, reason_for_visit: e.target.value })}
+                    disabled={fieldsDisabled}
+                    rows={4}
+                  />
+                </CCol>
+              </CRow>
+            </CCardBody>
+          </CCard>
+
+          {/* Form Actions */}
+          <div className="d-flex justify-content-end gap-2 mb-5">
+            <CButton color="secondary" variant="ghost" onClick={() => navigate('/appointments')}>
+              {t('Cancel')}
+            </CButton>
+            {fieldsDisabled ? (
+              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                <CIcon icon={cilPencil} className="me-2" />
+                {t('Edit')}
+              </CButton>
+            ) : (
+              <div className="d-flex gap-2">
+                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={saveChanges} className="px-4 shadow-sm">
+                  <CIcon icon={cilSave} className="me-2" />
+                  {t('Save Changes')}
+                </CButton>
+              </div>
+            )}
+          </div>
+        </CForm>
+      </CCol>
+
+      <CModal alignment="center" visible={deleteModalVisible} onClose={() => setDeleteModalVisible(false)}>
         <CModalHeader>
           <CModalTitle>{t('Delete Appointment')}</CModalTitle>
         </CModalHeader>

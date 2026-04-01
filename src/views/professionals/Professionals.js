@@ -7,6 +7,7 @@ import ModalAdd from '../../components/ModalAdd'
 
 import Notifications from '../../components/Notifications'
 import { useTranslation } from 'react-i18next'
+import PremiumInfoContent from '../../components/PremiumInfoContent'
 
 import '../users/styles/users.css'
 import '../users/styles/filter.css'
@@ -55,6 +56,32 @@ export const Professionls = () => {
   const [specialties, setSpecialties] = useState([])
   const [formDataState, setFormData] = useState({})
   const token = localStorage.getItem('authToken')
+
+  const [colorScheme, setColorScheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light'
+    const ds = document.documentElement.dataset.coreuiTheme
+    if (ds) return ds
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onColorSchemeChange = () => {
+      const ds = document.documentElement.dataset.coreuiTheme
+      if (ds) setColorScheme(ds)
+      else if (window.matchMedia)
+        setColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    }
+    document.documentElement.addEventListener('ColorSchemeChange', onColorSchemeChange)
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')
+    mq && mq.addEventListener && mq.addEventListener('change', onColorSchemeChange)
+    return () => {
+      document.documentElement.removeEventListener('ColorSchemeChange', onColorSchemeChange)
+      mq && mq.removeEventListener && mq.removeEventListener('change', onColorSchemeChange)
+    }
+  }, [])
   const defaultAvatar = '/avatar.png'
 
   const fetchProfessionals = async () => {
@@ -161,7 +188,7 @@ export const Professionls = () => {
               biography: formData.biography,
               years_of_experience: Number(formData.years_of_experience),
             },
-            specialties: [formData.specialty_id, formData.subspecialty_id].filter(Boolean),
+            specialties: [formData.specialty_id, formData.subspecialty_id].filter((v) => v && v !== 'none'),
           },
           { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         )
@@ -271,15 +298,21 @@ export const Professionls = () => {
           name: 'specialty_id',
           label: 'Especialidad',
           type: 'select',
-          required: true,
-          options: specialties.specialties || [], // Opciones de specialties
+          required: false,
+          options: [
+            { label: 'Sin especialidad', value: 'none' },
+            ...(specialties.specialties || [])
+          ],
         },
         {
           name: 'subspecialty_id',
           label: 'Subespecialidad',
           type: 'select',
           required: false,
-          options: specialties.subspecialties || [], // Opciones de subspecialties
+          options: [
+            { label: 'Sin subespecialidad', value: 'none' },
+            ...(specialties.subspecialties || [])
+          ],
         },
         {
           name: 'biography',
@@ -510,10 +543,12 @@ export const Professionls = () => {
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
-                    {/* ColSpan es 6 para cubrir todas las columnas de la tabla */}
-                    <CTableDataCell colSpan={6}>
-                      <div className="skeleton-row"></div>
-                    </CTableDataCell>
+                    {/* Renderizamos 6 celdas individuales para mantener el ancho de las columnas */}
+                    {Array.from({ length: 6 }).map((_, cellIndex) => (
+                      <CTableDataCell key={cellIndex}>
+                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                      </CTableDataCell>
+                    ))}
                   </CTableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
@@ -574,63 +609,7 @@ export const Professionls = () => {
         onClose={() => setInfoVisible(false)}
         title={t('Professional information')}
         content={
-          selectedProfessional ? (
-            <div>
-              <p>
-                <strong>{t('First name')}:</strong> {selectedProfessional.first_name}
-              </p>
-              <p>
-                <strong>{t('Last name')}:</strong> {selectedProfessional.last_name}
-              </p>
-              <p>
-                <strong>{t('Email')}:</strong> {selectedProfessional.email}
-              </p>
-              <p>
-                <strong>{t('Professional Type')}: </strong>
-                {selectedProfessional.professional_type}
-              </p>
-              <p>
-                <strong>Specialty:</strong> {selectedProfessional.specialties?.join(', ') || 'N/A'}
-              </p>
-              <p>
-                <strong>Subspecialty:</strong>{' '}
-                {selectedProfessional.subspecialties?.join(', ') || 'N/A'}
-              </p>
-              <p>
-                <strong>{t('Address')}:</strong>{' '}
-                {selectedProfessional.address || 'No address available'}
-              </p>
-              <p>
-                <strong>{t('Phone')}:</strong> {selectedProfessional.phone || 'No phone available'}
-              </p>
-              <p>
-                <strong>{t('Birth Date')}:</strong>{' '}
-                {formatDate(selectedProfessional.birth_date, 'DATE') || 'No birth date available'}
-              </p>
-              <p>
-                <strong>{t('Gender')}:</strong>{' '}
-                {selectedProfessional.gender === 'F' ? 'Female' : 'Male'}
-              </p>
-              <p>
-                <strong>{t('Status')}:</strong> {selectedProfessional.status}
-              </p>
-              <p>
-                <strong>{t('Biography')}:</strong> {selectedProfessional.biography || 'N/A'}
-              </p>
-              <p>
-                <strong>{t('Years of Experience')}:</strong>{' '}
-                {selectedProfessional.years_of_experience || 'N/A'}
-              </p>
-              <p>
-                <strong>{t('Created at')}:</strong>{' '}
-                {selectedProfessional.created_at
-                  ? new Date(selectedProfessional.created_at).toLocaleString()
-                  : 'N/A'}
-              </p>
-            </div>
-          ) : (
-            <p>{t('No information available')}</p>
-          )
+          <PremiumInfoContent type="professional" data={selectedProfessional} colorScheme={colorScheme} />
         }
       />
       <ModalAdd

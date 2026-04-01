@@ -29,8 +29,58 @@ html[data-coreui-theme='light'] .login-page-wrapper {
 }
 
 html[data-coreui-theme='dark'] .login-page-wrapper {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  background: linear-gradient(135deg, #090e17 0%, #111827 100%) !important;
 }
+
+/* Glowing orbs for frosted glass effect */
+.login-page-wrapper::before,
+.login-page-wrapper::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+  animation: pulseGlow 10s infinite alternate;
+  pointer-events: none;
+}
+
+html[data-coreui-theme='dark'] .login-page-wrapper::before {
+  width: 450px;
+  height: 450px;
+  background: rgba(59, 130, 246, 0.12); /* Blue glow - reduced opacity */
+  top: 5%;
+  left: 10%;
+}
+
+html[data-coreui-theme='dark'] .login-page-wrapper::after {
+  width: 400px;
+  height: 400px;
+  background: rgba(139, 92, 246, 0.12); /* Purple glow - reduced opacity */
+  bottom: 5%;
+  right: 15%;
+}
+
+html[data-coreui-theme='light'] .login-page-wrapper::before {
+  width: 450px;
+  height: 450px;
+  background: rgba(255, 255, 255, 0.25);
+  top: 15%;
+  left: 20%;
+}
+
+html[data-coreui-theme='light'] .login-page-wrapper::after {
+  width: 400px;
+  height: 400px;
+  background: rgba(147, 197, 253, 0.2);
+  bottom: 15%;
+  right: 20%;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.5; }
+  100% { transform: scale(1.05) translate(20px, -20px); opacity: 0.8; }
+}
+
 .btn-toggle {
   border-radius: 2rem !important;
   background: rgba(var(--cui-body-bg-rgb), 0.6) !important;
