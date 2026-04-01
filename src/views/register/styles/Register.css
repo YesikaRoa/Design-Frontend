@@ -95,8 +95,14 @@ html[data-coreui-theme='light'] .register-page-wrapper::after {
 }
 
 @keyframes pulseGlow {
-  0% { transform: scale(1) translate(0, 0); opacity: 0.5; }
-  100% { transform: scale(1.05) translate(20px, -20px); opacity: 0.8; }
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.05) translate(20px, -20px);
+    opacity: 0.8;
+  }
 }
 
 .btn-toggle {
@@ -137,18 +143,81 @@ html[data-coreui-theme='light'] .register-page-wrapper::after {
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
-  overflow: hidden;
+  overflow: visible; /* permitir dropdown/extras sin clipping */
 }
 
 .blur-card:hover,
 .register-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.16) !important;
+  transform: none !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16) !important;
 }
 
 html[data-coreui-theme='dark'] .blur-card {
   background: linear-gradient(150deg, rgba(30, 41, 59, 0.88), rgba(15, 23, 42, 0.8)) !important;
   border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+html[data-coreui-theme='dark'] .form-select,
+html[data-coreui-theme='dark'] .form-select:focus {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(148, 163, 184, 0.4) !important;
+  box-shadow: none !important;
+  appearance: none !important;
+}
+
+html[data-coreui-theme='dark'] .form-select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-coreui-theme='dark'] .form-select option:checked,
+html[data-coreui-theme='dark'] .form-select option:active {
+  background-color: rgba(var(--cui-primary-rgb), 0.35) !important;
+  color: #fff !important;
+}
+
+html[data-coreui-theme='dark'] .floating-input-group,
+html[data-coreui-theme='dark'] .floating-input-group:focus-within {
+  background: rgba(var(--cui-body-bg-rgb), 0.52) !important;
+  box-shadow: none !important;
+  border-color: rgba(var(--cui-body-color-rgb), 0.08) !important;
+}
+
+html[data-coreui-theme='dark'] .floating-input-group .form-select,
+html[data-coreui-theme='dark'] .floating-input-group .form-select:focus,
+html[data-coreui-theme='dark'] .floating-input-group .form-control,
+html[data-coreui-theme='dark'] .floating-input-group .form-control:focus,
+html[data-coreui-theme='dark'] input[type='date'],
+html[data-coreui-theme='dark'] input[type='date']:focus,
+html[data-coreui-theme='dark'] input[type='datetime-local'],
+html[data-coreui-theme='dark'] input[type='datetime-local']:focus {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(148, 163, 184, 0.4) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  appearance: none !important;
+  transition: none !important;
+}
+
+html[data-coreui-theme='dark'] .form-select::-ms-expand {
+  filter: invert(1) !important;
+}
+
+html[data-coreui-theme='dark'] input[type='date']::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  filter: none !important;
+}
+
+html[data-coreui-theme='dark'] .floating-input-group .form-select {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #f8fafc !important;
+}
+
+html[data-coreui-theme='dark'] .floating-input-group .form-select:focus {
+  background: rgba(15, 23, 42, 0.8) !important;
+  box-shadow: none !important;
 }
 
 .register-card-body {

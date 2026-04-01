@@ -55,8 +55,14 @@ body {
 }
 
 @keyframes slideInFromRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 .wrapper {
   width: 100%;
@@ -169,8 +175,14 @@ body {
   }
 
   @keyframes slideInFromBottom {
-    from { transform: translate(-50%, 100%); opacity: 0; }
-    to { transform: translate(-50%, 0); opacity: 1; }
+    from {
+      transform: translate(-50%, 100%);
+      opacity: 0;
+    }
+    to {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
   }
 }
 
@@ -235,9 +247,9 @@ body {
   height: 100%;
   width: 100%;
   background: linear-gradient(
-    90deg, 
-    rgba(56, 73, 219, 0) 0%, 
-    rgba(56, 73, 219, 1) 50%, 
+    90deg,
+    rgba(56, 73, 219, 0) 0%,
+    rgba(56, 73, 219, 1) 50%,
     rgba(56, 73, 219, 0) 100%
   );
   background-size: 200% 100%;
@@ -246,16 +258,20 @@ body {
 }
 
 @keyframes shimmer-top-bar {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Color adjustments for dark mode */
 [data-coreui-theme='dark'] .top-progress-bar-inner {
   background: linear-gradient(
-    90deg, 
-    rgba(93, 110, 255, 0) 0%, 
-    rgba(93, 110, 255, 1) 50%, 
+    90deg,
+    rgba(93, 110, 255, 0) 0%,
+    rgba(93, 110, 255, 1) 50%,
     rgba(93, 110, 255, 0) 100%
   );
   box-shadow: 0 0 10px rgba(93, 110, 255, 0.6);
@@ -277,11 +293,11 @@ html[data-coreui-theme='dark'] select {
   color-scheme: dark !important;
 }
 
-html[data-coreui-theme='dark'] input[type="date"]::-webkit-calendar-picker-indicator,
-html[data-coreui-theme='dark'] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-html[data-coreui-theme='dark'] input[type="time"]::-webkit-calendar-picker-indicator,
-html[data-coreui-theme='dark'] input[type="month"]::-webkit-calendar-picker-indicator,
-html[data-coreui-theme='dark'] .form-control[type="date"]::-webkit-calendar-picker-indicator {
+html[data-coreui-theme='dark'] input[type='date']::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type='datetime-local']::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type='time']::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] input[type='month']::-webkit-calendar-picker-indicator,
+html[data-coreui-theme='dark'] .form-control[type='date']::-webkit-calendar-picker-indicator {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ffffff"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>') !important;
   background-position: center !important;
   background-size: contain !important;
@@ -289,6 +305,52 @@ html[data-coreui-theme='dark'] .form-control[type="date"]::-webkit-calendar-pick
   opacity: 0.8 !important;
   filter: none !important;
   cursor: pointer;
+}
+
+/* Fix select dropdown appearance in dark mode */
+html[data-coreui-theme='dark'] .form-select {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+html[data-coreui-theme='dark'] .form-select:focus {
+  border-color: rgba(var(--cui-primary-rgb), 0.75) !important;
+  box-shadow: 0 0 0 0.25rem rgba(var(--cui-primary-rgb), 0.25) !important;
+  color-scheme: dark !important;
+  background-color: rgba(15, 23, 42, 0.85) !important;
+}
+
+html[data-coreui-theme='dark'] .form-control,
+html[data-coreui-theme='dark'] .form-control:focus,
+html[data-coreui-theme='dark'] input,
+html[data-coreui-theme='dark'] input:focus,
+html[data-coreui-theme='dark'] select,
+html[data-coreui-theme='dark'] select:focus {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+html[data-coreui-theme='dark'] .form-select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-coreui-theme='dark'] .form-select option:checked,
+html[data-coreui-theme='dark'] .form-select option:active {
+  background-color: rgba(var(--cui-primary-rgb), 0.35) !important;
+  color: #fff !important;
+}
+
+html[data-coreui-theme='dark'] .floating-input-group {
+  background: rgba(var(--cui-body-bg-rgb), 0.6) !important;
+}
+
+html[data-coreui-theme='dark'] .floating-input-group:focus-within {
+  background: rgba(var(--cui-body-bg-rgb), 0.76) !important;
 }
 
 /* ========================================================================= */
@@ -331,53 +393,84 @@ html:not([data-coreui-theme='dark']) {
 /* PREMIUM PASTEL ACTION BUTTONS (TABLES) FOR LIGHT MODE                     */
 /* ========================================================================= */
 html:not([data-coreui-theme='dark']) {
-  .table .btn, table .btn {
+  .table .btn,
+  table .btn {
     transition: all 0.2s ease-in-out;
     border: none !important;
   }
-  
-  .table .btn-primary, table .btn-primary {
+
+  .table .btn-primary,
+  table .btn-primary {
     background-color: #818cf8 !important; /* Medium Pastel Indigo */
     color: #ffffff !important;
   }
-  .table .btn-primary svg, table .btn-primary svg { fill: #ffffff !important; color: #ffffff !important; }
-  .table .btn-primary:hover, table .btn-primary:hover {
+  .table .btn-primary svg,
+  table .btn-primary svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+  }
+  .table .btn-primary:hover,
+  table .btn-primary:hover {
     background-color: #6366f1 !important; /* Slightly darker */
   }
 
-  .table .btn-danger, table .btn-danger {
+  .table .btn-danger,
+  table .btn-danger {
     background-color: #f87171 !important; /* Medium Pastel Red */
     color: #ffffff !important;
   }
-  .table .btn-danger svg, table .btn-danger svg { fill: #ffffff !important; color: #ffffff !important; }
-  .table .btn-danger:hover, table .btn-danger:hover {
+  .table .btn-danger svg,
+  table .btn-danger svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+  }
+  .table .btn-danger:hover,
+  table .btn-danger:hover {
     background-color: #ef4444 !important;
   }
 
-  .table .btn-info, table .btn-info {
+  .table .btn-info,
+  table .btn-info {
     background-color: #38bdf8 !important; /* Medium Pastel Sky/Blue */
     color: #ffffff !important;
   }
-  .table .btn-info svg, table .btn-info svg { fill: #ffffff !important; color: #ffffff !important; }
-  .table .btn-info:hover, table .btn-info:hover {
+  .table .btn-info svg,
+  table .btn-info svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+  }
+  .table .btn-info:hover,
+  table .btn-info:hover {
     background-color: #0ea5e9 !important;
   }
-  
-  .table .btn-success, table .btn-success {
+
+  .table .btn-success,
+  table .btn-success {
     background-color: #34d399 !important; /* Medium Pastel Emerald/Green */
     color: #ffffff !important;
   }
-  .table .btn-success svg, table .btn-success svg { fill: #ffffff !important; color: #ffffff !important; }
-  .table .btn-success:hover, table .btn-success:hover {
+  .table .btn-success svg,
+  table .btn-success svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+  }
+  .table .btn-success:hover,
+  table .btn-success:hover {
     background-color: #10b981 !important;
   }
 
-  .table .btn-warning, table .btn-warning {
+  .table .btn-warning,
+  table .btn-warning {
     background-color: #fbbf24 !important; /* Medium Pastel Amber/Yellow */
     color: #ffffff !important;
   }
-  .table .btn-warning svg, table .btn-warning svg { fill: #ffffff !important; color: #ffffff !important; }
-  .table .btn-warning:hover, table .btn-warning:hover {
+  .table .btn-warning svg,
+  table .btn-warning svg {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+  }
+  .table .btn-warning:hover,
+  table .btn-warning:hover {
     background-color: #f59e0b !important;
   }
 }

@@ -31,7 +31,7 @@ export const isStepValid = (step, formData) => {
   }
 }
 // 📌 Valida un solo campo según las mismas reglas del backend (Zod)
-export const validateField = (name, value, t) => {
+export const validateField = (name, value, t = (msg) => msg) => {
   let message = ''
 
   switch (name) {

@@ -141,7 +141,7 @@ const Register = () => {
       ...(name === 'specialty' && { subspecialty: '' }),
     }))
 
-    const errorMessage = validateField(name, value)
+    const errorMessage = validateField(name, value, t)
     setErrors((prev) => ({ ...prev, [name]: errorMessage }))
   }
 
