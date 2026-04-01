@@ -72,7 +72,7 @@ export const NotificationPopover = () => {
     }
 
     fetchIfVisible()
-    const interval = setInterval(fetchIfVisible, 300000) // 1 minuto y solo si se ve la página
+    const interval = setInterval(fetchIfVisible, 1800000) //30 minutos y solo si se ve la página
     return () => clearInterval(interval)
   }, [])
 
