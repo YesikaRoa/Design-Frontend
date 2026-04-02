@@ -144,12 +144,16 @@ export const Users = () => {
             specialties: [
               ...(Array.isArray(formData.specialty_id)
                 ? formData.specialty_id.filter((v) => v !== '' && v !== 'none').map(Number)
-                : formData.specialty_id && formData.specialty_id !== '' && formData.specialty_id !== 'none'
+                : formData.specialty_id &&
+                    formData.specialty_id !== '' &&
+                    formData.specialty_id !== 'none'
                   ? [Number(formData.specialty_id)]
                   : []),
               ...(Array.isArray(formData.subspecialty_id)
                 ? formData.subspecialty_id.filter((v) => v !== '' && v !== 'none').map(Number)
-                : formData.subspecialty_id && formData.subspecialty_id !== '' && formData.subspecialty_id !== 'none'
+                : formData.subspecialty_id &&
+                    formData.subspecialty_id !== '' &&
+                    formData.subspecialty_id !== 'none'
                   ? [Number(formData.subspecialty_id)]
                   : []),
             ],
@@ -311,7 +315,7 @@ export const Users = () => {
                   { label: 'Sin especialidad', value: 'none' },
                   ...specialties
                     .filter((s) => s.id >= 1 && s.id <= 15)
-                    .map((s) => ({ label: s.name, value: s.id }))
+                    .map((s) => ({ label: s.name, value: s.id })),
                 ],
               },
               {
@@ -324,7 +328,7 @@ export const Users = () => {
                   { label: 'Sin subespecialidad', value: 'none' },
                   ...specialties
                     .filter((s) => s.id >= 16 && s.id <= 60)
-                    .map((s) => ({ label: s.name, value: s.id }))
+                    .map((s) => ({ label: s.name, value: s.id })),
                 ],
               },
             ]
@@ -632,17 +636,20 @@ export const Users = () => {
                     {/* Renderizamos 7 celdas individuales para mantener el ancho de las columnas */}
                     {Array.from({ length: 7 }).map((_, cellIndex) => (
                       <CTableDataCell key={cellIndex}>
-                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                        <div
+                          className="skeleton-row"
+                          style={{ height: '24px', margin: '10px 0' }}
+                        ></div>
                       </CTableDataCell>
                     ))}
                   </CTableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
-                // 2. Muestra "No hay usuarios disponibles" si no hay datos
+                // 2. Muestra "No users available" si no hay datos
                 <CTableRow>
                   {/* ColSpan es 7 para cubrir todas las columnas */}
-                  <CTableDataCell colSpan={7} className="text-center">
-                    No hay usuarios disponibles
+                  <CTableDataCell colSpan={7} className="text-center no-data-text">
+                    {t('No users available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
@@ -698,9 +705,7 @@ export const Users = () => {
         visible={infoVisible}
         onClose={() => setInfoVisible(false)} // Cierra la modal
         title={t('User information')}
-        content={
-          <PremiumInfoContent type="user" data={selectedUser} colorScheme={colorScheme} />
-        }
+        content={<PremiumInfoContent type="user" data={selectedUser} colorScheme={colorScheme} />}
       />
 
       <ModalAdd

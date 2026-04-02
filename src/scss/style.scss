@@ -293,6 +293,18 @@ html[data-coreui-theme='dark'] select {
   color-scheme: dark !important;
 }
 
+/* Eliminar iconos "x" nativos en inputs cuando no se quieren */
+input::-ms-clear,
+input::-ms-expand,
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 html[data-coreui-theme='dark'] input[type='date']::-webkit-calendar-picker-indicator,
 html[data-coreui-theme='dark'] input[type='datetime-local']::-webkit-calendar-picker-indicator,
 html[data-coreui-theme='dark'] input[type='time']::-webkit-calendar-picker-indicator,
@@ -309,17 +321,15 @@ html[data-coreui-theme='dark'] .form-control[type='date']::-webkit-calendar-pick
 
 /* Fix select dropdown appearance in dark mode */
 html[data-coreui-theme='dark'] .form-select {
-  background-color: rgba(15, 23, 42, 0.85) !important;
   border: 1px solid rgba(148, 163, 184, 0.35) !important;
   color: #f8fafc !important;
   box-shadow: none !important;
+  color-scheme: dark !important;
 }
 
 html[data-coreui-theme='dark'] .form-select:focus {
   border-color: rgba(var(--cui-primary-rgb), 0.75) !important;
   box-shadow: 0 0 0 0.25rem rgba(var(--cui-primary-rgb), 0.25) !important;
-  color-scheme: dark !important;
-  background-color: rgba(15, 23, 42, 0.85) !important;
 }
 
 html[data-coreui-theme='dark'] .form-control,
@@ -328,10 +338,10 @@ html[data-coreui-theme='dark'] input,
 html[data-coreui-theme='dark'] input:focus,
 html[data-coreui-theme='dark'] select,
 html[data-coreui-theme='dark'] select:focus {
-  background-color: rgba(15, 23, 42, 0.85) !important;
   color: #f8fafc !important;
   box-shadow: none !important;
   border-color: rgba(148, 163, 184, 0.35) !important;
+  color-scheme: dark !important;
 }
 
 html[data-coreui-theme='dark'] .form-select option {
@@ -482,4 +492,22 @@ html:not([data-coreui-theme='dark']) {
 .table td {
   text-align: left !important;
   vertical-align: middle !important;
+}
+
+/* Empty table placeholder should be centered in any table */
+.table tbody tr td[colspan] {
+  text-align: center !important;
+}
+
+.table tbody tr td[colspan] .no-data-message,
+.table tbody tr td[colspan] .no-data-text {
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* For fallback with generic coreui tables */
+.table tbody tr td:only-child {
+  text-align: center !important;
 }

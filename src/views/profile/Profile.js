@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 
 import {
   CCard,
@@ -79,6 +79,19 @@ const Profile = () => {
   }
   const { request, loading: apiLoading } = useApi()
 
+  // Callbacks optimizados para onChange de selects
+  const handleSpecialtyChange = useCallback((selected) => {
+    setSelectedSpecialties(
+      Array.isArray(selected) ? selected.filter((item) => item && item.label) : [],
+    )
+  }, [])
+
+  const handleSubspecialtyChange = useCallback((selected) => {
+    setSelectedSubspecialties(
+      Array.isArray(selected) ? selected.filter((item) => item && item.label) : [],
+    )
+  }, [])
+
   // Obtener perfil al cargar
   useEffect(() => {
     if (!authToken) return
@@ -106,11 +119,17 @@ const Profile = () => {
           subspecialty: data.subspecialties || '',
         })
         if (Array.isArray(data.specialties)) {
-          setSelectedSpecialties(data.specialties.map((s) => ({ label: s.name, value: s.id })))
+          setSelectedSpecialties(
+            data.specialties
+              .filter((s) => s && s.name)
+              .map((s) => ({ label: s.name, value: s.id })),
+          )
         }
         if (Array.isArray(data.subspecialties)) {
           setSelectedSubspecialties(
-            data.subspecialties.map((s) => ({ label: s.name, value: s.id })),
+            data.subspecialties
+              .filter((s) => s && s.name)
+              .map((s) => ({ label: s.name, value: s.id })),
           )
         }
       } catch (error) {
@@ -121,11 +140,17 @@ const Profile = () => {
   }, [authToken])
 
   const getSpecialtyNames = () => {
-    return selectedSpecialties.map((s) => s.label).join(', ') || '-'
+    const specialties = user?.specialties || []
+    return Array.isArray(specialties) && specialties.length > 0
+      ? specialties.map((s) => s.name).join(', ')
+      : '-'
   }
 
   const getSubspecialtyNames = () => {
-    return selectedSubspecialties.map((s) => s.label).join(', ') || '-'
+    const subspecialties = user?.subspecialties || []
+    return Array.isArray(subspecialties) && subspecialties.length > 0
+      ? subspecialties.map((s) => s.name).join(', ')
+      : '-'
   }
 
   // Cargar opciones de specialties y subspecialties para los selects
@@ -144,13 +169,21 @@ const Profile = () => {
   }, [authToken])
 
   // Funciones auxiliares para mostrar nombres
-  const specialtyOptions = specialtiesData
-    .filter((item) => item.type === 'specialty')
-    .map((item) => ({ value: item.id, label: item.name }))
+  const specialtyOptions = useMemo(
+    () =>
+      specialtiesData
+        .filter((item) => item.type === 'specialty')
+        .map((item) => ({ value: item.id, label: item.name })),
+    [specialtiesData],
+  )
 
-  const subspecialtyOptions = specialtiesData
-    .filter((item) => item.type === 'subspecialty')
-    .map((item) => ({ value: item.id, label: item.name }))
+  const subspecialtyOptions = useMemo(
+    () =>
+      specialtiesData
+        .filter((item) => item.type === 'subspecialty')
+        .map((item) => ({ value: item.id, label: item.name })),
+    [specialtiesData],
+  )
 
   // Manejador para inputs
   const handleInputChange = (e) => {
@@ -534,20 +567,34 @@ const Profile = () => {
                   />
                   <Select
                     isMulti
+                    isClearable={false}
+                    components={{
+                      MultiValueRemove: () => null,
+                      DropdownIndicator: () => null,
+                      IndicatorSeparator: () => null,
+                      ClearIndicator: () => null,
+                    }}
                     name="specialty"
                     options={specialtyOptions}
-                    value={selectedSpecialties}
-                    onChange={(selected) => setSelectedSpecialties(selected)}
+                    value={selectedSpecialties || []}
+                    onChange={handleSpecialtyChange}
                     className="mb-2"
                     classNamePrefix="react-select"
                     placeholder="Selecciona especialidades"
                   />
                   <Select
                     isMulti
+                    isClearable={false}
+                    components={{
+                      MultiValueRemove: () => null,
+                      DropdownIndicator: () => null,
+                      IndicatorSeparator: () => null,
+                      ClearIndicator: () => null,
+                    }}
                     name="subspecialty"
                     options={subspecialtyOptions}
-                    value={selectedSubspecialties}
-                    onChange={(selected) => setSelectedSubspecialties(selected)}
+                    value={selectedSubspecialties || []}
+                    onChange={handleSubspecialtyChange}
                     className="mb-2"
                     classNamePrefix="react-select"
                     placeholder="Selecciona subespecialidades"
@@ -654,4 +701,4 @@ const Profile = () => {
   )
 }
 
-export default Profile
+export default React.memo(Profile)

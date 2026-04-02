@@ -179,7 +179,7 @@ html[data-coreui-theme='dark'] .form-select option:active {
 
 html[data-coreui-theme='dark'] .floating-input-group,
 html[data-coreui-theme='dark'] .floating-input-group:focus-within {
-  background: rgba(var(--cui-body-bg-rgb), 0.52) !important;
+  background: rgba(var(--cui-body-bg-rgb), 0.32) !important;
   box-shadow: none !important;
   border-color: rgba(var(--cui-body-color-rgb), 0.08) !important;
 }
@@ -192,9 +192,9 @@ html[data-coreui-theme='dark'] input[type='date'],
 html[data-coreui-theme='dark'] input[type='date']:focus,
 html[data-coreui-theme='dark'] input[type='datetime-local'],
 html[data-coreui-theme='dark'] input[type='datetime-local']:focus {
-  background: rgba(15, 23, 42, 0.9) !important;
+  background: transparent !important;
   color: #f8fafc !important;
-  border: 1px solid rgba(148, 163, 184, 0.4) !important;
+  border: none !important;
   box-shadow: none !important;
   outline: none !important;
   appearance: none !important;

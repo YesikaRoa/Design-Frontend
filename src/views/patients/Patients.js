@@ -500,16 +500,19 @@ export const Patients = () => {
                     {/* Renderizamos 6 celdas individuales para mantener el ancho de las columnas */}
                     {Array.from({ length: 6 }).map((_, cellIndex) => (
                       <CTableDataCell key={cellIndex}>
-                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                        <div
+                          className="skeleton-row"
+                          style={{ height: '24px', margin: '10px 0' }}
+                        ></div>
                       </CTableDataCell>
                     ))}
                   </CTableRow>
                 ))
               ) : filteredUsers.length === 0 ? (
-                // 2. Muestra "No hay usuarios disponibles" si no hay datos
+                // 2. Muestra "No users available" si no hay datos
                 <CTableRow>
-                  <CTableDataCell colSpan={6} className="text-center">
-                    No hay usuarios disponibles
+                  <CTableDataCell colSpan={6} className="text-center no-data-text">
+                    {t('No users available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (

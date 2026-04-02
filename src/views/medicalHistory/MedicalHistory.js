@@ -331,7 +331,6 @@ const MedicalHistory = () => {
         image: base64Image ? base64Image : null,
       }
 
-
       try {
         const result = await request('post', '/medical_record', newMedicalHistory, headers)
         if (!result.success) {
@@ -358,264 +357,269 @@ const MedicalHistory = () => {
     })
   }
 
+  const medicalHistorySteps = React.useMemo(
+    () => [
+      {
+        fields: [
+          {
+            name: 'appointment_id',
+            label: t('Appointment Id'),
+            type: 'custom',
+            placeholder: t('Select Appointment'),
+            options: [],
+          },
+          {
+            name: 'reason_for_visit',
+            label: t('Reason for visit'),
+            type: 'textarea',
+            placeholder: t('Reason for visit'),
+          },
+          {
+            name: 'weight',
+            label: t('Weight'),
+            type: 'number',
+            placeholder: 'kg',
+          },
+          {
+            name: 'height',
+            label: t('Height'),
+            type: 'number',
+            placeholder: 'cm',
+          },
+          {
+            name: 'body_mass_index',
+            label: t('Body mass index'),
+            type: 'number',
+            placeholder: 'BMI',
+          },
+          {
+            name: 'blood_pressure',
+            label: t('Blood pressure'),
+            type: 'text',
+            placeholder: '120/80',
+          },
+          {
+            name: 'heart_rate',
+            label: t('Heart rate'),
+            type: 'number',
+            placeholder: 'bpm',
+          },
+          {
+            name: 'respiratory_rate',
+            label: t('Respiratory rate'),
+            type: 'number',
+            placeholder: 'bpm',
+          },
+          {
+            name: 'temperature',
+            label: t('Temperature'),
+            type: 'number',
+            placeholder: '°C',
+          },
+          {
+            name: 'oxygen_saturation',
+            label: t('Oxygen saturation'),
+            type: 'number',
+            placeholder: '%',
+          },
+        ],
+      },
+      {
+        fields: [
+          {
+            name: 'symptoms',
+            label: t('Symptoms'),
+            type: 'textarea',
+            placeholder: t('Symptoms'),
+          },
+          {
+            name: 'current_illness_history',
+            label: t('Current illness history'),
+            type: 'textarea',
+            placeholder: t('Current illness history'),
+          },
+          {
+            name: 'physical_exam',
+            label: t('Physical exam'),
+            type: 'textarea',
+            placeholder: t('Physical exam'),
+          },
+          {
+            name: 'diagnosis',
+            label: t('Diagnosis'),
+            type: 'textarea',
+            placeholder: t('Diagnosis'),
+          },
+          {
+            name: 'differential_diagnosis',
+            label: t('Differential diagnosis'),
+            type: 'textarea',
+            placeholder: t('Differential diagnosis'),
+          },
+          {
+            name: 'evolution_notes',
+            label: t('Evolution notes'),
+            type: 'textarea',
+            placeholder: t('Evolution notes'),
+          },
+        ],
+      },
+      {
+        fields: [
+          {
+            name: 'treatment',
+            label: t('Treatment'),
+            type: 'textarea',
+            placeholder: t('Treatment'),
+          },
+          {
+            name: 'treatment_plan',
+            label: t('Treatment plan'),
+            type: 'textarea',
+            placeholder: t('Treatment plan'),
+          },
+          {
+            name: 'medications_prescribed',
+            label: t('Medications prescribed'),
+            type: 'textarea',
+            placeholder: t('Medications prescribed'),
+          },
+          {
+            name: 'laboratory_tests_requested',
+            label: t('Laboratory tests requested'),
+            type: 'textarea',
+            placeholder: t('Laboratory tests requested'),
+          },
+          {
+            name: 'imaging_tests_requested',
+            label: t('Imaging tests requested'),
+            type: 'textarea',
+            placeholder: t('Imaging tests requested'),
+          },
+          {
+            name: 'test_instructions',
+            label: t('Test instructions'),
+            type: 'textarea',
+            placeholder: t('Test instructions'),
+          },
+          {
+            name: 'follow_up_date',
+            label: t('Follow up date'),
+            type: 'custom',
+            custom: 'follow_up_date',
+          },
+          {
+            name: 'general_notes',
+            label: t('General Notes'),
+            type: 'textarea',
+            placeholder: t('Enter Additional Notes'),
+          },
+          {
+            name: 'attachment_image',
+            label: t('Attach Image'),
+            type: 'file',
+            placeholder: t('Upload Image'),
+            accept: 'image/*',
+          },
+        ],
+      },
+    ],
+    [t],
+  )
 
-  const medicalHistorySteps = React.useMemo(() => [
-    {
-      fields: [
-        {
-          name: 'appointment_id',
-          label: t('Appointment Id'),
-          type: 'custom',
-          placeholder: t('Select Appointment'),
-          options: [],
-        },
-        {
-          name: 'reason_for_visit',
-          label: t('Reason for visit'),
-          type: 'textarea',
-          placeholder: t('Reason for visit'),
-        },
-        {
-          name: 'weight',
-          label: t('Weight'),
-          type: 'number',
-          placeholder: 'kg',
-        },
-        {
-          name: 'height',
-          label: t('Height'),
-          type: 'number',
-          placeholder: 'cm',
-        },
-        {
-          name: 'body_mass_index',
-          label: t('Body mass index'),
-          type: 'number',
-          placeholder: 'BMI',
-        },
-        {
-          name: 'blood_pressure',
-          label: t('Blood pressure'),
-          type: 'text',
-          placeholder: '120/80',
-        },
-        {
-          name: 'heart_rate',
-          label: t('Heart rate'),
-          type: 'number',
-          placeholder: 'bpm',
-        },
-        {
-          name: 'respiratory_rate',
-          label: t('Respiratory rate'),
-          type: 'number',
-          placeholder: 'bpm',
-        },
-        {
-          name: 'temperature',
-          label: t('Temperature'),
-          type: 'number',
-          placeholder: '°C',
-        },
-        {
-          name: 'oxygen_saturation',
-          label: t('Oxygen saturation'),
-          type: 'number',
-          placeholder: '%',
-        },
-      ],
-    },
-    {
-      fields: [
-        {
-          name: 'symptoms',
-          label: t('Symptoms'),
-          type: 'textarea',
-          placeholder: t('Symptoms'),
-        },
-        {
-          name: 'current_illness_history',
-          label: t('Current illness history'),
-          type: 'textarea',
-          placeholder: t('Current illness history'),
-        },
-        {
-          name: 'physical_exam',
-          label: t('Physical exam'),
-          type: 'textarea',
-          placeholder: t('Physical exam'),
-        },
-        {
-          name: 'diagnosis',
-          label: t('Diagnosis'),
-          type: 'textarea',
-          placeholder: t('Diagnosis'),
-        },
-        {
-          name: 'differential_diagnosis',
-          label: t('Differential diagnosis'),
-          type: 'textarea',
-          placeholder: t('Differential diagnosis'),
-        },
-        {
-          name: 'evolution_notes',
-          label: t('Evolution notes'),
-          type: 'textarea',
-          placeholder: t('Evolution notes'),
-        },
-      ],
-    },
-    {
-      fields: [
-        {
-          name: 'treatment',
-          label: t('Treatment'),
-          type: 'textarea',
-          placeholder: t('Treatment'),
-        },
-        {
-          name: 'treatment_plan',
-          label: t('Treatment plan'),
-          type: 'textarea',
-          placeholder: t('Treatment plan'),
-        },
-        {
-          name: 'medications_prescribed',
-          label: t('Medications prescribed'),
-          type: 'textarea',
-          placeholder: t('Medications prescribed'),
-        },
-        {
-          name: 'laboratory_tests_requested',
-          label: t('Laboratory tests requested'),
-          type: 'textarea',
-          placeholder: t('Laboratory tests requested'),
-        },
-        {
-          name: 'imaging_tests_requested',
-          label: t('Imaging tests requested'),
-          type: 'textarea',
-          placeholder: t('Imaging tests requested'),
-        },
-        {
-          name: 'test_instructions',
-          label: t('Test instructions'),
-          type: 'textarea',
-          placeholder: t('Test instructions'),
-        },
-        {
-          name: 'follow_up_date',
-          label: t('Follow up date'),
-          type: 'custom',
-          custom: 'follow_up_date',
-        },
-        {
-          name: 'general_notes',
-          label: t('General Notes'),
-          type: 'textarea',
-          placeholder: t('Enter Additional Notes'),
-        },
-        {
-          name: 'attachment_image',
-          label: t('Attach Image'),
-          type: 'file',
-          placeholder: t('Upload Image'),
-          accept: 'image/*',
-        },
-      ],
-    },
-  ], [t]);
-
-  const customFields = React.useMemo(() => ({
-    appointment_id: (props) => (
-      <AppointmentAsyncSelect
-        {...props}
-        colorScheme={colorScheme}
-        t={t}
-        request={request}
-        value={typeof props.value === 'object' ? props.value.id : props.value}
-        onChange={(option) => {
-          props.onChange(option ? option.id : '')
-          if (props.setFormData) {
-            props.setFormData((prev) => ({
-              ...prev,
-              appointment_raw: option || null,
-            }))
-          }
-        }}
-      />
-    ),
-    created_at: ({ value, onChange, placeholder }) => (
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <DateTimePicker
-          label={t('Created at')}
-          value={value ? new Date(value) : null}
-          onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
-          format="dd/MM/yyyy HH:mm"
-          disablePortal
-          slotProps={{
-            popper: {
-              disablePortal: true,
-              modifiers: [{ name: 'preventOverflow', enabled: true }],
-            },
-            textField: {
-              variant: 'standard',
-              fullWidth: true,
-              placeholder,
-              InputLabelProps: {
-                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
-              },
-              InputProps: {
-                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
-              },
-              inputProps: {
-                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
-              },
-              FormHelperTextProps: {
-                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
-              },
-            },
+  const customFields = React.useMemo(
+    () => ({
+      appointment_id: (props) => (
+        <AppointmentAsyncSelect
+          {...props}
+          colorScheme={colorScheme}
+          t={t}
+          request={request}
+          value={typeof props.value === 'object' ? props.value.id : props.value}
+          onChange={(option) => {
+            props.onChange(option ? option.id : '')
+            if (props.setFormData) {
+              props.setFormData((prev) => ({
+                ...prev,
+                appointment_raw: option || null,
+              }))
+            }
           }}
-          reduceAnimations
         />
-      </LocalizationProvider>
-    ),
-    follow_up_date: ({ value, onChange, placeholder }) => (
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <DateTimePicker
-          label={t('Follow up date')}
-          value={value ? new Date(value) : null}
-          onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
-          format="dd/MM/yyyy HH:mm"
-          disablePortal
-          slotProps={{
-            popper: {
-              disablePortal: true,
-              modifiers: [{ name: 'preventOverflow', enabled: true }],
-            },
-            textField: {
-              variant: 'standard',
-              fullWidth: true,
-              placeholder,
-              InputLabelProps: {
-                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+      ),
+      created_at: ({ value, onChange, placeholder }) => (
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DateTimePicker
+            label={t('Created at')}
+            value={value ? new Date(value) : null}
+            onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
+            format="dd/MM/yyyy HH:mm"
+            disablePortal
+            slotProps={{
+              popper: {
+                disablePortal: true,
+                modifiers: [{ name: 'preventOverflow', enabled: true }],
               },
-              InputProps: {
-                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+              textField: {
+                variant: 'standard',
+                fullWidth: true,
+                placeholder,
+                InputLabelProps: {
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+                },
+                InputProps: {
+                  style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+                },
+                inputProps: {
+                  style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+                },
+                FormHelperTextProps: {
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+                },
               },
-              inputProps: {
-                style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+            }}
+            reduceAnimations
+          />
+        </LocalizationProvider>
+      ),
+      follow_up_date: ({ value, onChange, placeholder }) => (
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DateTimePicker
+            label={t('Follow up date')}
+            value={value ? new Date(value) : null}
+            onChange={(newValue) => onChange(newValue ? new Date(newValue).toISOString() : '')}
+            format="dd/MM/yyyy HH:mm"
+            disablePortal
+            slotProps={{
+              popper: {
+                disablePortal: true,
+                modifiers: [{ name: 'preventOverflow', enabled: true }],
               },
-              FormHelperTextProps: {
-                style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+              textField: {
+                variant: 'standard',
+                fullWidth: true,
+                placeholder,
+                InputLabelProps: {
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.9)' : undefined },
+                },
+                InputProps: {
+                  style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+                },
+                inputProps: {
+                  style: { color: colorScheme === 'dark' ? '#fff' : undefined },
+                },
+                FormHelperTextProps: {
+                  style: { color: colorScheme === 'dark' ? 'rgba(255,255,255,0.7)' : undefined },
+                },
               },
-            },
-          }}
-          reduceAnimations
-        />
-      </LocalizationProvider>
-    ),
-  }), [colorScheme, t, request]);
+            }}
+            reduceAnimations
+          />
+        </LocalizationProvider>
+      ),
+    }),
+    [colorScheme, t, request],
+  )
 
   const addMedicalHistory = () => {
     ModalAddRef.current.open()
@@ -886,15 +890,18 @@ const MedicalHistory = () => {
             <CTableBody>
               {/* 1. Muestra el Skeleton Loader si loading es true */}
               {medicalHistory === null ||
-                (loading && (!medicalHistory || medicalHistory.length === 0)) ||
-                (!showEmptyMessage && FilteredMedicalHistory.length === 0) ? (
+              (loading && (!medicalHistory || medicalHistory.length === 0)) ||
+              (!showEmptyMessage && FilteredMedicalHistory.length === 0) ? (
                 // Simula 5 filas de carga
                 Array.from({ length: 5 }).map((_, index) => (
                   <CTableRow key={index}>
                     {/* Renderizamos 5 celdas individuales para mantener el ancho de las columnas */}
                     {Array.from({ length: 5 }).map((_, cellIndex) => (
                       <CTableDataCell key={cellIndex}>
-                        <div className="skeleton-row" style={{ height: '24px', margin: '10px 0' }}></div>
+                        <div
+                          className="skeleton-row"
+                          style={{ height: '24px', margin: '10px 0' }}
+                        ></div>
                       </CTableDataCell>
                     ))}
                   </CTableRow>
@@ -902,8 +909,8 @@ const MedicalHistory = () => {
               ) : FilteredMedicalHistory.length === 0 ? (
                 // 2. Muestra "No appointments available" si no hay datos
                 <CTableRow>
-                  <CTableDataCell colSpan={5} className="text-center">
-                    {t('No Medical History Available')}
+                  <CTableDataCell colSpan={5} className="text-center no-data-text">
+                    {t('No Medical History available')}
                   </CTableDataCell>
                 </CTableRow>
               ) : (
@@ -962,34 +969,53 @@ const MedicalHistory = () => {
         title={t('Medical History Information')}
         content={
           selectedMedicalHistory ? (
-            <div className={`medical-history-info-modal ${colorScheme === 'dark' ? 'text-light' : 'text-dark'}`}>
+            <div
+              className={`medical-history-info-modal ${colorScheme === 'dark' ? 'text-light' : 'text-dark'}`}
+            >
               {/* Header Info Banner */}
               <div
                 className="info-banner mb-4 p-3 rounded"
                 style={{
-                  backgroundColor: colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.15)' : 'rgba(56, 73, 219, 0.05)',
+                  backgroundColor:
+                    colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.15)' : 'rgba(56, 73, 219, 0.05)',
                   border: `1px solid ${colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.3)' : 'rgba(56, 73, 219, 0.1)'}`,
                 }}
               >
                 <CRow className="align-items-center">
                   <CCol md={6}>
                     <div className="mb-2">
-                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Patient')}</label>
-                      <span className="fs-5 fw-bold text-primary">{selectedMedicalHistory.patient_full_name}</span>
+                      <label className="small text-uppercase fw-bold text-muted d-block">
+                        {t('Patient')}
+                      </label>
+                      <span className="fs-5 fw-bold text-primary">
+                        {selectedMedicalHistory.patient_full_name}
+                      </span>
                     </div>
                     <div>
-                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Professional')}</label>
-                      <span className="fw-medium">{selectedMedicalHistory.professional_full_name}</span>
+                      <label className="small text-uppercase fw-bold text-muted d-block">
+                        {t('Professional')}
+                      </label>
+                      <span className="fw-medium">
+                        {selectedMedicalHistory.professional_full_name}
+                      </span>
                     </div>
                   </CCol>
                   <CCol md={6} className="text-md-end">
                     <div className="mb-2">
-                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Appointment')}</label>
-                      <CBadge color="primary" shape="rounded-pill">#{selectedMedicalHistory.appointment_id}</CBadge>
+                      <label className="small text-uppercase fw-bold text-muted d-block">
+                        {t('Appointment')}
+                      </label>
+                      <CBadge color="primary" shape="rounded-pill">
+                        #{selectedMedicalHistory.appointment_id}
+                      </CBadge>
                     </div>
                     <div>
-                      <label className="small text-uppercase fw-bold text-muted d-block">{t('Date')}</label>
-                      <span className="small">{formatDate(selectedMedicalHistory.created_at, 'DATETIME')}</span>
+                      <label className="small text-uppercase fw-bold text-muted d-block">
+                        {t('Date')}
+                      </label>
+                      <span className="small">
+                        {formatDate(selectedMedicalHistory.created_at, 'DATETIME')}
+                      </span>
                     </div>
                   </CCol>
                 </CRow>
@@ -1011,40 +1037,69 @@ const MedicalHistory = () => {
               {/* Clinical & Diagnosis Grid */}
               <CRow className="mb-4 g-4">
                 <CCol md={6}>
-                  <div className="h-100 p-3 rounded" style={{ backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                  <div
+                    className="h-100 p-3 rounded"
+                    style={{
+                      backgroundColor:
+                        colorScheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
                     <h6 className="text-primary fw-bold mb-3">{t('Clinical History')}</h6>
 
                     {[
-                      { label: t('Reason for visit'), value: selectedMedicalHistory.reason_for_visit },
+                      {
+                        label: t('Reason for visit'),
+                        value: selectedMedicalHistory.reason_for_visit,
+                      },
                       { label: t('Symptoms'), value: selectedMedicalHistory.symptoms },
-                      { label: t('Current illness history'), value: selectedMedicalHistory.current_illness_history, fullWidth: true },
-                      { label: t('Physical exam'), value: selectedMedicalHistory.physical_exam, fullWidth: true },
+                      {
+                        label: t('Current illness history'),
+                        value: selectedMedicalHistory.current_illness_history,
+                        fullWidth: true,
+                      },
+                      {
+                        label: t('Physical exam'),
+                        value: selectedMedicalHistory.physical_exam,
+                        fullWidth: true,
+                      },
                     ].map((item, idx) => (
                       <div key={idx} className="mb-3 ps-1">
-                        <label className="d-block small text-muted text-uppercase fw-semibold mb-1">{item.label}</label>
-                        <div className="fw-medium">
-                          {item.value || '-'}
-                        </div>
+                        <label className="d-block small text-muted text-uppercase fw-semibold mb-1">
+                          {item.label}
+                        </label>
+                        <div className="fw-medium">{item.value || '-'}</div>
                       </div>
                     ))}
                   </div>
                 </CCol>
                 <CCol md={6}>
-                  <div className="h-100 p-3 rounded" style={{ backgroundColor: colorScheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                  <div
+                    className="h-100 p-3 rounded"
+                    style={{
+                      backgroundColor:
+                        colorScheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
                     <h6 className="text-primary fw-bold mb-3">{t('Diagnosis & Treatment')}</h6>
 
                     {[
                       { label: t('Diagnosis'), value: selectedMedicalHistory.diagnosis },
-                      { label: t('Differential diagnosis'), value: selectedMedicalHistory.differential_diagnosis },
+                      {
+                        label: t('Differential diagnosis'),
+                        value: selectedMedicalHistory.differential_diagnosis,
+                      },
                       { label: t('Treatment'), value: selectedMedicalHistory.treatment },
                       { label: t('Treatment plan'), value: selectedMedicalHistory.treatment_plan },
-                      { label: t('Medications prescribed'), value: selectedMedicalHistory.medications_prescribed },
+                      {
+                        label: t('Medications prescribed'),
+                        value: selectedMedicalHistory.medications_prescribed,
+                      },
                     ].map((item, idx) => (
                       <div key={idx} className="mb-3 ps-1">
-                        <label className="d-block small text-muted text-uppercase fw-semibold mb-1">{item.label}</label>
-                        <div className="fw-medium">
-                          {item.value || '-'}
-                        </div>
+                        <label className="d-block small text-muted text-uppercase fw-semibold mb-1">
+                          {item.label}
+                        </label>
+                        <div className="fw-medium">{item.value || '-'}</div>
                       </div>
                     ))}
                   </div>
@@ -1055,28 +1110,51 @@ const MedicalHistory = () => {
               <div
                 className="vitals-container mb-4 p-4 rounded"
                 style={{
-                  backgroundColor: colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.1)' : 'rgba(56, 73, 219, 0.03)',
+                  backgroundColor:
+                    colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.1)' : 'rgba(56, 73, 219, 0.03)',
                   border: `1px solid ${colorScheme === 'dark' ? 'rgba(56, 73, 219, 0.2)' : 'rgba(56, 73, 219, 0.1)'}`,
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
                 }}
               >
-                <h6 className="text-primary fw-bold mb-4 text-center text-uppercase ls-1">{t('Vital Signs')}</h6>
+                <h6 className="text-primary fw-bold mb-4 text-center text-uppercase ls-1">
+                  {t('Vital Signs')}
+                </h6>
                 <CRow className="row-cols-2 row-cols-md-4 g-4">
                   {[
                     { label: t('Weight'), value: selectedMedicalHistory.weight, unit: 'kg' },
                     { label: t('Height'), value: selectedMedicalHistory.height, unit: 'cm' },
                     { label: t('BMI'), value: selectedMedicalHistory.body_mass_index },
                     { label: t('BP'), value: selectedMedicalHistory.blood_pressure },
-                    { label: t('Heart Rate'), value: selectedMedicalHistory.heart_rate, unit: 'bpm' },
+                    {
+                      label: t('Heart Rate'),
+                      value: selectedMedicalHistory.heart_rate,
+                      unit: 'bpm',
+                    },
                     { label: t('RR'), value: selectedMedicalHistory.respiratory_rate, unit: 'bpm' },
                     { label: t('Temp'), value: selectedMedicalHistory.temperature, unit: '°C' },
-                    { label: t('O2 Sat'), value: selectedMedicalHistory.oxygen_saturation, unit: '%' },
+                    {
+                      label: t('O2 Sat'),
+                      value: selectedMedicalHistory.oxygen_saturation,
+                      unit: '%',
+                    },
                   ].map((vital, idx) => (
                     <CCol key={idx}>
                       <div className="vital-card text-center">
-                        <div className="small text-uppercase fw-bold mb-1" style={{ fontSize: '0.66rem', color: colorScheme === 'dark' ? 'rgba(255,255,255,0.5)' : '#6c757d' }}>{vital.label}</div>
-                        <div className={`fs-5 fw-bold ${colorScheme === 'dark' ? 'text-white' : 'text-primary-emphasis'}`}>
-                          {vital.value ? `${vital.value}${vital.unit ? ` ${vital.unit}` : ''}` : '-'}
+                        <div
+                          className="small text-uppercase fw-bold mb-1"
+                          style={{
+                            fontSize: '0.66rem',
+                            color: colorScheme === 'dark' ? 'rgba(255,255,255,0.5)' : '#6c757d',
+                          }}
+                        >
+                          {vital.label}
+                        </div>
+                        <div
+                          className={`fs-5 fw-bold ${colorScheme === 'dark' ? 'text-white' : 'text-primary-emphasis'}`}
+                        >
+                          {vital.value
+                            ? `${vital.value}${vital.unit ? ` ${vital.unit}` : ''}`
+                            : '-'}
                         </div>
                       </div>
                     </CCol>
@@ -1090,9 +1168,18 @@ const MedicalHistory = () => {
                 <CRow>
                   <CCol md={7}>
                     {[
-                      { label: t('Laboratory tests requested'), value: selectedMedicalHistory.laboratory_tests_requested },
-                      { label: t('Imaging tests requested'), value: selectedMedicalHistory.imaging_tests_requested },
-                      { label: t('Test instructions'), value: selectedMedicalHistory.test_instructions },
+                      {
+                        label: t('Laboratory tests requested'),
+                        value: selectedMedicalHistory.laboratory_tests_requested,
+                      },
+                      {
+                        label: t('Imaging tests requested'),
+                        value: selectedMedicalHistory.imaging_tests_requested,
+                      },
+                      {
+                        label: t('Test instructions'),
+                        value: selectedMedicalHistory.test_instructions,
+                      },
                     ].map((item, idx) => (
                       <div key={idx} className="mb-3">
                         <label className="small fw-bold text-muted">{item.label}:</label>
@@ -1103,14 +1190,23 @@ const MedicalHistory = () => {
                   <CCol md={5} className="border-start">
                     <div className="mb-3">
                       <label className="small fw-bold text-muted">{t('Follow up date')}:</label>
-                      <div className="ps-2 fw-medium">{selectedMedicalHistory.follow_up_date ? formatDate(selectedMedicalHistory.follow_up_date, 'DATE') : 'N/A'}</div>
+                      <div className="ps-2 fw-medium">
+                        {selectedMedicalHistory.follow_up_date
+                          ? formatDate(selectedMedicalHistory.follow_up_date, 'DATE')
+                          : 'N/A'}
+                      </div>
                     </div>
                     <div className="mb-3">
                       <label className="small fw-bold text-muted">{t('Evolution notes')}:</label>
-                      <div className="text-muted small ps-2">{selectedMedicalHistory.evolution_notes || t('None')}</div>
+                      <div className="text-muted small ps-2">
+                        {selectedMedicalHistory.evolution_notes || t('None')}
+                      </div>
                     </div>
                     <div className="mt-4 pt-2 border-top small text-muted">
-                      <strong>{t('Updated at')}:</strong> {selectedMedicalHistory.updated_at ? formatDate(selectedMedicalHistory.updated_at, 'DATETIME') : 'N/A'}
+                      <strong>{t('Updated at')}:</strong>{' '}
+                      {selectedMedicalHistory.updated_at
+                        ? formatDate(selectedMedicalHistory.updated_at, 'DATETIME')
+                        : 'N/A'}
                     </div>
                   </CCol>
                 </CRow>
