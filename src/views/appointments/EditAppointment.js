@@ -324,7 +324,7 @@ const EditAppointment = () => {
                 <CCol md={6}>
                   <CFormSelect
                     id="status"
-                    floatingLabel={t('Status')}
+                    label={t('Status')}
                     value={editedAppointment.status}
                     onChange={(e) => setEditedAppointment({ ...editedAppointment, status: e.target.value })}
                     disabled={fieldsDisabled}
@@ -338,7 +338,7 @@ const EditAppointment = () => {
                 <CCol md={6}>
                   <CFormSelect
                     id="has_medical_record"
-                    floatingLabel={t('Has Medical Record')}
+                    label={t('Has Medical Record')}
                     value={
                       editedAppointment.has_medical_record === true || editedAppointment.has_medical_record === 'true'
                         ? 'true'
@@ -404,21 +404,23 @@ const EditAppointment = () => {
                 <CCol md={6}>
                   <CFormTextarea
                     id="notes"
-                    floatingLabel={t('Notes')}
+                    label={t('Notes')}
                     value={editedAppointment.notes || ''}
                     onChange={(e) => setEditedAppointment({ ...editedAppointment, notes: e.target.value })}
                     disabled={fieldsDisabled}
                     rows={4}
+                    style={{ resize: 'none' }}
                   />
                 </CCol>
                 <CCol md={6}>
                   <CFormTextarea
                     id="reason_for_visit"
-                    floatingLabel={t('Reason for visit')}
+                    label={t('Reason for visit')}
                     value={editedAppointment.reason_for_visit || ''}
                     onChange={(e) => setEditedAppointment({ ...editedAppointment, reason_for_visit: e.target.value })}
                     disabled={fieldsDisabled}
                     rows={4}
+                    style={{ resize: 'none' }}
                   />
                 </CCol>
               </CRow>
@@ -427,24 +429,31 @@ const EditAppointment = () => {
 
           {/* Form Actions */}
           <div className="d-flex justify-content-end gap-2 mb-5">
-            <CButton color="secondary" variant="ghost" onClick={() => navigate('/appointments')}>
-              {t('Cancel')}
-            </CButton>
             {fieldsDisabled ? (
-              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
-                <CIcon icon={cilPencil} className="me-2" />
-                {t('Edit')}
-              </CButton>
+              <>
+                <CButton color="secondary" variant="ghost" onClick={() => navigate('/appointments')}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                  <CIcon icon={cilPencil} className="me-2" />
+                  {t('Edit')}
+                </CButton>
+              </>
             ) : (
-              <div className="d-flex gap-2">
-                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+              <>
+                <CButton color="secondary" variant="outline" onClick={() => {
+                  handleFieldsDisabled();
+                  if (appointment) {
+                    setEditedAppointment({ ...appointment });
+                  }
+                }}>
                   {t('Cancel')}
                 </CButton>
                 <CButton color="primary" onClick={saveChanges} className="px-4 shadow-sm">
                   <CIcon icon={cilSave} className="me-2" />
                   {t('Save Changes')}
                 </CButton>
-              </div>
+              </>
             )}
           </div>
         </CForm>

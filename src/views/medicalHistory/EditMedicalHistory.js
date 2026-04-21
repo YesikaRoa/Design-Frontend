@@ -259,38 +259,42 @@ const EditMedicalHistory = () => {
                 <CRow className="g-4">
                   <CCol md={6}>
                     <CFormTextarea
-                      floatingLabel={t('Reason for visit')}
+                      label={t('Reason for visit')}
                       value={editedMedicalHistory.reason_for_visit || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, reason_for_visit: e.target.value })}
                       disabled={fieldsDisabled}
                       rows={3}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={6}>
                     <CFormTextarea
-                      floatingLabel={t('Symptoms')}
+                      label={t('Symptoms')}
                       value={editedMedicalHistory.symptoms || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, symptoms: e.target.value })}
                       disabled={fieldsDisabled}
                       rows={3}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Current illness history')}
+                      label={t('Current illness history')}
                       value={editedMedicalHistory.current_illness_history || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, current_illness_history: e.target.value })}
                       disabled={fieldsDisabled}
                       rows={3}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Physical exam')}
+                      label={t('Physical exam')}
                       value={editedMedicalHistory.physical_exam || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, physical_exam: e.target.value })}
                       disabled={fieldsDisabled}
                       rows={3}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                 </CRow>
@@ -342,7 +346,7 @@ const EditMedicalHistory = () => {
                 <CRow className="g-4">
                   <CCol md={6}>
                     <CFormTextarea
-                      floatingLabel={t('Diagnosis')}
+                      label={t('Diagnosis')}
                       value={editedMedicalHistory.diagnosis || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, diagnosis: e.target.value })}
                       disabled={fieldsDisabled}
@@ -351,34 +355,38 @@ const EditMedicalHistory = () => {
                   </CCol>
                   <CCol md={6}>
                     <CFormTextarea
-                      floatingLabel={t('Differential diagnosis')}
+                      label={t('Differential diagnosis')}
                       value={editedMedicalHistory.differential_diagnosis || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, differential_diagnosis: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Treatment')}
+                      label={t('Treatment')}
                       value={editedMedicalHistory.treatment || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, treatment: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Treatment plan')}
+                      label={t('Treatment plan')}
                       value={editedMedicalHistory.treatment_plan || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, treatment_plan: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Medications prescribed')}
+                      label={t('Medications prescribed')}
                       value={editedMedicalHistory.medications_prescribed || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, medications_prescribed: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                 </CRow>
@@ -395,26 +403,29 @@ const EditMedicalHistory = () => {
                 <CRow className="g-4">
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Laboratory tests requested')}
+                      label={t('Laboratory tests requested')}
                       value={editedMedicalHistory.laboratory_tests_requested || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, laboratory_tests_requested: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Imaging tests requested')}
+                      label={t('Imaging tests requested')}
                       value={editedMedicalHistory.imaging_tests_requested || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, imaging_tests_requested: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Test instructions')}
+                      label={t('Test instructions')}
                       value={editedMedicalHistory.test_instructions || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, test_instructions: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                   <CCol md={12}>
@@ -429,10 +440,11 @@ const EditMedicalHistory = () => {
                   </CCol>
                   <CCol md={12}>
                     <CFormTextarea
-                      floatingLabel={t('Evolution notes')}
+                      label={t('Evolution notes')}
                       value={editedMedicalHistory.evolution_notes || ''}
                       onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, evolution_notes: e.target.value })}
                       disabled={fieldsDisabled}
+                      style={{ resize: 'none' }}
                     />
                   </CCol>
                 </CRow>
@@ -448,11 +460,12 @@ const EditMedicalHistory = () => {
               <CCardBody className="p-4">
                 <CFormTextarea
                   id="general_notes"
-                  floatingLabel={t('General Notes')}
+                  label={t('General Notes')}
                   value={editedMedicalHistory.general_notes || ''}
                   onChange={(e) => seteditedMedicalHistory({ ...editedMedicalHistory, general_notes: e.target.value })}
                   className="mb-4"
                   disabled={fieldsDisabled}
+                  style={{ resize: 'none' }}
                 />
 
                 <CRow className="align-items-start g-4">
@@ -484,24 +497,36 @@ const EditMedicalHistory = () => {
 
             {/* Form Actions */}
             <div className="d-flex justify-content-end gap-2 mb-5">
-              <CButton color="secondary" variant="ghost" onClick={() => navigate('/medicalHistory')}>
-                {t('Cancel')}
-              </CButton>
               {fieldsDisabled ? (
-                <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
-                  <CIcon icon={cilPencil} className="me-2" />
-                  {t('Edit')}
-                </CButton>
+                <>
+                  <CButton color="secondary" variant="ghost" onClick={() => navigate('/medicalHistory')}>
+                    {t('Cancel')}
+                  </CButton>
+                  <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                    <CIcon icon={cilPencil} className="me-2" />
+                    {t('Edit')}
+                  </CButton>
+                </>
               ) : (
-                <div className="d-flex gap-2">
-                  <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+                <>
+                  <CButton color="secondary" variant="outline" onClick={() => {
+                    handleFieldsDisabled();
+                    if (medicalHistory) {
+                      seteditedMedicalHistory({
+                        ...medicalHistory,
+                        follow_up_date: medicalHistory.follow_up_date
+                          ? new Date(medicalHistory.follow_up_date).toISOString().slice(0, 16)
+                          : '',
+                      });
+                    }
+                  }}>
                     {t('Cancel')}
                   </CButton>
                   <CButton color="primary" onClick={saveChanges} className="px-4 shadow-sm">
                     <CIcon icon={cilSave} className="me-2" />
                     {t('Save Changes')}
                   </CButton>
-                </div>
+                </>
               )}
             </div>
         </CForm>

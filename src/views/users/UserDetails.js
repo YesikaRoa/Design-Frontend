@@ -286,7 +286,7 @@ const UserDetails = () => {
                   <CFormInput
                     type="text"
                     id="firstName"
-                    floatingLabel={t('First name')}
+                    label={t('First name')}
                     defaultValue={user.first_name}
                     disabled={fieldsDisabled}
                   />
@@ -295,7 +295,7 @@ const UserDetails = () => {
                   <CFormInput
                     type="text"
                     id="lastName"
-                    floatingLabel={t('Last name')}
+                    label={t('Last name')}
                     defaultValue={user.last_name}
                     disabled={fieldsDisabled}
                   />
@@ -304,7 +304,7 @@ const UserDetails = () => {
                   <CFormInput
                     type="email"
                     id="email"
-                    floatingLabel={t('Email')}
+                    label={t('Email')}
                     defaultValue={user.email}
                     disabled={fieldsDisabled}
                   />
@@ -313,7 +313,7 @@ const UserDetails = () => {
                   <CFormInput
                     type="text"
                     id="phone"
-                    floatingLabel={t('Phone')}
+                    label={t('Phone')}
                     defaultValue={user.phone}
                     disabled={fieldsDisabled}
                   />
@@ -322,7 +322,7 @@ const UserDetails = () => {
                   <CFormInput
                     type="text"
                     id="address"
-                    floatingLabel={t('Address')}
+                    label={t('Address')}
                     defaultValue={user.address}
                     disabled={fieldsDisabled}
                   />
@@ -333,24 +333,35 @@ const UserDetails = () => {
 
           {/* Form Actions */}
           <div className="d-flex justify-content-end gap-2 mb-5">
-            <CButton color="secondary" variant="ghost" onClick={() => navigate('/users')}>
-              {t('Cancel')}
-            </CButton>
             {fieldsDisabled ? (
-              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
-                <CIcon icon={cilPencil} className="me-2" />
-                {t('Edit')}
-              </CButton>
+              <>
+                <CButton color="secondary" variant="ghost" onClick={() => navigate('/users')}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                  <CIcon icon={cilPencil} className="me-2" />
+                  {t('Edit')}
+                </CButton>
+              </>
             ) : (
-              <div className="d-flex gap-2">
-                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+              <>
+                <CButton color="secondary" variant="outline" onClick={() => {
+                  handleFieldsDisabled();
+                  if (user) {
+                    document.getElementById('firstName').value = user.first_name || '';
+                    document.getElementById('lastName').value = user.last_name || '';
+                    document.getElementById('email').value = user.email || '';
+                    document.getElementById('phone').value = user.phone || '';
+                    document.getElementById('address').value = user.address || '';
+                  }
+                }}>
                   {t('Cancel')}
                 </CButton>
                 <CButton color="primary" onClick={save} className="px-4 shadow-sm">
                   <CIcon icon={cilSave} className="me-2" />
                   {t('Save Changes')}
                 </CButton>
-              </div>
+              </>
             )}
           </div>
         </CForm>

@@ -12,6 +12,7 @@ import {
   CCol,
   CRow,
   CFormInput,
+  CFormTextarea,
   CAlert,
   CModal,
   CModalBody,
@@ -253,7 +254,7 @@ const EditPatient = () => {
                   <CFormInput
                     type="text"
                     id="first_name"
-                    floatingLabel={t('First name')}
+                    label={t('First name')}
                     value={formData.first_name}
                     onChange={handleInputChange}
                     disabled={fieldsDisabled}
@@ -263,7 +264,7 @@ const EditPatient = () => {
                   <CFormInput
                     type="text"
                     id="last_name"
-                    floatingLabel={t('Last name')}
+                    label={t('Last name')}
                     value={formData.last_name}
                     onChange={handleInputChange}
                     disabled={fieldsDisabled}
@@ -273,7 +274,7 @@ const EditPatient = () => {
                   <CFormInput
                     type="email"
                     id="email"
-                    floatingLabel={t('Email')}
+                    label={t('Email')}
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={fieldsDisabled}
@@ -283,7 +284,7 @@ const EditPatient = () => {
                   <CFormInput
                     type="text"
                     id="phone"
-                    floatingLabel={t('Phone')}
+                    label={t('Phone')}
                     value={formData.phone}
                     onChange={handleInputChange}
                     disabled={fieldsDisabled}
@@ -293,20 +294,21 @@ const EditPatient = () => {
                   <CFormInput
                     type="text"
                     id="address"
-                    floatingLabel={t('Address')}
+                    label={t('Address')}
                     value={formData.address}
                     onChange={handleInputChange}
                     disabled={fieldsDisabled}
                   />
                 </CCol>
                 <CCol md={12}>
-                  <CFormInput
-                    type="text"
+                  <CFormTextarea
                     id="medical_data"
-                    floatingLabel={t('Medical Data')}
+                    label={t('Medical Data')}
                     value={formData.medical_data}
                     onChange={handleInputChange}
                     disabled={fieldsDisabled}
+                    rows={4}
+                    style={{ resize: 'none' }}
                   />
                 </CCol>
               </CRow>
@@ -315,24 +317,38 @@ const EditPatient = () => {
 
           {/* Form Actions */}
           <div className="d-flex justify-content-end gap-2 mb-5">
-            <CButton color="secondary" variant="ghost" onClick={() => navigate('/patients')}>
-              {t('Cancel')}
-            </CButton>
             {fieldsDisabled ? (
-              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
-                <CIcon icon={cilPencil} className="me-2" />
-                {t('Edit')}
-              </CButton>
+              <>
+                <CButton color="secondary" variant="ghost" onClick={() => navigate('/patients')}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                  <CIcon icon={cilPencil} className="me-2" />
+                  {t('Edit')}
+                </CButton>
+              </>
             ) : (
-              <div className="d-flex gap-2">
-                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+              <>
+                <CButton color="secondary" variant="outline" onClick={() => {
+                  handleFieldsDisabled();
+                  if (patient) {
+                    setFormData({
+                      first_name: patient.first_name || '',
+                      last_name: patient.last_name || '',
+                      email: patient.email || '',
+                      address: patient.address || '',
+                      phone: patient.phone || '',
+                      medical_data: patient.medical_data || '',
+                    });
+                  }
+                }}>
                   {t('Cancel')}
                 </CButton>
                 <CButton color="primary" onClick={save} className="px-4 shadow-sm">
                   <CIcon icon={cilSave} className="me-2" />
                   {t('Save Changes')}
                 </CButton>
-              </div>
+              </>
             )}
           </div>
         </CForm>

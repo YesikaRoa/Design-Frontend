@@ -12,6 +12,7 @@ import {
   CCol,
   CRow,
   CFormInput,
+  CFormTextarea,
   CAlert,
   CForm,
 } from '@coreui/react'
@@ -56,10 +57,8 @@ const EditProfessional = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [selectedSpecialties, setSelectedSpecialties] = useState([])
   const [selectedSubspecialties, setSelectedSubspecialties] = useState([])
-  const [professional, setProfessional] = useState({
-    first_name: '', last_name: '', email: '', address: '', phone: '',
-    biography: '', years_of_experience: 0, specialties: [], subspecialties: [],
-  })
+  const [professional, setProfessional] = useState(null)
+  const [originalProfessional, setOriginalProfessional] = useState(null)
   const [specialties, setSpecialties] = useState([])
   const [subspecialties, setSubspecialties] = useState([])
   const token = localStorage.getItem('authToken')
@@ -86,6 +85,7 @@ const EditProfessional = () => {
       if (status === 403 || status === 401) { navigate('/404'); return }
       if (!success || !data) throw new Error('Error fetching professional')
       setProfessional(data)
+      setOriginalProfessional(data)
     } catch (error) {
       console.error(error)
       navigate('/404')
@@ -257,16 +257,16 @@ const EditProfessional = () => {
               <div className="mb-3">
                 <label className="small text-muted text-uppercase fw-bold d-block">{t('Full Name')}</label>
                 <div className="fw-bold fs-5 text-primary-emphasis">
-                  {professional.first_name} {professional.last_name}
+                  {originalProfessional?.first_name || professional.first_name} {originalProfessional?.last_name || professional.last_name}
                 </div>
               </div>
               <div className="mb-3">
                 <label className="small text-muted text-uppercase fw-bold d-block">{t('Email')}</label>
-                <div className="fw-medium">{professional.email}</div>
+                <div className="fw-medium">{originalProfessional?.email || professional.email}</div>
               </div>
               <div className="mb-3">
                 <label className="small text-muted text-uppercase fw-bold d-block">{t('Professional Type')}</label>
-                <div className="fw-medium">{professional.professional_type || 'N/A'}</div>
+                <div className="fw-medium">{originalProfessional?.professional_type || professional.professional_type || 'N/A'}</div>
               </div>
               <div className="mb-3">
                 <label className="small text-muted text-uppercase fw-bold d-block">{t('Status')}</label>
@@ -324,7 +324,7 @@ const EditProfessional = () => {
                   <CFormInput
                     type="text"
                     id="firstName"
-                    floatingLabel={t('First name')}
+                    label={t('First name')}
                     value={professional.first_name || ''}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, first_name: e.target.value }))}
                     disabled={fieldsDisabled}
@@ -334,7 +334,7 @@ const EditProfessional = () => {
                   <CFormInput
                     type="text"
                     id="lastName"
-                    floatingLabel={t('Last name')}
+                    label={t('Last name')}
                     value={professional.last_name || ''}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, last_name: e.target.value }))}
                     disabled={fieldsDisabled}
@@ -344,7 +344,7 @@ const EditProfessional = () => {
                   <CFormInput
                     type="email"
                     id="email"
-                    floatingLabel={t('Email')}
+                    label={t('Email')}
                     value={professional.email || ''}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, email: e.target.value }))}
                     disabled={fieldsDisabled}
@@ -354,7 +354,7 @@ const EditProfessional = () => {
                   <CFormInput
                     type="text"
                     id="phone"
-                    floatingLabel={t('Phone')}
+                    label={t('Phone')}
                     value={professional.phone || ''}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, phone: e.target.value }))}
                     disabled={fieldsDisabled}
@@ -364,27 +364,28 @@ const EditProfessional = () => {
                   <CFormInput
                     type="text"
                     id="address"
-                    floatingLabel={t('Address')}
+                    label={t('Address')}
                     value={professional.address || ''}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, address: e.target.value }))}
                     disabled={fieldsDisabled}
                   />
                 </CCol>
                 <CCol md={9}>
-                  <CFormInput
-                    type="text"
+                  <CFormTextarea
                     id="biography"
-                    floatingLabel={t('Biography')}
+                    label={t('Biography')}
                     value={professional.biography || ''}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, biography: e.target.value }))}
                     disabled={fieldsDisabled}
+                    rows={4}
+                    style={{ resize: 'none' }}
                   />
                 </CCol>
                 <CCol md={3}>
                   <CFormInput
                     type="number"
                     id="years_of_experience"
-                    floatingLabel={t('Years of Experience')}
+                    label={t('Years of Experience')}
                     value={professional.years_of_experience || 0}
                     onChange={(e) => setProfessional((prev) => ({ ...prev, years_of_experience: Number(e.target.value) }))}
                     disabled={fieldsDisabled}
@@ -436,24 +437,31 @@ const EditProfessional = () => {
 
           {/* Form Actions */}
           <div className="d-flex justify-content-end gap-2 mb-5">
-            <CButton color="secondary" variant="ghost" onClick={() => navigate('/professionals')}>
-              {t('Cancel')}
-            </CButton>
             {fieldsDisabled ? (
-              <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
-                <CIcon icon={cilPencil} className="me-2" />
-                {t('Edit')}
-              </CButton>
+              <>
+                <CButton color="secondary" variant="ghost" onClick={() => navigate('/professionals')}>
+                  {t('Cancel')}
+                </CButton>
+                <CButton color="primary" onClick={handleFieldsDisabled} className="px-4">
+                  <CIcon icon={cilPencil} className="me-2" />
+                  {t('Edit')}
+                </CButton>
+              </>
             ) : (
-              <div className="d-flex gap-2">
-                <CButton color="secondary" variant="outline" onClick={handleFieldsDisabled}>
+              <>
+                <CButton color="secondary" variant="outline" onClick={() => {
+                  handleFieldsDisabled();
+                  if (originalProfessional) {
+                    setProfessional(originalProfessional);
+                  }
+                }}>
                   {t('Cancel')}
                 </CButton>
                 <CButton color="primary" onClick={save} className="px-4 shadow-sm">
                   <CIcon icon={cilSave} className="me-2" />
                   {t('Save Changes')}
                 </CButton>
-              </div>
+              </>
             )}
           </div>
         </CForm>
