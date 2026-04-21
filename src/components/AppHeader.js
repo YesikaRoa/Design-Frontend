@@ -69,7 +69,7 @@ const AppHeader = () => {
           <CNavItem>
             <CHeaderNav className="nav-link" style={{ cursor: 'pointer' }} onClick={changeLanguage}>
               <CIcon icon={cilTranslate} size="lg" />
-              <span className="ms-1">{i18n.language.toUpperCase()}</span>
+              <span className="ms-1">{i18n.language.substring(0, 2).toUpperCase()}</span>
             </CHeaderNav>
           </CNavItem>
         </CHeaderNav>
